@@ -1,0 +1,36 @@
+# Node modules
+node_modules/
+npm-debug.log
+yarn.lock
+package-lock.json
+
+# Build outputs
+build/
+dist/
+*.gradle
+.gradle/
+.gradle
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Local properties
+local.properties
+gradle.properties
+
+# Android
+*.apk
+*.ap_
+*.dex
+*.class
+*.jar
+bin/
+gen/
+
+# Kotlin
+*.kt.bak

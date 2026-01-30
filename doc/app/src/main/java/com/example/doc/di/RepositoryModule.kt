@@ -1,0 +1,54 @@
+package com.example.doc.di
+
+import com.example.doc.data.daos.ConsejoDao
+import com.example.doc.data.daos.EjercicioDao
+import com.example.doc.data.daos.RegistroSaludDao
+import com.example.doc.repository.ConsejoRepository
+import com.example.doc.repository.EjercicioRepository
+import com.example.doc.repository.RegistroSaludRepository
+import com.example.doc.repository.UsuarioRepository
+import com.example.doc.repository.EjercicioRealizadoRepository
+import com.example.doc.data.daos.EjercicioRealizadoDao
+import com.example.doc.data.daos.UsuarioDao
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+@Suppress("unused")
+object RepositoryModule {
+
+    @Provides
+    @Singleton
+    fun provideUsuarioRepository(usuarioDao: UsuarioDao): UsuarioRepository {
+        return UsuarioRepository(usuarioDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideRegistroSaludRepository(registroSaludDao: RegistroSaludDao): RegistroSaludRepository {
+        return RegistroSaludRepository(registroSaludDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideEjercicioRepository(ejercicioDao: EjercicioDao): EjercicioRepository {
+        return EjercicioRepository(ejercicioDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideConsejoRepository(consejoDao: ConsejoDao): ConsejoRepository {
+        return ConsejoRepository(consejoDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideEjercicioRealizadoRepository(ejercicioRealizadoDao: EjercicioRealizadoDao): EjercicioRealizadoRepository {
+        return EjercicioRealizadoRepository(ejercicioRealizadoDao)
+    }
+}
+

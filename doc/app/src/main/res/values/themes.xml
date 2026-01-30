@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tema base compatible con API 21+ (Android 5.0+) -->
+    <style name="Theme.Doc" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Barras del sistema visibles con fondo blanco -->
+        <!-- windowLightStatusBar solo disponible desde API 23+ -->
+        <item name="android:statusBarColor">@color/white</item>
+        <item name="android:navigationBarColor">@color/white</item>
+    </style>
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/white</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenAnimationDuration">300</item>
+        <item name="postSplashScreenTheme">@style/Theme.Doc</item>
+    </style>
+</resources>

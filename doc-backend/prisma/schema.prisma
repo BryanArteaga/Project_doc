@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Usuario {
+  id                Int      @id @default(autoincrement())
+  cedula            String   @unique
+  nombre            String
+  edad              Int
+  peso              Float
+  altura            Float
+  sexo              String
+  enfermedad        String
+  colorEnfermedad   String
+  notifEnabled      Boolean  @default(true)
+  notifType         String   @default("daily_fixed")
+  notifDetails      String
+  glucosaInicial    Float?
+  colesterolInicial Float?
+
+  // Campos de activación
+  accountStatus     String   @default("pending") // pending, active, inactive
+  activatedAt       DateTime?
+  activatedBy       String?  // Cédula del doctor
+  registeredAt      DateTime @default(now())
+
+  // Sincronización
+  lastSyncAt        DateTime?
+  deviceId          String?
+
+  registrosSalud    RegistroSalud[]
+  ejerciciosRealizados EjercicioRealizado[]
+
+  @@index([cedula])
+  @@index([accountStatus])
+}
+
+model RegistroSalud {
+  id          Int      @id @default(autoincrement())
+  usuarioId   Int
+  fecha       DateTime @default(now())
+  glucosa     Float?
+  colesterol  Float?
+  presionSist Int?
+  presionDias Int?
+  peso        Float?
+  observaciones String?
+
+  // Sincronización
+  syncStatus  String   @default("synced") // synced, pending
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, fecha])
+}
+
+model EjercicioRealizado {
+  id          Int      @id @default(autoincrement())
+  usuarioId   Int
+  ejercicioId Int
+  nombreEjercicio String
+  duracion    Int      // minutos
+  completado  Boolean  @default(true)
+  fecha       DateTime @default(now())
+
+  // Sincronización
+  syncStatus  String   @default("synced")
+  createdAt   DateTime @default(now())
+
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, fecha])
+}
+
+model CodigoActivacion {
+  id          Int      @id @default(autoincrement())
+  codigo      String   @unique
+  doctorCedula String
+  usado       Boolean  @default(false)
+  cedulaPaciente String?
+  creadoEn    DateTime @default(now())
+  usadoEn     DateTime?
+  expiraEn    DateTime
+
+  @@index([codigo])
+  @@index([doctorCedula])
+}
+
