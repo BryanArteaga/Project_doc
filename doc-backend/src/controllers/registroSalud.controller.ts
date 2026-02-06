@@ -1,7 +1,6 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { AuthRequest, RegistroSaludDTO } from '../types';
-const prisma = new PrismaClient();
 export const createRegistro = async (req: AuthRequest, res: Response) => {
   try {
     const data: RegistroSaludDTO = req.body;

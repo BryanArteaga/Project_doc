@@ -1,0 +1,317 @@
+import { Request, Response } from 'express';
+import { prisma } from '../lib/prisma';
+import { AccountStatus, NotificationType } from '../types/prisma';
+import { z } from 'zod';
+
+// Schemas de validación
+const PaginationSchema = z.object({
+  page: z.string().optional().default('1').pipe(z.coerce.number().min(1)),
+  limit: z.string().optional().default('10').pipe(z.coerce.number().min(1).max(100)),
+});
+
+/**
+ * Obtener lista de pacientes del doctor
+ */
+export const getPatients = async (req: Request, res: Response) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    const { page, limit } = PaginationSchema.parse(req.query);
+    const skip = (page - 1) * limit;
+
+    // Obtener pacientes del doctor
+    const [patients, total] = await Promise.all([
+      prisma.usuario.findMany({
+        where: {
+          idDoctorAsignado: req.userId,
+        },
+        select: {
+          id: true,
+          email: true,
+          nombre: true,
+          apellido: true,
+          telefonoPersonal: true,
+          estadoCuenta: true,
+          registradoEn: true,
+          activadoEn: true,
+        },
+        skip,
+        take: limit,
+        orderBy: { registradoEn: 'desc' },
+      }),
+      prisma.usuario.count({
+        where: {
+          idDoctorAsignado: req.userId,
+        },
+      }),
+    ]);
+
+    res.json({
+      patients,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error: any) {
+    console.error('Error al obtener pacientes:', error);
+    res.status(500).json({ error: error.mensaje || 'Error al obtener pacientes' });
+  }
+};
+
+/**
+ * Obtener detalle de un paciente
+ */
+export const getPatient = async (req: Request, res: Response) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    const { id } = req.params;
+    const patientId = parseInt(id);
+
+    const patient = await prisma.usuario.findUnique({
+      where: { id: patientId },
+      include: {
+        registrosSalud: {
+          orderBy: { registradoEn: 'desc' },
+          take: 20,
+        },
+        asignacionesEjercicio: {
+          orderBy: { creadoEn: 'desc' },
+          include: {
+            ejercicio: true,
+            completaciones: true,
+          },
+        },
+        notificaciones: {
+          orderBy: { creadoEn: 'desc' },
+          take: 10,
+        },
+      },
+    });
+
+    if (!patient) {
+      return res.status(404).json({ error: 'Paciente no encontrado' });
+    }
+
+    // Verificar que el doctor sea el asignado
+    if (patient.idDoctorAsignado !== req.userId) {
+      return res.status(403).json({ error: 'No tienes permiso para ver este paciente' });
+    }
+
+    res.json(patient);
+  } catch (error: any) {
+    console.error('Error al obtener detalle de paciente:', error);
+    res.status(500).json({ error: error.mensaje || 'Error al obtener paciente' });
+  }
+};
+
+/**
+ * Obtener pacientes pendientes de activación
+ */
+export const getPendingPatients = async (req: Request, res: Response) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    const { page, limit } = PaginationSchema.parse(req.query);
+    const skip = (page - 1) * limit;
+
+    const [patients, total] = await Promise.all([
+      prisma.usuario.findMany({
+        where: {
+          estadoCuenta: AccountStatus.INACTIVE,
+          idDoctorAsignado: req.userId,
+        },
+        select: {
+          id: true,
+          email: true,
+          nombre: true,
+          apellido: true,
+          telefonoPersonal: true,
+          registradoEn: true,
+        },
+        skip,
+        take: limit,
+        orderBy: { registradoEn: 'asc' },
+      }),
+      prisma.usuario.count({
+        where: {
+          estadoCuenta: AccountStatus.INACTIVE,
+          idDoctorAsignado: req.userId,
+        },
+      }),
+    ]);
+
+    res.json({
+      patients,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error: any) {
+    console.error('Error al obtener pacientes pendientes:', error);
+    res.status(500).json({ error: error.mensaje || 'Error al obtener pacientes pendientes' });
+  }
+};
+
+/**
+ * Activar cuenta de paciente
+ */
+export const activatePatient = async (req: Request, res: Response) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    const { id } = req.params;
+    const patientId = parseInt(id);
+
+    // Obtener el paciente
+    const patient = await prisma.usuario.findUnique({
+      where: { id: patientId },
+    });
+
+    if (!patient) {
+      return res.status(404).json({ error: 'Paciente no encontrado' });
+    }
+
+    // Actualizar estado
+    const updated = await prisma.usuario.update({
+      where: { id: patientId },
+      data: {
+        estadoCuenta: AccountStatus.ACTIVE,
+        activadoEn: new Date(),
+        activadoPor: req.userId,
+      },
+    });
+
+    // Crear notificación
+    await prisma.notificacion.create({
+      data: {
+        usuarioId: patientId,
+        tipo: NotificationType.account_activated,
+        titulo: '¡Tu cuenta ha sido activada!',
+        mensaje: 'Tu doctor ha aprobado tu solicitud. Ahora puedes usar todas las funciones de la app.',
+        metadatos: {
+          activadoPor: req.userId,
+          activadoEn: new Date().toISOString(),
+        },
+      },
+    });
+
+    res.json({
+      message: 'Paciente activado exitosamente',
+      patient: {
+        id: updated.id,
+        email: updated.email,
+        nombre: updated.nombre,
+        apellido: updated.apellido,
+        estadoCuenta: updated.estadoCuenta,
+        activadoEn: updated.activadoEn,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error al activar paciente:', error);
+    res.status(500).json({ error: error.mensaje || 'Error al activar paciente' });
+  }
+};
+
+/**
+ * Desactivar cuenta de paciente
+ */
+export const deactivatePatient = async (req: Request, res: Response) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    const { id } = req.params;
+    const patientId = parseInt(id);
+
+    const patient = await prisma.usuario.findUnique({
+      where: { id: patientId },
+    });
+
+    if (!patient) {
+      return res.status(404).json({ error: 'Paciente no encontrado' });
+    }
+
+    const updated = await prisma.usuario.update({
+      where: { id: patientId },
+      data: {
+        estadoCuenta: AccountStatus.SUSPENDED,
+      },
+    });
+
+    res.json({
+      message: 'Paciente desactivado exitosamente',
+      patient: {
+        id: updated.id,
+        email: updated.email,
+        nombre: updated.nombre,
+        apellido: updated.apellido,
+        estadoCuenta: updated.estadoCuenta,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error al desactivar paciente:', error);
+    res.status(500).json({ error: error.mensaje || 'Error al desactivar paciente' });
+  }
+};
+
+/**
+ * Asignar paciente a doctor
+ */
+export const assignPatientToDoctor = async (req: Request, res: Response) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    const { patientId } = req.body;
+
+    if (!patientId) {
+      return res.status(400).json({ error: 'patientId es requerido' });
+    }
+
+    const patient = await prisma.usuario.findUnique({
+      where: { id: patientId },
+    });
+
+    if (!patient) {
+      return res.status(404).json({ error: 'Paciente no encontrado' });
+    }
+
+    const updated = await prisma.usuario.update({
+      where: { id: patientId },
+      data: {
+        idDoctorAsignado: req.userId,
+      },
+    });
+
+    res.json({
+      message: 'Paciente asignado al doctor exitosamente',
+      patient: {
+        id: updated.id,
+        email: updated.email,
+        nombre: updated.nombre,
+        apellido: updated.apellido,
+        idDoctorAsignado: updated.idDoctorAsignado,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error al asignar paciente:', error);
+    res.status(500).json({ error: error.mensaje || 'Error al asignar paciente' });
+  }
+};

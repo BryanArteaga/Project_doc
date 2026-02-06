@@ -1,132 +1,130 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-import jwt from 'jsonwebtoken';
-import { RegisterDTO, LoginDTO, AuthRequest } from '../types';
+import { AuthService } from '../services/auth.service';
+import { z } from 'zod';
 
-const prisma = new PrismaClient();
+// Schemas de validación (solo pacientes se registran via app)
+const RegisterSchema = z.object({
+  email: z.string().email('Email inválido'),
+  password: z.string().min(6, 'Password debe tener al menos 6 caracteres'),
+  nombre: z.string().min(2, 'Nombre debe tener al menos 2 caracteres'),
+  apellido: z.string().min(2, 'Apellido debe tener al menos 2 caracteres'),
+  telefonoPersonal: z.string().optional(),
+  fechaNacimiento: z.string().optional(),
+  sexo: z.string().optional(),
+});
 
+const LoginSchema = z.object({
+  email: z.string().email('Email inválido'),
+  password: z.string().min(6, 'Password debe tener al menos 6 caracteres'),
+});
+
+const UpdateDeviceTokenSchema = z.object({
+  tokenDispositivo: z.string().min(10, 'Token inválido'),
+});
+
+/**
+ * Registrar nuevo usuario
+ */
 export const register = async (req: Request, res: Response) => {
   try {
-    const data: RegisterDTO = req.body;
-
-    // Validar que la cédula no exista
-    const existingUser = await prisma.usuario.findUnique({
-      where: { cedula: data.cedula }
-    });
-
-    if (existingUser) {
-      return res.status(400).json({ error: 'La cédula ya está registrada' });
-    }
-
-    // Crear usuario con estado "pending" (pendiente de activación)
-    const usuario = await prisma.usuario.create({
-      data: {
-        ...data,
-        accountStatus: 'pending', // Estado inicial: pendiente
-        notifDetails: '{}',
-        registeredAt: new Date()
-      }
-    });
-
-    // Generar token JWT
-    const token = jwt.sign(
-      { userId: usuario.id, cedula: usuario.cedula },
-      process.env.JWT_SECRET || 'secreta123',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-    );
+    const data = RegisterSchema.parse(req.body);
+    const user = await AuthService.register(data);
 
     res.status(201).json({
-      message: 'Usuario registrado exitosamente. Tu cuenta está pendiente de activación por el doctor.',
-      usuario: {
-        id: usuario.id,
-        cedula: usuario.cedula,
-        nombre: usuario.nombre,
-        accountStatus: usuario.accountStatus,
-        registeredAt: usuario.registeredAt
-      },
-      token
+      message: 'Usuario registrado exitosamente',
+      user,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error en registro:', error);
-    res.status(500).json({ error: 'Error al registrar usuario' });
+
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        error: 'Validación fallida',
+        details: error.errors,
+      });
+    }
+
+    res.status(400).json({
+      error: error.mensaje || 'Error al registrar usuario',
+    });
   }
 };
 
+/**
+ * Login de usuario
+ */
 export const login = async (req: Request, res: Response) => {
   try {
-    const { cedula }: LoginDTO = req.body;
-
-    const usuario = await prisma.usuario.findUnique({
-      where: { cedula }
-    });
-
-    if (!usuario) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-
-    // Generar token JWT
-    const token = jwt.sign(
-      { userId: usuario.id, cedula: usuario.cedula },
-      process.env.JWT_SECRET || 'secreta123',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-    );
-
-    // Actualizar última sincronización
-    await prisma.usuario.update({
-      where: { id: usuario.id },
-      data: { lastSyncAt: new Date() }
-    });
+    const data = LoginSchema.parse(req.body);
+    const result = await AuthService.login(data);
 
     res.json({
       message: 'Login exitoso',
-      usuario: {
-        id: usuario.id,
-        cedula: usuario.cedula,
-        nombre: usuario.nombre,
-        edad: usuario.edad,
-        peso: usuario.peso,
-        altura: usuario.altura,
-        sexo: usuario.sexo,
-        enfermedad: usuario.enfermedad,
-        colorEnfermedad: usuario.colorEnfermedad,
-        accountStatus: usuario.accountStatus,
-        activatedAt: usuario.activatedAt,
-        notifEnabled: usuario.notifEnabled,
-        notifType: usuario.notifType,
-        notifDetails: usuario.notifDetails,
-        glucosaInicial: usuario.glucosaInicial,
-        colesterolInicial: usuario.colesterolInicial
-      },
-      token
+      token: result.token,
+      user: result.user,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error en login:', error);
-    res.status(500).json({ error: 'Error al iniciar sesión' });
-  }
-};
 
-export const checkAccountStatus = async (req: AuthRequest, res: Response) => {
-  try {
-    const usuario = await prisma.usuario.findUnique({
-      where: { id: req.userId },
-      select: {
-        id: true,
-        cedula: true,
-        nombre: true,
-        accountStatus: true,
-        activatedAt: true,
-        activatedBy: true
-      }
-    });
-
-    if (!usuario) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        error: 'Validación fallida',
+        details: error.errors,
+      });
     }
 
-    res.json(usuario);
-  } catch (error) {
-    console.error('Error al verificar estado:', error);
-    res.status(500).json({ error: 'Error al verificar estado de cuenta' });
+    res.status(400).json({
+      error: error.mensaje || 'Error al iniciar sesión',
+    });
   }
 };
+
+/**
+ * Obtener perfil del usuario actual
+ */
+export const me = async (req: Request, res: Response) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    const user = await AuthService.getUserById(req.userId);
+    res.json(user);
+  } catch (error: any) {
+    console.error('Error al obtener perfil:', error);
+    res.status(404).json({
+      error: error.mensaje || 'Usuario no encontrado',
+    });
+  }
+};
+
+/**
+ * Actualizar device token para notificaciones push
+ */
+export const updateDeviceToken = async (req: Request, res: Response) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    const data = UpdateDeviceTokenSchema.parse(req.body);
+    await AuthService.updateDeviceToken(req.userId, data.tokenDispositivo);
+
+    res.json({ message: 'Device token actualizado' });
+  } catch (error: any) {
+    console.error('Error al actualizar device token:', error);
+
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        error: 'Validación fallida',
+        details: error.errors,
+      });
+    }
+
+    res.status(400).json({
+      error: error.mensaje || 'Error al actualizar device token',
+    });
+  }
+};
+
 

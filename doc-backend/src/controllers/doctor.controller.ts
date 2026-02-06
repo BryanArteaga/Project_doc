@@ -1,18 +1,16 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../types';
-
-const prisma = new PrismaClient();
 
 // Obtener todos los usuarios pendientes de activación
 export const getPendingUsers = async (req: Request, res: Response) => {
   try {
     const pendingUsers = await prisma.usuario.findMany({
       where: {
-        accountStatus: 'pending'
+        estadoCuenta: 'INACTIVE'
       },
       orderBy: {
-        registeredAt: 'desc'
+        registradoEn: 'desc'
       },
       select: {
         id: true,
@@ -24,7 +22,7 @@ export const getPendingUsers = async (req: Request, res: Response) => {
         sexo: true,
         enfermedad: true,
         colorEnfermedad: true,
-        registeredAt: true,
+        registradoEn: true,
         glucosaInicial: true,
         colesterolInicial: true
       }
@@ -42,10 +40,10 @@ export const getActiveUsers = async (req: Request, res: Response) => {
   try {
     const activeUsers = await prisma.usuario.findMany({
       where: {
-        accountStatus: 'active'
+        estadoCuenta: 'ACTIVE'
       },
       orderBy: {
-        activatedAt: 'desc'
+        activadoEn: 'desc'
       },
       include: {
         registrosSalud: {
@@ -84,7 +82,7 @@ export const activateUser = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 
-    if (usuario.accountStatus === 'active') {
+    if (usuario.estadoCuenta === 'ACTIVE') {
       return res.status(400).json({ error: 'El usuario ya está activo' });
     }
 
@@ -92,9 +90,9 @@ export const activateUser = async (req: Request, res: Response) => {
     const updatedUser = await prisma.usuario.update({
       where: { id: parseInt(userId) },
       data: {
-        accountStatus: 'active',
-        activatedAt: new Date(),
-        activatedBy: doctorCedula
+        estadoCuenta: 'ACTIVE',
+        activadoEn: new Date(),
+        activadoPor: doctorCedula
       }
     });
 
@@ -104,9 +102,9 @@ export const activateUser = async (req: Request, res: Response) => {
         id: updatedUser.id,
         cedula: updatedUser.cedula,
         nombre: updatedUser.nombre,
-        accountStatus: updatedUser.accountStatus,
-        activatedAt: updatedUser.activatedAt,
-        activatedBy: updatedUser.activatedBy
+        estadoCuenta: updatedUser.estadoCuenta,
+        activadoEn: updatedUser.activadoEn,
+        activadoPor: updatedUser.activadoPor
       }
     });
 
@@ -131,7 +129,7 @@ export const deactivateUser = async (req: Request, res: Response) => {
     const updatedUser = await prisma.usuario.update({
       where: { id: parseInt(userId) },
       data: {
-        accountStatus: 'inactive'
+        estadoCuenta: 'INACTIVE'
       }
     });
 
@@ -141,7 +139,7 @@ export const deactivateUser = async (req: Request, res: Response) => {
         id: updatedUser.id,
         cedula: updatedUser.cedula,
         nombre: updatedUser.nombre,
-        accountStatus: updatedUser.accountStatus
+        estadoCuenta: updatedUser.estadoCuenta
       }
     });
   } catch (error) {
@@ -155,16 +153,14 @@ export const getDashboardStats = async (req: Request, res: Response) => {
   try {
     const [totalUsers, pendingUsers, activeUsers, inactiveUsers] = await Promise.all([
       prisma.usuario.count(),
-      prisma.usuario.count({ where: { accountStatus: 'pending' } }),
-      prisma.usuario.count({ where: { accountStatus: 'active' } }),
-      prisma.usuario.count({ where: { accountStatus: 'inactive' } })
+      prisma.usuario.count({ where: { estadoCuenta: 'INACTIVE' } }),
+      prisma.usuario.count({ where: { estadoCuenta: 'ACTIVE' } }),
+      prisma.usuario.count({ where: { estadoCuenta: 'INACTIVE' } })
     ]);
 
     const registrosHoy = await prisma.registroSalud.count({
       where: {
-        fecha: {
-          gte: new Date(new Date().setHours(0, 0, 0, 0))
-        }
+        fecha: new Date().toISOString().split('T')[0] // formato yyyy-MM-dd
       }
     });
 

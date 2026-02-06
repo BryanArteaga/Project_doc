@@ -2,13 +2,19 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
+import authDoctorRoutes from './routes/auth.doctor.routes';
 import usuarioRoutes from './routes/usuario.routes';
 import registroSaludRoutes from './routes/registroSalud.routes';
 import ejercicioRoutes from './routes/ejercicio.routes';
 import doctorRoutes from './routes/doctor.routes';
+import syncRoutes from './routes/sync.routes';
+import notificationRoutes from './routes/notification.routes';
+
 dotenv.config();
+
 const app = express();
 const PORT = process.env.PORT || 3000;
+
 // Middlewares
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
@@ -16,16 +22,32 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 // Routes
-app.use('/api/auth', authRoutes);
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'API Backend Doc - Sistema de Gestion de Pacientes',
+    version: '1.0.0'
+  });
+});
+
+// Auth routes
+app.use('/api/auth', authRoutes); // Pacientes
+app.use('/api/auth/doctor', authDoctorRoutes); // Doctores y Admins
+
+// Resource routes
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/registros-salud', registroSaludRoutes);
 app.use('/api/ejercicios', ejercicioRoutes);
 app.use('/api/doctor', doctorRoutes);
+app.use('/api/sync', syncRoutes);
+app.use('/api/notifications', notificationRoutes);
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
 // Error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
@@ -33,7 +55,9 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     error: err.message || 'Error interno del servidor'
   });
 });
+
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV}`);
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV}`);
 });
+

@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
@@ -7,89 +7,257 @@ datasource db {
   provider = "postgresql"
 }
 
+// Enum para roles de staff médico
+enum StaffRole {
+  ADMIN
+  DOCTOR
+}
+
+// Enum para estado de cuenta de pacientes
+enum AccountStatus {
+  INACTIVE
+  ACTIVE
+  SUSPENDED
+}
+
+// Enum para estado de asignación de ejercicio
+enum ExerciseAssignmentStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// Enum para tipo de notificación
+enum NotificationType {
+  account_activated
+  exercise_assigned
+  exercise_reminder
+  health_check
+  message_from_doctor
+}
+
+// Doctor (Staff médico con autenticación Supabase)
+model Doctor {
+  id              Int         @id @default(autoincrement())
+  supabaseUserId  String      @unique
+  email           String      @unique
+  nombre          String
+  apellido        String
+  cedula          String      @unique
+  telefono        String?
+  especialidad    String?
+  rol             StaffRole   @default(DOCTOR)
+  activo          Boolean     @default(true)
+  
+  creadoEn        DateTime    @default(now())
+  actualizadoEn   DateTime    @updatedAt
+  
+  pacientes       Usuario[]   @relation("DoctorPacientes")
+  
+  @@map("doctores")
+}
+
+// Usuario (Paciente)
 model Usuario {
-  id                Int      @id @default(autoincrement())
-  cedula            String   @unique
-  nombre            String
-  edad              Int
-  peso              Float
-  altura            Float
-  sexo              String
-  enfermedad        String
-  colorEnfermedad   String
-  notifEnabled      Boolean  @default(true)
-  notifType         String   @default("daily_fixed")
-  notifDetails      String
-  glucosaInicial    Float?
-  colesterolInicial Float?
+  id                    Int       @id @default(autoincrement())
+  email                 String    @unique
+  password              String
+  nombre                String
+  apellido              String
+  cedula                String?
+  telefonoPersonal      String?
+  fechaNacimiento       DateTime?
+  edad                  Int?
+  peso                  Float?
+  altura                Float?
+  sexo                  String?
+  enfermedad            String?
+  colorEnfermedad       String?
+  
+  estadoCuenta          AccountStatus @default(INACTIVE)
+  
+  doctorAsignado        Doctor?   @relation("DoctorPacientes", fields: [idDoctorAsignado], references: [id])
+  idDoctorAsignado      Int?
+  
+  glucosaInicial        Float?
+  colesterolInicial     Float?
+  notifEnabled          Boolean   @default(true)
+  notifType             String    @default("daily_fixed")
+  notifDetails          String    @default("{\"hour\":20}")
+  
+  activadoEn            DateTime?
+  activadoPor           Int?
+  registradoEn          DateTime  @default(now())
+  ultimaSincronizacion  DateTime?
+  tokenDispositivo      String?
+  
+  creadoEn              DateTime  @default(now())
+  actualizadoEn         DateTime  @updatedAt
 
-  // Campos de activación
-  accountStatus     String   @default("pending") // pending, active, inactive
-  activatedAt       DateTime?
-  activatedBy       String?  // Cédula del doctor
-  registeredAt      DateTime @default(now())
+  registrosSalud        RegistroSalud[]
+  asignacionesEjercicio AsignacionEjercicio[]
+  ejerciciosRealizados  EjercicioRealizado[]
+  notificaciones        Notificacion[]
 
-  // Sincronización
-  lastSyncAt        DateTime?
-  deviceId          String?
-
-  registrosSalud    RegistroSalud[]
-  ejerciciosRealizados EjercicioRealizado[]
-
-  @@index([cedula])
-  @@index([accountStatus])
+  @@index([email])
+  @@index([estadoCuenta])
+  @@index([idDoctorAsignado])
+  @@map("usuarios")
 }
 
 model RegistroSalud {
-  id          Int      @id @default(autoincrement())
-  usuarioId   Int
-  fecha       DateTime @default(now())
-  glucosa     Float?
-  colesterol  Float?
-  presionSist Int?
-  presionDias Int?
-  peso        Float?
-  observaciones String?
+  id                Int       @id @default(autoincrement())
+  usuarioId         Int
+  
+  presionSistolica  Int?
+  presionDiastolica Int?
+  glucosa           Float?
+  colesterol        Float?
+  temperatura       Float?
+  peso              Float?
+  calorias          Int?
+  ejercicio         Int?
+  estadoAnimo       String?
+  notas             String?
+  
+  idSincronizacion  String?
+  sincronizadoEn    DateTime?
+  
+  fecha             String?
+  hora              String?
+  registradoEn      DateTime  @default(now())
+  creadoEn          DateTime  @default(now())
+  actualizadoEn     DateTime  @updatedAt
+  
+  usuario           Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  
+  @@index([usuarioId, registradoEn])
+  @@index([idSincronizacion])
+  @@map("registros_salud")
+}
 
-  // Sincronización
-  syncStatus  String   @default("synced") // synced, pending
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model Ejercicio {
+  id                Int       @id @default(autoincrement())
+  nombre            String
+  descripcion       String?
+  enfermedad        String?
+  duracion          Int?
+  intensidad        String?
+  imagenResId       Int?
+  series            Int       @default(3)
+  descansoEntreSeries Int @default(30)
+  urlImagen         String?
+  urlVideo          String?
+  
+  creadoEn          DateTime  @default(now())
+  actualizadoEn     DateTime  @updatedAt
+  
+  asignaciones      AsignacionEjercicio[]
+  realizados        EjercicioRealizado[]
+  
+  @@index([enfermedad])
+  @@map("ejercicios")
+}
 
-  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-
-  @@index([usuarioId, fecha])
+model AsignacionEjercicio {
+  id                Int       @id @default(autoincrement())
+  ejercicioId       Int
+  pacienteId        Int
+  
+  estado            ExerciseAssignmentStatus @default(PENDING)
+  progreso          Int       @default(0)
+  
+  frecuenciaRecordatorio Int?
+  
+  asignadoEn        DateTime  @default(now())
+  fechaInicio       DateTime?
+  fechaFin          DateTime?
+  
+  idSincronizacion  String?
+  sincronizadoEn    DateTime?
+  
+  creadoEn          DateTime  @default(now())
+  actualizadoEn     DateTime  @updatedAt
+  
+  ejercicio         Ejercicio @relation(fields: [ejercicioId], references: [id], onDelete: Cascade)
+  paciente          Usuario   @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  completaciones    EjercicioRealizado[]
+  
+  @@index([pacienteId, estado])
+  @@index([idSincronizacion])
+  @@map("asignaciones_ejercicio")
 }
 
 model EjercicioRealizado {
-  id          Int      @id @default(autoincrement())
-  usuarioId   Int
-  ejercicioId Int
-  nombreEjercicio String
-  duracion    Int      // minutos
-  completado  Boolean  @default(true)
-  fecha       DateTime @default(now())
-
-  // Sincronización
-  syncStatus  String   @default("synced")
-  createdAt   DateTime @default(now())
-
-  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-
-  @@index([usuarioId, fecha])
+  id                Int       @id @default(autoincrement())
+  usuarioId         Int
+  ejercicioId       Int
+  asignacionId      Int?
+  
+  duracionReal      Int?
+  dificultad        Int?
+  dolor             Int?
+  notas             String?
+  
+  idSincronizacion  String?
+  sincronizadoEn    DateTime?
+  
+  fecha             String?
+  completadoEn      DateTime  @default(now())
+  creadoEn          DateTime  @default(now())
+  
+  usuario           Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  ejercicio         Ejercicio @relation(fields: [ejercicioId], references: [id], onDelete: Cascade)
+  asignacion        AsignacionEjercicio? @relation(fields: [asignacionId], references: [id], onDelete: SetNull)
+  
+  @@index([usuarioId, completadoEn])
+  @@index([idSincronizacion])
+  @@map("ejercicios_realizados")
 }
 
-model CodigoActivacion {
-  id          Int      @id @default(autoincrement())
-  codigo      String   @unique
-  doctorCedula String
-  usado       Boolean  @default(false)
-  cedulaPaciente String?
-  creadoEn    DateTime @default(now())
-  usadoEn     DateTime?
-  expiraEn    DateTime
-
-  @@index([codigo])
-  @@index([doctorCedula])
+model Consejo {
+  id                Int       @id @default(autoincrement())
+  enfermedad        String
+  consejo           String
+  
+  creadoEn          DateTime  @default(now())
+  actualizadoEn     DateTime  @updatedAt
+  
+  @@map("consejos")
 }
 
+model Notificacion {
+  id                Int       @id @default(autoincrement())
+  usuarioId         Int
+  
+  tipo              NotificationType
+  titulo            String
+  mensaje           String
+  metadatos         Json?
+  
+  leido             Boolean   @default(false)
+  leidoEn           DateTime?
+  
+  creadoEn          DateTime  @default(now())
+  actualizadoEn     DateTime  @updatedAt
+  
+  usuario           Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  
+  @@index([usuarioId, leido])
+  @@index([tipo])
+  @@map("notificaciones")
+}
+
+model ConfiguracionSistema {
+  id                Int       @id @default(autoincrement())
+  clave             String    @unique
+  valor             String
+  descripcion       String?
+  
+  creadoEn          DateTime  @default(now())
+  actualizadoEn     DateTime  @updatedAt
+  
+  @@index([clave])
+  @@map("configuracion_sistema")
+}

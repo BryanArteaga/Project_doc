@@ -1,30 +1,141 @@
-import { Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { AuthRequest } from '../types';
-export const authenticateToken = (req: AuthRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  if (!token) {
-    return res.status(401).json({ error: 'Token no proporcionado' });
+import { Request, Response, NextFunction } from 'express';
+import { AuthService } from '../services/auth.service';
+import { AccountStatus } from '../types/prisma';
+import { StaffRole } from '../../generated/prisma';
+import { verifySupabaseToken } from '../lib/supabase';
+import { prisma } from '../lib/prisma';
+
+// Extender tipos de Express
+declare global {
+  namespace Express {
+    interface Request {
+      userId?: number;
+      estadoCuenta?: AccountStatus;
+      user?: any;
+      doctorId?: string;
+      doctorRole?: StaffRole;
+      doctorDbId?: number;
+    }
   }
+}
+
+/**
+ * Middleware para verificar JWT token (solo para pacientes)
+ */
+export const verifyToken = (req: Request, res: Response, next: NextFunction) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secreta123') as { 
-      userId: number; 
-      cedula: string 
-    };
-    req.userId = decoded.userId;
-    req.userCedula = decoded.cedula;
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ error: 'Token no proporcionado' });
+    }
+
+    const payload = AuthService.verifyToken(token);
+    if (!payload) {
+      return res.status(401).json({ error: 'Token inválido o expirado' });
+    }
+
+    req.userId = payload.usuarioId;
+    req.estadoCuenta = payload.estadoCuenta;
+
     next();
   } catch (error) {
-    return res.status(403).json({ error: 'Token inválido o expirado' });
+    return res.status(401).json({ error: 'Error al verificar token' });
   }
 };
-export const authenticateDoctor = (req: AuthRequest, res: Response, next: NextFunction) => {
-  // Por ahora, el doctor usa una cédula específica o un token especial
-  // Esto puede mejorarse con un modelo Doctor separado
-  const doctorToken = req.headers['x-doctor-token'];
-  if (!doctorToken || doctorToken !== process.env.DOCTOR_TOKEN) {
-    return res.status(403).json({ error: 'Acceso denegado: se requiere autorización de doctor' });
+
+/**
+ * Middleware para verificar que la cuenta esté activa
+ */
+export const requireActive = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.estadoCuenta) {
+    return res.status(401).json({ error: 'No autenticado' });
   }
+
+  if (req.estadoCuenta !== AccountStatus.ACTIVE) {
+    return res.status(403).json({
+      error: 'Tu cuenta no está activada',
+      estadoCuenta: req.estadoCuenta,
+    });
+  }
+
   next();
 };
+
+/**
+ * Middleware para aplicar todas las validaciones (auth + active)
+ */
+export const requireAuth = [verifyToken, requireActive];
+
+/**
+ * Middleware legacy para compatibilidad
+ */
+export const authenticateToken = verifyToken;
+
+/**
+ * Middleware para verificar token de Supabase (doctores)
+ */
+export const verifyDoctorToken = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ error: 'Token no proporcionado' });
+    }
+
+    // Verificar token con Supabase
+    const user = await verifySupabaseToken(token);
+
+    if (!user || !user.id) {
+      return res.status(401).json({ error: 'Token inválido o expirado' });
+    }
+
+    // Buscar doctor en nuestra BD
+    const doctor = await prisma.doctor.findUnique({
+      where: { supabaseUserId: user.id }
+    });
+
+    if (!doctor) {
+      return res.status(404).json({ error: 'Doctor no encontrado en el sistema' });
+    }
+
+    if (!doctor.activo) {
+      return res.status(403).json({ error: 'Cuenta desactivada' });
+    }
+
+    // Agregar info del doctor al request
+    req.doctorId = user.id;
+    req.doctorRole = doctor.rol;
+    req.doctorDbId = doctor.id;
+
+    next();
+  } catch (error: any) {
+    console.error('Error al verificar token de doctor:', error);
+    return res.status(401).json({ error: 'Error al verificar token' });
+  }
+};
+
+/**
+ * Middleware para verificar que el doctor sea ADMIN
+ */
+export const requireAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  if (!req.doctorRole) {
+    return res.status(401).json({ error: 'No autenticado' });
+  }
+
+  if (req.doctorRole !== 'ADMIN') {
+    return res.status(403).json({ error: 'Acceso denegado: Se requiere rol de administrador' });
+  }
+
+  next();
+};
+
+/**
+ * Middleware combinado: Autenticación de doctor
+ */
+export const requireDoctor = verifyDoctorToken;
+
+/**
+ * Middleware combinado: Autenticación de doctor + rol ADMIN
+ */
+export const requireDoctorAdmin = [verifyDoctorToken, requireAdmin];

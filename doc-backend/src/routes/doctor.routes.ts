@@ -1,19 +1,25 @@
 import { Router } from 'express';
-import { 
-  getPendingUsers, 
-  getActiveUsers, 
-  activateUser, 
-  deactivateUser,
-  getDashboardStats,
-  getUserDetails
-} from '../controllers/doctor.controller';
-import { authenticateDoctor } from '../middleware/auth.middleware';
+import {
+  getPatients,
+  getPatient,
+  getPendingPatients,
+  activatePatient,
+  deactivatePatient,
+  assignPatientToDoctor,
+} from '../controllers/patient.controller';
+import { requireAuth } from '../middleware/auth.middleware';
+
 const router = Router();
-router.use(authenticateDoctor);
-router.get('/stats', getDashboardStats);
-router.get('/users/pending', getPendingUsers);
-router.get('/users/active', getActiveUsers);
-router.get('/users/:userId', getUserDetails);
-router.post('/users/:userId/activate', activateUser);
-router.post('/users/:userId/deactivate', deactivateUser);
+
+// Todas las rutas requieren autenticación (TODO: agregar autenticación específica de doctor)
+router.use(...requireAuth);
+
+// Rutas de pacientes
+router.get('/patients', getPatients);
+router.get('/patients/pending', getPendingPatients);
+router.get('/patients/:id', getPatient);
+router.patch('/patients/:id/activate', activatePatient);
+router.patch('/patients/:id/deactivate', deactivatePatient);
+router.post('/patients/assign', assignPatientToDoctor);
+
 export default router;

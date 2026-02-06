@@ -1,0 +1,298 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Enum para roles de staff médico
+enum StaffRole {
+  ADMIN
+  DOCTOR
+}
+
+// Enum para estado de cuenta de pacientes
+enum AccountStatus {
+  INACTIVE
+  ACTIVE
+  SUSPENDED
+}
+
+// Enum para estado de asignación de ejercicio
+enum ExerciseAssignmentStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// Enum para tipo de notificación
+enum NotificationType {
+  account_activated
+  exercise_assigned
+  exercise_reminder
+  health_check
+  message_from_doctor
+}
+
+// Doctor (Staff médico con autenticación Supabase)
+model Doctor {
+  id              Int         @id @default(autoincrement())
+  supabaseUserId  String      @unique  // UUID de Supabase Auth
+  email           String      @unique
+  nombre          String
+  apellido        String
+  cedula          String      @unique
+  telefono        String?
+  especialidad    String?
+  rol             StaffRole   @default(DOCTOR)
+  activo          Boolean     @default(true)
+  
+  creadoEn        DateTime    @default(now())
+  actualizadoEn   DateTime    @updatedAt
+  
+  // Relación con pacientes
+  pacEstado de cuenta
+  estadoCuenta          AccountStatus @default(INACTIVE)
+  
+  // Relación con doctor
+  doctorAsignado        Doctor?   @relation("DoctorPacientes", fields: [idDoctorAsignado], references: [id])
+  idDoctorAsignado      Int?
+  password              String
+  nombre                String
+  apellido              String
+  cedula                String?   // Cédula única (para Room)
+  telefonoPersonal      String?
+  fechaNacimiento       DateTime?
+  edad                  Int?      // Edad actual (para Room)
+  peso                  Float?    // Peso en kg (para Room)
+  altura                Float?    // Altura en metros (para Room)
+  sexo                  String?
+  enfermedad            String?   // Hipertensión, Diabetes, Obesidad, Colesterol alto (para Room)
+  colorEnfermedad       String?   // Código hexadecimal del color asociado (para Room)
+  
+  // Role y estado
+  rol                   UserRole  @default(PATIENT)
+  estadoCuenta          AccountStatus @default(INACTIVE)
+  
+  // Doctor fields
+  idDoctor              String?   // Cédula del doctor
+  
+  // Patient fields
+  idDoctorAsignado      Int?      // ID del doctor asignado
+  glucosaInicial        Float?
+  colesterolInicial     Float?
+  notifEnabled          Boolean   @default(true)       // Nuevo (para Room)
+  notifType             String    @default("daily_fixed") // Nuevo (para Room)
+  notifDetails          String    @default("{\"hour\":20}") // Nuevo (para Room)
+  
+  // Timestamps
+  activadoEn            DateTime?
+  activadoPor           Int?      // ID del doctor que activó
+  registradoEn          DateTime  @default(now())
+  ultimaSincronizacion  DateTime?
+  tokenDispositivo      String?   // FCM token para push notifications
+  
+  creadoEn              DateTime  @default(now())
+  actualizadoEn         DateTime  @updatedAt
+
+  // Relaciones
+  registrosSalud        RegistroSalud[]
+  asignacionesEjercicio AsignacionEjercicio[]
+  ejerciciosRealizados  EjercicioRealizado[]
+  notificaciones        Notificacion[]
+  
+  // Doctor relations
+  doctorQuieneActivaron Usuario?     @relation("ActivadoPor", fields: [activadoPor], references: [id])
+  pacientesActivados    Usuario[]    @relation("ActivadoPor")
+  
+  doctorAsignado        Usuario?     @relation("DoctorPacientes", fields: [idDoctorAsignado], references: [id])
+  pacientes             Usuario[]    @relation("DoctorPacientes")
+
+  @@index([email])
+  @@index([estadoCuenta])
+  @@index([rol])
+  @@index([idDoctorAsignado])
+  @@map("usuarios")
+}
+
+// Registro de salud
+model RegistroSalud {
+  id                Int       @id @default(autoincrement())
+  usuarioId         Int
+  
+  // Datos de salud
+  presionSistolica  Int?
+  presionDiastolica Int?
+  glucosa           Float?
+  colesterol        Float?
+  temperatura       Float?
+  peso              Float?
+  calorias          Int?      // Para Room
+  ejercicio         Int?      // Minutos de ejercicio (para Room)
+  estadoAnimo       String?   // Para Room
+  notas             String?
+  
+  // Sincronización
+  idSincronizacion  String?   // ID local de Room Database
+  sincronizadoEn    DateTime?
+  
+  fecha             String?   // yyyy-MM-dd (para Room)
+  hora              String?   // HH:mm (para Room)
+  registradoEn      DateTime  @default(now())
+  creadoEn          DateTime  @default(now())
+  actualizadoEn     DateTime  @updatedAt
+  
+  // Relación
+  usuario           Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  
+  @@index([usuarioId, registradoEn])
+  @@index([idSincronizacion])
+  @@map("registros_salud")
+}
+
+// Catálogo de ejercicios
+model Ejercicio {
+  id                Int       @id @default(autoincrement())
+  nombre            String
+  descripcion       String?
+  enfermedad        String?   // A qué enfermedad está asociado (para Room)
+  duracion          Int?      // segundos de cada serie (para Room)
+  intensidad        String?   // Baja, Media, Alta (para Room)
+  imagenResId       Int?      // Imagen del ejercicio (para Room)
+  series            Int       @default(3)  // Número de series
+  descansoEntreSeries Int @default(30) // Descanso en segundos entre series (para Room)
+  urlImagen         String?
+  urlVideo          String?
+  
+  creadoEn          DateTime  @default(now())
+  actualizadoEn     DateTime  @updatedAt
+  
+  // Relaciones
+  asignaciones      AsignacionEjercicio[]
+  realizados        EjercicioRealizado[]
+  
+  @@index([enfermedad])
+  @@map("ejercicios")
+}
+
+// Asignación de ejercicio a paciente
+model AsignacionEjercicio {
+  id                Int       @id @default(autoincrement())
+  ejercicioId       Int
+  pacienteId        Int
+  
+  // Asignación
+  estado            ExerciseAssignmentStatus @default(PENDING)
+  progreso          Int       @default(0) // 0-100
+  
+  // Notificación
+  frecuenciaRecordatorio Int?      // cada X horas
+  
+  // Fechas
+  asignadoEn        DateTime  @default(now())
+  fechaInicio       DateTime?
+  fechaFin          DateTime?
+  
+  // Sincronización
+  idSincronizacion  String?
+  sincronizadoEn    DateTime?
+  
+  creadoEn          DateTime  @default(now())
+  actualizadoEn     DateTime  @updatedAt
+  
+  // Relaciones
+  ejercicio         Ejercicio @relation(fields: [ejercicioId], references: [id], onDelete: Cascade)
+  paciente          Usuario   @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  completaciones    EjercicioRealizado[]
+  
+  @@index([pacienteId, estado])
+  @@index([idSincronizacion])
+  @@map("asignaciones_ejercicio")
+}
+
+// Registro de completación de ejercicio
+model EjercicioRealizado {
+  id                Int       @id @default(autoincrement())
+  usuarioId         Int
+  ejercicioId       Int
+  asignacionId      Int?      // Puede ser null si no está asignado
+  
+  // Detalles
+  duracionReal      Int?      // minutos reales
+  dificultad        Int?      // 1-5
+  dolor             Int?      // 1-10
+  notas             String?
+  
+  // Sincronización
+  idSincronizacion  String?
+  sincronizadoEn    DateTime?
+  
+  fecha             String?   // yyyy-MM-dd (para Room)
+  completadoEn      DateTime  @default(now())
+  creadoEn          DateTime  @default(now())
+  
+  // Relaciones
+  usuario           Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  ejercicio         Ejercicio @relation(fields: [ejercicioId], references: [id], onDelete: Cascade)
+  asignacion        AsignacionEjercicio? @relation(fields: [asignacionId], references: [id], onDelete: SetNull)
+  
+  @@index([usuarioId, completadoEn])
+  @@index([idSincronizacion])
+  @@map("ejercicios_realizados")
+}
+
+// Consejos
+model Consejo {
+  id                Int       @id @default(autoincrement())
+  enfermedad        String
+  consejo           String
+  
+  creadoEn          DateTime  @default(now())
+  actualizadoEn     DateTime  @updatedAt
+  
+  @@map("consejos")
+}
+
+// Notificaciones
+model Notificacion {
+  id                Int       @id @default(autoincrement())
+  usuarioId         Int
+  
+  // Contenido
+  tipo              NotificationType
+  titulo            String
+  mensaje           String
+  metadatos         Json?     // JSON adicional
+  
+  // Estado
+  leido             Boolean   @default(false)
+  leidoEn           DateTime?
+  
+  creadoEn          DateTime  @default(now())
+  actualizadoEn     DateTime  @updatedAt
+  
+  // Relación
+  usuario           Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  
+  @@index([usuarioId, leido])
+  @@index([tipo])
+  @@map("notificaciones")
+}
+
+// Configuración del sistema
+model ConfiguracionSistema {
+  id                Int       @id @default(autoincrement())
+  clave             String    @unique
+  valor             String
+  descripcion       String?
+  
+  creadoEn          DateTime  @default(now())
+  actualizadoEn     DateTime  @updatedAt
+  
+  @@index([clave])
+  @@map("configuracion_sistema")
+}
+
