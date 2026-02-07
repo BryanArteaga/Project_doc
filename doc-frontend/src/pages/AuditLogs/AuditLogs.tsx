@@ -106,10 +106,23 @@ const AuditLogs: React.FC = () => {
       <PageTransition>
         <div className="audit-container">
           <div className="audit-header">
-            <h1 className="audit-title">Logs de Auditoría</h1>
-            <p className="audit-subtitle">
-              Monitoreo de actividad y eventos del sistema
-            </p>
+            <div>
+              <h1 className="audit-title">Logs de Auditoría</h1>
+              <p className="audit-subtitle">
+                Monitoreo de actividad y eventos del sistema
+              </p>
+            </div>
+            <div className="audit-header-actions">
+              <button
+                onClick={loadLogs}
+                className="audit-btn audit-btn-secondary"
+                title="Actualizar logs"
+                aria-label="Actualizar logs"
+              >
+                <RefreshCw className="w-5 h-5" />
+                <span className="hidden sm:inline">Actualizar</span>
+              </button>
+            </div>
           </div>
 
           {/* Controles */}
@@ -121,12 +134,14 @@ const AuditLogs: React.FC = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="audit-search"
+                aria-label="Buscar en logs"
               />
               
               <select
                 value={filterLevel}
                 onChange={(e) => setFilterLevel(e.target.value)}
                 className="audit-select"
+                aria-label="Filtrar por nivel de log"
               >
                 <option value="ALL">Todos los niveles</option>
                 <option value="INFO">Info</option>
@@ -138,33 +153,30 @@ const AuditLogs: React.FC = () => {
 
             <div className="audit-actions">
               <button
-                onClick={loadLogs}
-                className="audit-btn audit-btn-secondary"
-                title="Actualizar"
-              >
-                <RefreshCw className="w-5 h-5" />
-              </button>
-              <button
                 onClick={exportLogsCSV}
                 className="audit-btn audit-btn-secondary"
                 title="Exportar CSV"
+                aria-label="Exportar logs como CSV"
               >
                 <Download className="w-5 h-5" />
-                CSV
+                <span className="hidden lg:inline">CSV</span>
               </button>
               <button
                 onClick={exportLogsJSON}
                 className="audit-btn audit-btn-secondary"
                 title="Exportar JSON"
+                aria-label="Exportar logs como JSON"
               >
                 <Download className="w-5 h-5" />
-                JSON
+                <span className="hidden lg:inline">JSON</span>
               </button>
               <button
                 onClick={clearLogs}
                 className="audit-btn audit-btn-danger"
+                aria-label="Limpiar todos los logs"
               >
-                Limpiar Logs
+                <span className="hidden sm:inline">Limpiar Logs</span>
+                <span className="sm:hidden">Limpiar</span>
               </button>
             </div>
           </div>
@@ -188,26 +200,32 @@ const AuditLogs: React.FC = () => {
           </div>
 
           {/* Lista de logs */}
-          <div className="audit-logs">
+          <div className="audit-logs" role="log" aria-live="polite" aria-label="Lista de logs de auditoría">
             {filteredLogs.length === 0 ? (
-              <div className="audit-empty">
-                <Info className="w-12 h-12 text-gray-400 mb-2" />
+              <div className="audit-empty" role="status">
+                <Info className="w-12 h-12 text-gray-400 mb-2" aria-hidden="true" />
                 <p>No hay logs disponibles</p>
               </div>
             ) : (
               filteredLogs.map((log, index) => (
-                <div key={index} className={`audit-log-item ${getLevelClass(log.level)}`}>
+                <article 
+                  key={index} 
+                  className={`audit-log-item ${getLevelClass(log.level)}`}
+                  role="article"
+                  aria-label={`Log ${log.level}: ${log.action}`}
+                >
                   <div className="audit-log-header">
-                    <div className="audit-log-icon">
+                    <div className="audit-log-icon" aria-hidden="true">
                       {getLevelIcon(log.level)}
                     </div>
                     <div className="audit-log-info">
                       <div className="audit-log-action">{log.action}</div>
-                      <div className="audit-log-timestamp">
+                      <time className="audit-log-timestamp" dateTime={log.timestamp}>
                         {new Date(log.timestamp).toLocaleString('es-ES')}
-                      </div>
+                      </time>
                     </div>
-                    <div className="audit-log-level">
+                    <div className="audit-log-level" role="status">
+                      <span className="sr-only">Nivel: </span>
                       {log.level}
                     </div>
                   </div>
@@ -233,7 +251,7 @@ const AuditLogs: React.FC = () => {
                       </details>
                     </div>
                   )}
-                </div>
+                </article>
               ))
             )}
           </div>

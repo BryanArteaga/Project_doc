@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/common/Layout/Layout';
 import Input from '../../components/common/Input';
-import { User, Mail, Lock, Stethoscope, ArrowLeft, Phone } from 'lucide-react';
+import PasswordStrengthIndicator from '../../components/common/PasswordStrengthIndicator/PasswordStrengthIndicator';
+import { User, Mail, Lock, Stethoscope, ArrowLeft, Phone, CreditCard, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { authService } from '../../services/auth.service';
+import { isValidEmail, isValidCedula, isValidPhone, isValidTextOnly, isStrongPassword } from '../../utils/security';
+import { auditService, AuditAction, AuditLevel } from '../../utils/audit';
 import './RegisterDoctor.css';
 
 const RegisterDoctor: React.FC = () => {
@@ -16,10 +19,13 @@ const RegisterDoctor: React.FC = () => {
     telefono: '',
     email: '',
     password: '',
+    confirmPassword: '',
     especialidad: '',
     isAdmin: false
   });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -37,18 +43,81 @@ const RegisterDoctor: React.FC = () => {
       return;
     }
 
+    // Validación de nombre (solo letras)
+    if (!isValidTextOnly(formData.nombre)) {
+      toast.error('El nombre solo debe contener letras');
+      return;
+    }
+
+    // Validación de apellido (solo letras)
+    if (!isValidTextOnly(formData.apellido)) {
+      toast.error('El apellido solo debe contener letras');
+      return;
+    }
+
+    // Validación de especialidad (solo letras)
+    if (!isValidTextOnly(formData.especialidad)) {
+      toast.error('La especialidad solo debe contener letras');
+      return;
+    }
+
+    // Validación de cédula (10 dígitos)
+    if (!isValidCedula(formData.cedula)) {
+      toast.error('La cédula debe tener exactamente 10 dígitos');
+      return;
+    }
+
+    // Validación de teléfono si se proporciona (10 dígitos)
+    if (formData.telefono && !isValidPhone(formData.telefono)) {
+      toast.error('El teléfono debe tener exactamente 10 dígitos');
+      return;
+    }
+
+    // Validación de email
+    if (!isValidEmail(formData.email)) {
+      toast.error('Email inválido');
+      return;
+    }
+
+    // Validación de contraseña fuerte
+    const passwordCheck = isStrongPassword(formData.password);
+    if (!passwordCheck.valid) {
+      toast.error(passwordCheck.message);
+      return;
+    }
+
+    // Validación de confirmación de contraseña
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Las contraseñas no coinciden');
+      return;
+    }
+
     try {
       setLoading(true);
-      const { isAdmin, ...restData } = formData;
+      const { isAdmin, confirmPassword, ...restData } = formData;
       const dataToSend = {
         ...restData,
         rol: isAdmin ? 'ADMIN' : 'DOCTOR',
         ...(restData.telefono ? {} : { telefono: undefined })
       };
       await authService.register(dataToSend);
+      
+      auditService.log(
+        AuditAction.REGISTER_DOCTOR,
+        AuditLevel.INFO,
+        `Nuevo doctor registrado: ${formData.nombre} ${formData.apellido}`,
+        { email: formData.email, rol: dataToSend.rol }
+      );
+      
       toast.success('Doctor registrado exitosamente');
       navigate('/admin');
     } catch (error: any) {
+      auditService.log(
+        AuditAction.ERROR,
+        AuditLevel.ERROR,
+        'Error al registrar doctor',
+        { error: error.message, email: formData.email }
+      );
       toast.error(error.response?.data?.message || 'Error al registrar doctor');
     } finally {
       setLoading(false);
@@ -115,17 +184,19 @@ const RegisterDoctor: React.FC = () => {
                 name="cedula"
                 value={formData.cedula}
                 onChange={handleChange}
-                placeholder="Ingresa la cédula"
-                icon={<User className="w-5 h-5" />}
+                placeholder="10 dígitos"
+                icon={<CreditCard className="w-5 h-5" />}
                 required
+                maxLength={10}
               />
               <Input
                 label="Teléfono"
                 name="telefono"
                 value={formData.telefono}
                 onChange={handleChange}
-                placeholder="Opcional"
+                placeholder="10 dígitos (opcional)"
                 icon={<Phone className="w-5 h-5" />}
+                maxLength={10}
               />
             </div>
 
@@ -151,16 +222,92 @@ const RegisterDoctor: React.FC = () => {
               />
             </div>
 
+            {/* Campo de contraseña con toggle de visibilidad */}
             <Input
               label="Contraseña"
               name="password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={handleChange}
-              placeholder="••••••••"
+              placeholder="Mín. 8 caracteres, mayúscula, minúscula y número"
               icon={<Lock className="w-5 h-5" />}
+              rightIcon={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: 'var(--color-text-secondary)'
+                  }}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              }
               required
             />
+
+            <PasswordStrengthIndicator password={formData.password} showSuggestions={true} />
+
+            {/* Campo de confirmación de contraseña con toggle de visibilidad */}
+            <Input
+              label="Confirmar Contraseña"
+              name="confirmPassword"
+              type={showConfirmPassword ? 'text' : 'password'}
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Vuelve a ingresar la contraseña"
+              icon={<Lock className="w-5 h-5" />}
+              rightIcon={
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: 'var(--color-text-secondary)'
+                  }}
+                >
+                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              }
+              required
+            />
+            
+            {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+              <p style={{ 
+                color: '#dc2626', 
+                fontSize: '0.875rem', 
+                marginTop: '0.5rem',
+                marginBottom: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}>
+                ⚠️ Las contraseñas no coinciden
+              </p>
+            )}
+            {formData.confirmPassword && formData.password === formData.confirmPassword && (
+              <p style={{ 
+                color: '#16a34a', 
+                fontSize: '0.875rem', 
+                marginTop: '0.5rem',
+                marginBottom: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}>
+                ✓ Las contraseñas coinciden
+              </p>
+            )}
 
             <div className="checkbox-container">
               <input

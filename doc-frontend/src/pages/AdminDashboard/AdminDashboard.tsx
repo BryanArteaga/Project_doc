@@ -10,7 +10,8 @@ import {
   Clock, 
   TrendingUp,
   UserPlus,
-  BarChart3
+  BarChart3,
+  FileText
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Layout from '../../components/common/Layout/Layout';
@@ -47,7 +48,7 @@ const AdminDashboard: React.FC = () => {
   if (loading) {
     return (
       <Layout>
-        <Loading message="Cargando datos..." />
+        <Loading message="Cargando datos..." fullHeight />
       </Layout>
     );
   }
@@ -133,6 +134,13 @@ const AdminDashboard: React.FC = () => {
             icon={<Users className="w-6 h-6" />}
             color="bg-purple-700"
             onClick={() => navigate('/admin/manage-patients')}
+          />
+          <ActionCard
+            title="Logs de Auditoría"
+            description="Ver historial y eventos del sistema"
+            icon={<FileText className="w-6 h-6" />}
+            color="bg-indigo-700"
+            onClick={() => navigate('/admin/audit-logs')}
           />
         </div>
 

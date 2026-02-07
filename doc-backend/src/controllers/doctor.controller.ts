@@ -1,32 +1,41 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../types';
+import { cacheService } from '../utils/cache';
 
 // Obtener todos los usuarios pendientes de activación
 export const getPendingUsers = async (req: Request, res: Response) => {
   try {
-    const pendingUsers = await prisma.usuario.findMany({
-      where: {
-        estadoCuenta: 'INACTIVE'
+    // Usar caché con TTL de 2 minutos
+    const pendingUsers = await cacheService.get(
+      'pending_users',
+      async () => {
+        return await prisma.usuario.findMany({
+          where: {
+            estadoCuenta: 'INACTIVE'
+          },
+          orderBy: {
+            registradoEn: 'desc'
+          },
+          take: 50, // Limitar resultados
+          select: {
+            id: true,
+            cedula: true,
+            nombre: true,
+            edad: true,
+            peso: true,
+            altura: true,
+            sexo: true,
+            enfermedad: true,
+            colorEnfermedad: true,
+            registradoEn: true,
+            glucosaInicial: true,
+            colesterolInicial: true
+          }
+        });
       },
-      orderBy: {
-        registradoEn: 'desc'
-      },
-      select: {
-        id: true,
-        cedula: true,
-        nombre: true,
-        edad: true,
-        peso: true,
-        altura: true,
-        sexo: true,
-        enfermedad: true,
-        colorEnfermedad: true,
-        registradoEn: true,
-        glucosaInicial: true,
-        colesterolInicial: true
-      }
-    });
+      2 * 60 * 1000 // 2 minutos
+    );
 
     res.json(pendingUsers);
   } catch (error) {
@@ -38,24 +47,39 @@ export const getPendingUsers = async (req: Request, res: Response) => {
 // Obtener todos los usuarios activos
 export const getActiveUsers = async (req: Request, res: Response) => {
   try {
-    const activeUsers = await prisma.usuario.findMany({
-      where: {
-        estadoCuenta: 'ACTIVE'
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
+
+    // Usar caché con paginación
+    const cacheKey = `active_users_page_${page}_limit_${limit}`;
+    
+    const activeUsers = await cacheService.get(
+      cacheKey,
+      async () => {
+        return await prisma.usuario.findMany({
+          where: {
+            estadoCuenta: 'ACTIVE'
+          },
+          orderBy: {
+            activadoEn: 'desc'
+          },
+          skip,
+          take: limit,
+          include: {
+            registrosSalud: {
+              orderBy: { fecha: 'desc' },
+              take: 5
+            },
+            ejerciciosRealizados: {
+              orderBy: { fecha: 'desc' },
+              take: 5
+            }
+          }
+        });
       },
-      orderBy: {
-        activadoEn: 'desc'
-      },
-      include: {
-        registrosSalud: {
-          orderBy: { fecha: 'desc' },
-          take: 5
-        },
-        ejerciciosRealizados: {
-          orderBy: { fecha: 'desc' },
-          take: 5
-        }
-      }
-    });
+      2 * 60 * 1000 // 2 minutos
+    );
 
     res.json(activeUsers);
   } catch (error) {
@@ -73,6 +97,10 @@ export const activateUser = async (req: Request, res: Response) => {
     if (!doctorCedula) {
       return res.status(400).json({ error: 'Se requiere la cédula del doctor' });
     }
+
+    // Invalidar caché al activar usuario
+    cacheService.invalidate('pending_users');
+    cacheService.invalidatePattern('active_users_');
 
     const usuario = await prisma.usuario.findUnique({
       where: { id: parseInt(userId) }

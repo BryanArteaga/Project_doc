@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
+import { cacheService } from '../utils/cache';
 import { z } from 'zod';
 
 // Schemas de validación (solo pacientes se registran via app)
@@ -29,6 +30,9 @@ export const register = async (req: Request, res: Response) => {
   try {
     const data = RegisterSchema.parse(req.body);
     const user = await AuthService.register(data);
+
+    // Invalidar cachés relacionados
+    cacheService.invalidate('pending_users');
 
     res.status(201).json({
       message: 'Usuario registrado exitosamente',

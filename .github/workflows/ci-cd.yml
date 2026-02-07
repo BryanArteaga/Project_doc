@@ -1,0 +1,162 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  # Job 1: Build y Test Backend
+  backend:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: doc-backend/package-lock.json
+
+      - name: Instalar dependencias Backend
+        working-directory: ./doc-backend
+        run: npm ci
+
+      - name: Generar Prisma Client
+        working-directory: ./doc-backend
+        run: npm run prisma:generate
+
+      - name: Build Backend
+        working-directory: ./doc-backend
+        run: npm run build
+
+      # Opcional: Ejecutar tests si los tienes
+      # - name: Run Tests
+      #   working-directory: ./doc-backend
+      #   run: npm test
+
+      - name: Verificar archivos de build
+        working-directory: ./doc-backend
+        run: ls -la dist/
+
+  # Job 2: Build Frontend
+  frontend:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: doc-frontend/package-lock.json
+
+      - name: Instalar dependencias Frontend
+        working-directory: ./doc-frontend
+        run: npm ci
+
+      - name: Build Frontend
+        working-directory: ./doc-frontend
+        run: npm run build
+        env:
+          # Usar variable de entorno o valor por defecto
+          VITE_API_URL: ${{ secrets.VITE_API_URL != '' && secrets.VITE_API_URL || 'http://localhost:3000' }}
+
+      - name: Analizar tamaño del bundle
+        working-directory: ./doc-frontend
+        run: |
+          echo "Tamaño del bundle:"
+          du -sh dist/
+          echo "Archivos más grandes:"
+          find dist/ -type f -exec du -h {} + | sort -rh | head -10
+
+      # Opcional: Subir artefactos
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-build
+          path: doc-frontend/dist/
+          retention-days: 7
+
+  # Job 3: Linting y Formato (Opcional)
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Lint Frontend
+        working-directory: ./doc-frontend
+        run: |
+          npm ci
+          npm run lint || echo "Linting con warnings"
+
+  # Job 4: Security Audit
+  security:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Audit Backend
+        working-directory: ./doc-backend
+        run: |
+          npm audit --production || true
+          echo "Backend audit completado"
+
+      - name: Audit Frontend
+        working-directory: ./doc-frontend
+        run: |
+          npm audit --production || true
+          echo "Frontend audit completado"
+
+  # Job 5: Deploy (Solo en merge a main)
+  deploy:
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Deploy notification
+        run: |
+          echo "Listo para deploy a producción"
+          echo "Configurar deploy en hosting (Vercel, Railway, etc.)"
+          
+      # Ejemplo: Deploy a Vercel (Frontend)
+      # - name: Deploy to Vercel
+      #   uses: amondnet/vercel-action@v25
+      #   with:
+      #     vercel-token: ${{ secrets.VERCEL_TOKEN }}
+      #     vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+      #     vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+      #     working-directory: ./doc-frontend
+      
+      # Ejemplo: Deploy a Railway (Backend)
+      # - name: Deploy to Railway
+      #   run: |
+      #     curl -fsSL https://railway.app/install.sh | sh
+      #     railway up --service backend
+      #   env:
+      #     RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}

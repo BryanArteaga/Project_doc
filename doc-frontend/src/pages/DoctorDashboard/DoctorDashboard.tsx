@@ -59,7 +59,7 @@ const DoctorDashboard: React.FC = () => {
   if (loading) {
     return (
       <Layout>
-        <Loading message="Cargando datos..." />
+        <Loading message="Cargando datos..." fullHeight />
       </Layout>
     );
   }

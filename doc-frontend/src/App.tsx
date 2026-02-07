@@ -1,18 +1,23 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
-import LoginPage from './pages/LoginPage';
-import DoctorDashboard from './pages/DoctorDashboard';
-import AdminDashboard from './pages/AdminDashboard';
-import RegisterDoctor from './pages/RegisterDoctor';
-import Reports from './pages/Reports';
-import ManagePatients from './pages/ManagePatients';
-import ManageDoctors from './pages/ManageDoctors';
-import Settings from './pages/Settings';
-import ViewPatients from './pages/ViewPatients';
-import AuditLogs from './pages/AuditLogs/AuditLogs';
+import Loading from './components/common/Loading';
+import ErrorBoundary from './components/ErrorBoundary';
 import { auditService, AuditAction, AuditLevel, logUnauthorizedAccess } from './utils/audit';
+
+// Lazy loading de páginas para code splitting
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const DoctorDashboard = lazy(() => import('./pages/DoctorDashboard'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const RegisterDoctor = lazy(() => import('./pages/RegisterDoctor'));
+const Reports = lazy(() => import('./pages/Reports'));
+const ManagePatients = lazy(() => import('./pages/ManagePatients'));
+const ManageDoctors = lazy(() => import('./pages/ManageDoctors'));
+const Settings = lazy(() => import('./pages/Settings'));
+const ViewPatients = lazy(() => import('./pages/ViewPatients'));
+const AuditLogs = lazy(() => import('./pages/AuditLogs/AuditLogs'));
 
 // Componente para proteger rutas que requieren autenticación
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -69,16 +74,17 @@ function AppRoutes() {
   const { isAuthenticated, isAdmin } = useAuth();
 
   return (
-    <Routes>
-      {/* Ruta pública - redirige si ya está autenticado */}
-      <Route
-        path="/login"
-        element={
-          <PublicRoute>
-            <LoginPage />
-          </PublicRoute>
-        }
-      />
+    <Suspense fallback={<Loading fullScreen message="Cargando..." />}>
+      <Routes>
+        {/* Ruta pública - redirige si ya está autenticado */}
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <LoginPage />
+            </PublicRoute>
+          }
+        />
 
       {/* Ruta del dashboard del doctor */}
       <Route
@@ -177,39 +183,42 @@ function AppRoutes() {
       {/* Ruta 404 */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   );
 }
 
 function App() {
   return (
-    <BrowserRouter>
-      <ThemeProvider>
-        <AuthProvider>
-          <AppRoutes />
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              className: 'dark:bg-gray-800 dark:text-white',
-              success: {
-                duration: 3000,
-                iconTheme: {
-                  primary: '#10b981',
-                  secondary: '#fff',
-                },
-              },
-              error: {
+    <ErrorBoundary>
+      <BrowserRouter>
+        <ThemeProvider>
+          <AuthProvider>
+            <AppRoutes />
+            <Toaster
+              position="top-right"
+              toastOptions={{
                 duration: 4000,
-                iconTheme: {
-                  primary: '#ef4444',
-                  secondary: '#fff',
+                className: 'dark:bg-gray-800 dark:text-white',
+                success: {
+                  duration: 3000,
+                  iconTheme: {
+                    primary: '#10b981',
+                    secondary: '#fff',
+                  },
                 },
-              },
-            }}
-          />
-        </AuthProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+                error: {
+                  duration: 4000,
+                  iconTheme: {
+                    primary: '#ef4444',
+                    secondary: '#fff',
+                  },
+                },
+              }}
+            />
+          </AuthProvider>
+        </ThemeProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

@@ -205,7 +205,7 @@ const ManageDoctors: React.FC = () => {
   if (loading) {
     return (
       <Layout>
-        <Loading message="Cargando doctores..." />
+        <Loading message="Cargando doctores..." fullHeight />
       </Layout>
     );
   }

@@ -1,0 +1,48 @@
+name: Database Maintenance
+
+on:
+  schedule:
+    # Ejecutar diariamente a las 3 AM UTC
+    - cron: '0 3 * * *'
+  
+  # Permitir ejecución manual desde GitHub Actions
+  workflow_dispatch:
+
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: doc-backend/package-lock.json
+
+      - name: Instalar dependencias
+        working-directory: ./doc-backend
+        run: npm ci
+
+      - name: Generar Prisma Client
+        working-directory: ./doc-backend
+        run: npm run prisma:generate
+
+      - name: Ejecutar mantenimiento
+        working-directory: ./doc-backend
+        run: npm run maintenance
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NODE_ENV: production
+
+      - name: Notificar resultado
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "Mantenimiento completado exitosamente"
+          else
+            echo "Mantenimiento falló"
+          fi

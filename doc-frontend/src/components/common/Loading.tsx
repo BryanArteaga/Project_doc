@@ -4,12 +4,14 @@ interface LoadingProps {
   message?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   fullScreen?: boolean;
+  fullHeight?: boolean;
 }
 
 const Loading: React.FC<LoadingProps> = ({ 
   message = 'Cargando...', 
   size = 'md',
-  fullScreen = false 
+  fullScreen = false,
+  fullHeight = false
 }) => {
   const sizeClasses = {
     sm: 'h-6 w-6',
@@ -20,7 +22,11 @@ const Loading: React.FC<LoadingProps> = ({
 
   const content = (
     <div className="flex flex-col items-center justify-center gap-4">
-      <div className={`animate-spin rounded-full border-b-2 border-brand-main dark:border-brand-main ${sizeClasses[size]}`}></div>
+      <div 
+        className={`animate-spin rounded-full border-b-2 border-brand-main dark:border-brand-main ${sizeClasses[size]}`}
+        role="status"
+        aria-label="Cargando"
+      ></div>
       {message && (
         <p className="text-brand-dark dark:text-gray-400 text-sm font-medium">{message}</p>
       )}
@@ -35,7 +41,20 @@ const Loading: React.FC<LoadingProps> = ({
     );
   }
 
-  return content;
+  if (fullHeight) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-center py-12">
+      {content}
+    </div>
+  );
 };
 
 export default Loading;
+

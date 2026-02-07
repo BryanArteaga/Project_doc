@@ -77,7 +77,7 @@ const ManagePatients: React.FC = () => {
   if (loading) {
     return (
       <Layout>
-        <Loading message="Cargando pacientes..." />
+        <Loading message="Cargando pacientes..." fullHeight />
       </Layout>
     );
   }

@@ -27,6 +27,12 @@ export const isValidPhone = (phone: string): boolean => {
   return phoneRegex.test(phone.replace(/[\s-]/g, ''));
 };
 
+// Validar texto (solo letras y espacios, sin números)
+export const isValidTextOnly = (text: string): boolean => {
+  const textRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+  return textRegex.test(text);
+};
+
 // Validar contraseña fuerte
 export const isStrongPassword = (password: string): { valid: boolean; message: string } => {
   if (password.length < 8) {

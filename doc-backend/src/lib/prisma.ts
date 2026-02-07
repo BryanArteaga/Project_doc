@@ -14,7 +14,16 @@ const prismaClientSingleton = () => {
     throw new Error('DATABASE_URL o DIRECT_URL no está configurada');
   }
   
-  const pool = new Pool({ connectionString });
+  // Configurar pool de conexiones con límites agresivos para plan gratuito
+  const pool = new Pool({ 
+    connectionString,
+    max: 5, // Reducido de 10 a 5 para ahorrar memoria
+    min: 1, // Mínimo de conexiones
+    idleTimeoutMillis: 20000, // Cerrar conexiones inactivas después de 20s (antes 30s)
+    connectionTimeoutMillis: 2000, // Timeout de conexión 2s
+    allowExitOnIdle: true, // Permitir que el proceso termine si no hay conexiones activas
+  });
+  
   const adapter = new PrismaPg(pool);
   
   return new PrismaClient({
