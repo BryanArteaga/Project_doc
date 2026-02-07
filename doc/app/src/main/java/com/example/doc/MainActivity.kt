@@ -22,6 +22,7 @@ import com.example.doc.repository.UsuarioRepository
 import com.example.doc.ui.theme.DocTheme
 import com.example.doc.navigation.AppNavigation
 import com.example.doc.navigation.Routes
+import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
@@ -66,13 +67,17 @@ class MainActivity : ComponentActivity() {
         // Solicitar permiso de notificaciones para Android 13+ (API 33+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-                Timber.d("📢 Permiso de notificaciones: ${if (isGranted) "concedido ✅" else "denegado ❌"}")
+                Timber.d("Permiso de notificaciones: ${if (isGranted) "concedido" else "denegado"}")
                 if (isGranted) {
-                    // Después de conceder notificaciones, verificar otros permisos
+                    // Obtener FCM token
+                    obtenerFCMToken()
+                    // Despues de conceder notificaciones, verificar otros permisos
                     requestSpecialPermissions()
                 }
             }.launch(Manifest.permission.POST_NOTIFICATIONS)
         } else {
+            // En versiones anteriores, obtener FCM token directamente
+            obtenerFCMToken()
             // En versiones anteriores, solicitar permisos especiales directamente
             requestSpecialPermissions()
         }
@@ -160,15 +165,32 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
-     * Verificar estado de optimización de batería
+     * Verificar estado de optimizacion de bateria
      */
     private fun checkBatteryOptimization() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
             if (powerManager.isIgnoringBatteryOptimizations(packageName)) {
-                Timber.d("✅ Optimización de batería desactivada")
+                Timber.d("Optimizacion de bateria desactivada")
             } else {
-                Timber.w("❌ Optimización de batería activa - Las notificaciones en segundo plano pueden no funcionar")
+                Timber.w("Optimizacion de bateria activa - Las notificaciones en segundo plano pueden no funcionar")
+            }
+        }
+    }
+
+    /**
+     * Obtener y guardar token FCM
+     */
+    private fun obtenerFCMToken() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                Timber.d("FCM Token obtenido: $token")
+
+                // Guardar en SharedPreferences
+                prefs.edit().putString("fcm_token", token).apply()
+            } else {
+                Timber.e("Error al obtener FCM Token: ${task.exception}")
             }
         }
     }

@@ -1,8 +1,11 @@
 package com.example.doc
 
 import android.app.Application
+import androidx.lifecycle.ProcessLifecycleOwner
 import coil.Coil
 import coil.ImageLoader
+import com.example.doc.utils.HybridNotificationManager
+import com.example.doc.utils.NetworkMonitor
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 import javax.inject.Inject
@@ -27,18 +30,28 @@ class DocApplication : Application() {
         // Configurar Coil con el ImageLoader optimizado
         Coil.setImageLoader(imageLoader)
 
-        Timber.d("DocApplication iniciada con optimizaciones de imágenes")
+        // Inicializar NetworkMonitor
+        NetworkMonitor.init(this)
+
+        // Inicializar HybridNotificationManager
+        val hybridManager = HybridNotificationManager(
+            this,
+            ProcessLifecycleOwner.get().lifecycleScope
+        )
+        hybridManager.init()
+
+        Timber.d("DocApplication iniciada con sistema hibrido de notificaciones")
     }
 
     /**
-     * Árbol de logging para producción que no imprime logs sensibles
+     * Arbol de logging para produccion que no imprime logs sensibles
      */
     private class ReleaseTree : Timber.Tree() {
         override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
             if (priority == android.util.Log.ERROR || priority == android.util.Log.WARN) {
-                // Aquí se pueden enviar logs a servicios de analytics
+                // Aqui se pueden enviar logs a servicios de analytics
                 // Ejemplo: FirebaseCrashlytics.getInstance().log(message)
-                // Por ahora, solo filtramos para no saturar logs en producción
+                // Por ahora, solo filtramos para no saturar logs en produccion
             }
         }
     }

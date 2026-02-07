@@ -61,6 +61,24 @@
             </intent-filter>
         </activity>
 
+        <!-- Firebase Messaging Service para PUSH notifications -->
+        <service
+            android:name=".services.MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- BroadcastReceiver para cambios de conectividad -->
+        <receiver
+            android:name=".receiver.NetworkChangeReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+            </intent-filter>
+        </receiver>
+
         <!-- BroadcastReceiver para manejar alarmas de notificaciones -->
         <receiver
             android:name=".receiver.NotificationReceiver"

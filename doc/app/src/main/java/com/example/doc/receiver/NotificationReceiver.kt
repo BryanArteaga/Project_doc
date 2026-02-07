@@ -499,6 +499,14 @@ class NotificationReceiver : BroadcastReceiver() {
         }
 
         /**
+         * Cancelar todas las alarmas (para sistema híbrido)
+         */
+        fun cancelAllAlarms(context: Context) {
+            Timber.d("🔴 Cancelando TODAS las alarmas (modo híbrido)")
+            cancelAllReminders(context)
+        }
+
+        /**
          * Cancelar todas las alarmas
          */
         fun cancelAllReminders(context: Context) {

@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
     id("org.jetbrains.kotlin.kapt")
+    id("com.google.gms.google-services")  // Firebase - MUST be AFTER android.application
 }
 
 android {
@@ -134,5 +135,9 @@ dependencies {
 
     // Seguridad - Solo Security Crypto (sin SQLCipher)
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+    implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-messaging")
 }
 
