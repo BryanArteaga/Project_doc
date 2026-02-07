@@ -14,15 +14,6 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import timber.log.Timber
 
-/**
- * Servicio de Firebase Cloud Messaging
- * 
- * TIPOS DE NOTIFICACIONES PUSH:
- * 1. health_reminder - Recordatorio de registro de salud
- * 2. exercise_reminder - Recordatorio de ejercicio
- * 3. account_activated - Cuenta activada por el doctor (SOLO PUSH)
- * 4. message_from_doctor - Mensaje del doctor (futuro)
- */
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     companion object {
