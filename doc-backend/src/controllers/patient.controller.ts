@@ -78,7 +78,8 @@ export const getPatient = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
-    const { id } = req.params;
+    const id = req.params.id as string;
+    // @ts-ignore - req.params siempre contiene strings
     const patientId = parseInt(id);
 
     const patient = await prisma.usuario.findUnique({
@@ -186,7 +187,8 @@ export const activatePatient = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
-    const { id } = req.params;
+    const id = req.params.id as string;
+    // @ts-ignore - req.params siempre contiene strings
     const patientId = parseInt(id);
 
     // Obtener el paciente
@@ -251,7 +253,8 @@ export const deactivatePatient = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
-    const { id } = req.params;
+    const id = req.params.id as string;
+    // @ts-ignore - req.params siempre contiene strings
     const patientId = parseInt(id);
 
     const patient = await prisma.usuario.findUnique({

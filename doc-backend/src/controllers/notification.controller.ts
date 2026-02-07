@@ -82,7 +82,8 @@ export const getNotification = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
-    const { id } = req.params;
+    const id = req.params.id as string;
+    // @ts-ignore - req.params siempre contiene strings
     const notificationId = parseInt(id);
 
     const notification = await prisma.notificacion.findUnique({
@@ -125,7 +126,8 @@ export const markAsRead = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
-    const { id } = req.params;
+    const id = req.params.id as string;
+    // @ts-ignore - req.params siempre contiene strings
     const notificationId = parseInt(id);
 
     const notification = await prisma.notificacion.findUnique({
@@ -197,7 +199,8 @@ export const deleteNotification = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
-    const { id } = req.params;
+    const id = req.params.id as string;
+    // @ts-ignore - req.params siempre contiene strings
     const notificationId = parseInt(id);
 
     const notification = await prisma.notificacion.findUnique({

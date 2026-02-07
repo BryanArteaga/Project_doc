@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/auth.service';
 import { AccountStatus } from '../types/prisma';
-import { StaffRole } from '../../generated/prisma';
+import { StaffRole } from '../generated/prisma';
 import { verifySupabaseToken } from '../lib/supabase';
 import { prisma } from '../lib/prisma';
 

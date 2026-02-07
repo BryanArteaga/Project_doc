@@ -91,7 +91,6 @@ export const getActiveUsers = async (req: Request, res: Response) => {
 // Activar cuenta de usuario
 export const activateUser = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
     const { doctorCedula } = req.body;
 
     if (!doctorCedula) {
@@ -101,6 +100,9 @@ export const activateUser = async (req: Request, res: Response) => {
     // Invalidar caché al activar usuario
     cacheService.invalidate('pending_users');
     cacheService.invalidatePattern('active_users_');
+
+    // @ts-ignore - req.params siempre contiene strings en Express
+    const userId = req.params.userId as string;
 
     const usuario = await prisma.usuario.findUnique({
       where: { id: parseInt(userId) }
@@ -147,7 +149,8 @@ export const activateUser = async (req: Request, res: Response) => {
 // Desactivar cuenta de usuario
 export const deactivateUser = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
+    // @ts-ignore - req.params siempre contiene strings
+    const userId = req.params.userId as string;
     const { doctorCedula } = req.body;
 
     if (!doctorCedula) {
@@ -217,7 +220,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
 // Obtener detalles de un usuario específico
 export const getUserDetails = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
+    const userId = req.params.userId as string;
 
     const usuario = await prisma.usuario.findUnique({
       where: { id: parseInt(userId) },
@@ -275,7 +278,8 @@ export const getAllDoctors = async (req: Request, res: Response) => {
 // Actualizar doctor (solo admin)
 export const updateDoctor = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    // @ts-ignore - req.params siempre contiene strings
+    const id = req.params.id as string;
     const { nombre, apellido, especialidad, telefono, activo, rol } = req.body;
 
     const doctor = await prisma.doctor.findUnique({

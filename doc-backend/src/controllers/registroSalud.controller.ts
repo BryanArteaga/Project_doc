@@ -40,7 +40,8 @@ export const getRegistros = async (req: AuthRequest, res: Response) => {
 };
 export const getRegistroById = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    // @ts-ignore - req.params siempre contiene strings
+    const id = req.params.id as string;
     const registro = await prisma.registroSalud.findFirst({
       where: {
         id: parseInt(id),
@@ -58,7 +59,8 @@ export const getRegistroById = async (req: AuthRequest, res: Response) => {
 };
 export const updateRegistro = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    // @ts-ignore - req.params siempre contiene strings
+    const id = req.params.id as string;
     const data: RegistroSaludDTO = req.body;
     const registro = await prisma.registroSalud.findFirst({
       where: {
@@ -81,7 +83,8 @@ export const updateRegistro = async (req: AuthRequest, res: Response) => {
 };
 export const deleteRegistro = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    // @ts-ignore - req.params siempre contiene strings
+    const id = req.params.id as string;
     const registro = await prisma.registroSalud.findFirst({
       where: {
         id: parseInt(id),

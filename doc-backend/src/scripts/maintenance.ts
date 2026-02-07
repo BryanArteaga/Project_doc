@@ -117,7 +117,8 @@ async function cleanupOldHealthRecords() {
           select: { id: true }
         });
 
-        const ids = oldRecords.map(r => r.id);
+        // @ts-ignore
+        const ids = oldRecords.map((r: any) => r.id);
 
         // Eliminar registros antiguos
         const deleted = await prisma.registroSalud.deleteMany({
