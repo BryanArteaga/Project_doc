@@ -18,11 +18,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Instalar dependencias Backend
         working-directory: ./doc-backend
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Generar Prisma Client
         working-directory: ./doc-backend
@@ -52,11 +52,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Instalar dependencias Frontend
         working-directory: ./doc-frontend
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Build Frontend
         working-directory: ./doc-frontend
@@ -92,12 +92,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Lint Frontend
         working-directory: ./doc-frontend
         run: |
-          npm install
+          npm install --legacy-peer-deps
           npm run lint || echo "Linting con warnings"
 
   # Job 4: Security Audit
@@ -111,19 +111,19 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Audit Backend
         working-directory: ./doc-backend
         run: |
-          npm install
+          npm install --legacy-peer-deps
           npm audit --production || true
           echo "Backend audit completado"
 
       - name: Audit Frontend
         working-directory: ./doc-frontend
         run: |
-          npm install
+          npm install --legacy-peer-deps
           npm audit --production || true
           echo "Frontend audit completado"
 
