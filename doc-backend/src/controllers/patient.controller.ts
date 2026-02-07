@@ -14,7 +14,10 @@ const PaginationSchema = z.object({
  */
 export const getPatients = async (req: Request, res: Response) => {
   try {
-    if (!req.userId) {
+    // Soportar tanto doctores (req.doctorDbId) como pacientes (req.userId)
+    const doctorId = req.doctorDbId || req.userId;
+    
+    if (!doctorId) {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
@@ -25,7 +28,7 @@ export const getPatients = async (req: Request, res: Response) => {
     const [patients, total] = await Promise.all([
       prisma.usuario.findMany({
         where: {
-          idDoctorAsignado: req.userId,
+          idDoctorAsignado: doctorId,
         },
         select: {
           id: true,
@@ -43,7 +46,7 @@ export const getPatients = async (req: Request, res: Response) => {
       }),
       prisma.usuario.count({
         where: {
-          idDoctorAsignado: req.userId,
+          idDoctorAsignado: doctorId,
         },
       }),
     ]);
@@ -68,7 +71,10 @@ export const getPatients = async (req: Request, res: Response) => {
  */
 export const getPatient = async (req: Request, res: Response) => {
   try {
-    if (!req.userId) {
+    // Soportar tanto doctores (req.doctorDbId) como pacientes (req.userId)
+    const doctorId = req.doctorDbId || req.userId;
+    
+    if (!doctorId) {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
@@ -101,7 +107,7 @@ export const getPatient = async (req: Request, res: Response) => {
     }
 
     // Verificar que el doctor sea el asignado
-    if (patient.idDoctorAsignado !== req.userId) {
+    if (patient.idDoctorAsignado !== doctorId) {
       return res.status(403).json({ error: 'No tienes permiso para ver este paciente' });
     }
 
@@ -117,7 +123,10 @@ export const getPatient = async (req: Request, res: Response) => {
  */
 export const getPendingPatients = async (req: Request, res: Response) => {
   try {
-    if (!req.userId) {
+    // Soportar tanto doctores (req.doctorDbId) como pacientes (req.userId)
+    const doctorId = req.doctorDbId || req.userId;
+    
+    if (!doctorId) {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
@@ -128,7 +137,7 @@ export const getPendingPatients = async (req: Request, res: Response) => {
       prisma.usuario.findMany({
         where: {
           estadoCuenta: AccountStatus.INACTIVE,
-          idDoctorAsignado: req.userId,
+          idDoctorAsignado: doctorId,
         },
         select: {
           id: true,
@@ -145,7 +154,7 @@ export const getPendingPatients = async (req: Request, res: Response) => {
       prisma.usuario.count({
         where: {
           estadoCuenta: AccountStatus.INACTIVE,
-          idDoctorAsignado: req.userId,
+          idDoctorAsignado: doctorId,
         },
       }),
     ]);
@@ -170,7 +179,10 @@ export const getPendingPatients = async (req: Request, res: Response) => {
  */
 export const activatePatient = async (req: Request, res: Response) => {
   try {
-    if (!req.userId) {
+    // Soportar tanto doctores (req.doctorDbId) como pacientes (req.userId)
+    const doctorId = req.doctorDbId || req.userId;
+    
+    if (!doctorId) {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
@@ -192,7 +204,7 @@ export const activatePatient = async (req: Request, res: Response) => {
       data: {
         estadoCuenta: AccountStatus.ACTIVE,
         activadoEn: new Date(),
-        activadoPor: req.userId,
+        activadoPor: doctorId,
       },
     });
 
@@ -204,7 +216,7 @@ export const activatePatient = async (req: Request, res: Response) => {
         titulo: '¡Tu cuenta ha sido activada!',
         mensaje: 'Tu doctor ha aprobado tu solicitud. Ahora puedes usar todas las funciones de la app.',
         metadatos: {
-          activadoPor: req.userId,
+          activadoPor: doctorId,
           activadoEn: new Date().toISOString(),
         },
       },
@@ -232,7 +244,10 @@ export const activatePatient = async (req: Request, res: Response) => {
  */
 export const deactivatePatient = async (req: Request, res: Response) => {
   try {
-    if (!req.userId) {
+    // Soportar tanto doctores (req.doctorDbId) como pacientes (req.userId)
+    const doctorId = req.doctorDbId || req.userId;
+    
+    if (!doctorId) {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
@@ -275,7 +290,10 @@ export const deactivatePatient = async (req: Request, res: Response) => {
  */
 export const assignPatientToDoctor = async (req: Request, res: Response) => {
   try {
-    if (!req.userId) {
+    // Soportar tanto doctores (req.doctorDbId) como pacientes (req.userId)
+    const doctorId = req.doctorDbId || req.userId;
+    
+    if (!doctorId) {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
@@ -296,7 +314,7 @@ export const assignPatientToDoctor = async (req: Request, res: Response) => {
     const updated = await prisma.usuario.update({
       where: { id: patientId },
       data: {
-        idDoctorAsignado: req.userId,
+        idDoctorAsignado: doctorId,
       },
     });
 

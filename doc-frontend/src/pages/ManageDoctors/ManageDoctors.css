@@ -1,0 +1,273 @@
+.manage-doctors-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.manage-doctors-header {
+  margin-bottom: 2rem;
+}
+
+.manage-doctors-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #122056;
+  margin: 1rem 0 0.5rem 0;
+}
+
+html.dark .manage-doctors-title {
+  color: #f1f5f9;
+}
+
+.manage-doctors-subtitle {
+  font-size: 1rem;
+  color: #64748b;
+  margin: 0;
+}
+
+html.dark .manage-doctors-subtitle {
+  color: #94a3b8;
+}
+
+/* Buscador */
+.search-container {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.875rem 1rem 0.875rem 3rem;
+  border: 1px solid #122056;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  background-color: #ffffff;
+  color: #122056;
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #5B65DC;
+  box-shadow: 0 0 0 3px rgba(91, 101, 220, 0.1);
+}
+
+html.dark .search-input {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+html.dark .search-input:focus {
+  border-color: #5B65DC;
+}
+
+/* Grid de doctores */
+.doctors-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .doctors-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .doctors-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.no-results {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem;
+  color: #64748b;
+  font-size: 1.125rem;
+}
+
+/* Card de doctor */
+.doctor-card {
+  background-color: #ffffff;
+  border: 1px solid #122056;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  transition: all 0.3s;
+}
+
+.doctor-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(18, 32, 86, 0.15);
+}
+
+html.dark .doctor-card {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+html.dark .doctor-card:hover {
+  box-shadow: 0 4px 12px rgba(238, 239, 253, 0.15);
+}
+
+.doctor-card-header {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.doctor-avatar {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #5B65DC, #122056);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.doctor-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.doctor-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #122056;
+  margin: 0 0 0.25rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+html.dark .doctor-name {
+  color: #f1f5f9;
+}
+
+.doctor-email {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+html.dark .doctor-email {
+  color: #94a3b8;
+}
+
+.doctor-specialty {
+  font-size: 0.875rem;
+  color: #5B65DC;
+  margin: 0.25rem 0 0 0;
+}
+
+.doctor-cedula {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0.25rem 0 0 0;
+}
+
+html.dark .doctor-cedula {
+  color: #94a3b8;
+}
+
+.doctor-card-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.doctor-badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.doctor-role,
+.doctor-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.doctor-role.admin {
+  background-color: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+}
+
+.doctor-role.doctor {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.doctor-status.active {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+}
+
+.doctor-status.inactive {
+  background-color: rgba(251, 146, 60, 0.1);
+  color: #fb923c;
+}
+
+.doctor-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.doctor-actions button {
+  flex: 1;
+  min-width: 120px;
+}
+
+/* Formulario de edición */
+.doctor-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .form-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.edit-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.edit-actions button {
+  flex: 1;
+}

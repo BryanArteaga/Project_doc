@@ -1,0 +1,242 @@
+.login-container {
+  min-height: 100vh;
+  background-color: #FAFAFD;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html.dark .login-container {
+  background-color: #0f172a;
+}
+
+.login-wrapper {
+  max-width: 28rem;
+  width: 100%;
+}
+
+.login-logo-section {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.login-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  background-color: #5B65DC;
+  border-radius: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 10px 40px rgba(91, 101, 220, 0.2);
+}
+
+.login-logo svg {
+  width: 2rem;
+  height: 2rem;
+  color: white;
+}
+
+.login-title {
+  font-size: 1.875rem;
+  font-weight: bold;
+  color: #122056;
+  margin-bottom: 0.5rem;
+}
+
+html.dark .login-title {
+  color: #f1f5f9;
+}
+
+.login-subtitle {
+  color: #64748b;
+  margin-top: 0.5rem;
+}
+
+html.dark .login-subtitle {
+  color: #94a3b8;
+}
+
+.login-card {
+  background-color: #FFFFFF;
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px rgba(18, 32, 86, 0.15), 0 0 0 1px rgba(18, 32, 86, 0.1);
+  padding: 2rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+}
+
+html.dark .login-card {
+  background-color: #1e293b;
+  box-shadow: 0 8px 32px rgba(238, 239, 253, 0.15), 0 0 0 1px rgba(238, 239, 253, 0.1);
+}
+
+.login-card-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #122056;
+  margin-bottom: 1.5rem;
+}
+
+html.dark .login-card-title {
+  color: #f1f5f9;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.login-form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.login-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #122056;
+  margin-bottom: 0.5rem;
+}
+
+html.dark .login-label {
+  color: #e2e8f0;
+}
+
+.login-input-wrapper {
+  position: relative;
+}
+
+.login-input-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #5B65DC;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+html.dark .login-input-icon {
+  color: #64748b;
+}
+
+.login-input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border: 2px solid #EEEFFD;
+  background-color: #FAFAFD;
+  color: #122056;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.login-input:focus {
+  border-color: #5B65DC;
+  box-shadow: 0 0 0 3px rgba(91, 101, 220, 0.1);
+}
+
+html.dark .login-input {
+  background-color: #334155;
+  border-color: #475569;
+  color: #f1f5f9;
+}
+
+html.dark .login-input:focus {
+  border-color: #5B65DC;
+  box-shadow: 0 0 0 3px rgba(91, 101, 220, 0.2);
+}
+
+html.dark .login-input:focus {
+  border-color: #5B65DC;
+}
+
+.login-input-password {
+  padding-right: 3rem;
+}
+
+.login-password-toggle {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: #5B65DC;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.login-password-toggle:hover {
+  color: #122056;
+}
+
+html.dark .login-password-toggle {
+  color: #64748b;
+}
+
+html.dark .login-password-toggle:hover {
+  color: #e2e8f0;
+}
+
+.login-password-toggle svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.login-submit-btn {
+  width: 100%;
+  background-color: #5B65DC;
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 20px rgba(91, 101, 220, 0.15);
+}
+
+.login-submit-btn:hover {
+  background-color: #4A52C4;
+  box-shadow: 0 10px 40px rgba(91, 101, 220, 0.2);
+}
+
+.login-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.login-help-text {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+html.dark .login-help-text {
+  color: #94a3b8;
+}
+
+.login-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+html.dark .login-footer {
+  color: #94a3b8;
+}
+
+html.dark .login-footer {
+  color: #9ca3af;
+}

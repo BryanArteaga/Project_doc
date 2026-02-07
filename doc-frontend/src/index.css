@@ -1,68 +1,95 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+@layer components {
+  /* Sobrescribir el reset de Tailwind para botones custom */
+  button.button,
+  button.button-primary,
+  button.button-secondary,
+  button.button-outline,
+  button.button-danger,
+  button.button-success {
+    all: unset;
+    box-sizing: border-box;
+    display: inline-flex;
+    cursor: pointer;
+  }
 }
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
+@layer base {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+    font-weight: 400;
+    
+    /* Paleta de colores personalizada */
+    --color-brand-dark: #122056;
+    --color-brand-main: #5B65DC;
+    --color-brand-light: #EEEFFD;
+    --color-brand-lighter: #FAFAFD;
+    --color-brand-white: #FFFFFF;
+    
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  a:hover {
-    color: #747bff;
+
+  html {
+    background-color: #FAFAFD !important;
   }
-  button {
-    background-color: #f9f9f9;
+
+  html.dark {
+    background-color: #0f172a !important;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    background-color: #FAFAFD !important;
+    color: #122056;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  html.dark body {
+    background-color: #0f172a !important;
+    color: #f1f5f9;
+  }
+
+  #root {
+    min-height: 100vh;
+    background-color: #FAFAFD;
+  }
+
+  html.dark #root {
+    background-color: #0f172a;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .bg-brand {
+    background-color: var(--color-brand-main);
+  }
+  
+  .shadow-brand {
+    box-shadow: 0 4px 20px rgba(91, 101, 220, 0.15);
+  }
+  
+  .shadow-brand-lg {
+    box-shadow: 0 10px 40px rgba(91, 101, 220, 0.2);
   }
 }

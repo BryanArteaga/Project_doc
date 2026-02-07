@@ -1,0 +1,257 @@
+.settings-container {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  background-color: #FAFAFD;
+  min-height: 100vh;
+}
+
+html.dark .settings-container {
+  background-color: #0f172a;
+}
+
+.settings-header {
+  margin-bottom: 2rem;
+}
+
+.settings-title {
+  font-size: 1.875rem;
+  font-weight: bold;
+  color: #122056;
+  margin-top: 1rem;
+}
+
+html.dark .settings-title {
+  color: #f1f5f9;
+}
+
+.settings-subtitle {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+html.dark .settings-subtitle {
+  color: #94a3b8;
+}
+
+.settings-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #EEEFFD;
+  flex-wrap: wrap;
+}
+
+html.dark .settings-tabs {
+  border-bottom-color: #334155;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #64748b;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: -2px;
+  transition: all 0.3s;
+}
+
+.tab:hover {
+  color: #5B65DC;
+}
+
+.tab.active {
+  color: #5B65DC;
+  border-bottom-color: #5B65DC;
+}
+
+html.dark .tab {
+  color: #94a3b8;
+}
+
+html.dark .tab.active {
+  color: #5B65DC;
+}
+
+.settings-content {
+  max-width: 48rem;
+}
+
+.settings-card {
+  background-color: #FFFFFF;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(18, 32, 86, 0.1);
+  border: 1px solid #122056;
+  padding: 2rem;
+}
+
+html.dark .settings-card {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #122056;
+  margin-bottom: 1.5rem;
+}
+
+html.dark .card-title {
+  color: #f1f5f9;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.info-text {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background-color: #EEEFFD;
+  border-left: 4px solid #5B65DC;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+html.dark .info-text {
+  background-color: #334155;
+  border-left-color: #5B65DC;
+}
+
+.info-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #5B65DC;
+  flex-shrink: 0;
+}
+
+html.dark .info-icon {
+  color: #5B65DC;
+}
+
+.info-text p {
+  font-size: 0.875rem;
+  color: #122056;
+  margin: 0;
+}
+
+html.dark .info-text p {
+  color: #f1f5f9;
+}
+
+.card-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  border-top: 1px solid #EEEFFD;
+}
+
+html.dark .card-actions {
+  border-top-color: #334155;
+}
+
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.notification-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background-color: #FAFAFD;
+  border-radius: 0.5rem;
+  border: 1px solid #EEEFFD;
+}
+
+html.dark .notification-item {
+  background-color: #0f172a;
+  border-color: #334155;
+}
+
+.notification-title {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #122056;
+  margin-bottom: 0.25rem;
+}
+
+html.dark .notification-title {
+  color: #f1f5f9;
+}
+
+.notification-desc {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+html.dark .notification-desc {
+  color: #94a3b8;
+}
+
+/* Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 3rem;
+  height: 1.75rem;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: 0.3s;
+  border-radius: 1.75rem;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 1.25rem;
+  width: 1.25rem;
+  left: 0.25rem;
+  bottom: 0.25rem;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #5B65DC;
+}
+
+input:checked + .slider:before {
+  transform: translateX(1.25rem);
+}

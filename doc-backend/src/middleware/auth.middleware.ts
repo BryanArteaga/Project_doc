@@ -110,8 +110,8 @@ export const verifyDoctorToken = async (req: Request, res: Response, next: NextF
 
     next();
   } catch (error: any) {
-    console.error('Error al verificar token de doctor:', error);
-    return res.status(401).json({ error: 'Error al verificar token' });
+    console.error('Error al verificar token de doctor:', error.message);
+    return res.status(401).json({ error: 'No autenticado' });
   }
 };
 

@@ -151,24 +151,33 @@ export const deactivateUser = async (req: Request, res: Response) => {
 // Obtener estadísticas generales
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
-    const [totalUsers, pendingUsers, activeUsers, inactiveUsers] = await Promise.all([
+    const [totalPacientes, pacientesPendientes, pacientesActivos, pacientesInactivos] = await Promise.all([
       prisma.usuario.count(),
       prisma.usuario.count({ where: { estadoCuenta: 'INACTIVE' } }),
       prisma.usuario.count({ where: { estadoCuenta: 'ACTIVE' } }),
-      prisma.usuario.count({ where: { estadoCuenta: 'INACTIVE' } })
+      prisma.usuario.count({ where: { estadoCuenta: 'SUSPENDED' } })
     ]);
+
+    // Obtener registros de salud de hoy
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const manana = new Date(hoy);
+    manana.setDate(manana.getDate() + 1);
 
     const registrosHoy = await prisma.registroSalud.count({
       where: {
-        fecha: new Date().toISOString().split('T')[0] // formato yyyy-MM-dd
+        fecha: {
+          gte: hoy.toISOString(),
+          lt: manana.toISOString()
+        }
       }
     });
 
     res.json({
-      totalUsers,
-      pendingUsers,
-      activeUsers,
-      inactiveUsers,
+      totalPacientes,
+      pacientesPendientes,
+      pacientesActivos,
+      pacientesInactivos,
       registrosHoy
     });
   } catch (error) {
@@ -204,6 +213,82 @@ export const getUserDetails = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error al obtener detalles de usuario:', error);
     res.status(500).json({ error: 'Error al obtener detalles de usuario' });
+  }
+};
+
+// Obtener todos los doctores (solo admin)
+export const getAllDoctors = async (req: Request, res: Response) => {
+  try {
+    const doctors = await prisma.doctor.findMany({
+      orderBy: {
+        creadoEn: 'desc'
+      },
+      select: {
+        id: true,
+        email: true,
+        nombre: true,
+        apellido: true,
+        cedula: true,
+        telefono: true,
+        especialidad: true,
+        rol: true,
+        activo: true,
+        creadoEn: true
+      }
+    });
+
+    res.json(doctors);
+  } catch (error) {
+    console.error('Error al obtener doctores:', error);
+    res.status(500).json({ error: 'Error al obtener doctores' });
+  }
+};
+
+// Actualizar doctor (solo admin)
+export const updateDoctor = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { nombre, apellido, especialidad, telefono, activo, rol } = req.body;
+
+    const doctor = await prisma.doctor.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!doctor) {
+      return res.status(404).json({ error: 'Doctor no encontrado' });
+    }
+
+    const updatedDoctor = await prisma.doctor.update({
+      where: { id: parseInt(id) },
+      data: {
+        ...(nombre && { nombre }),
+        ...(apellido && { apellido }),
+        ...(especialidad !== undefined && { especialidad }),
+        ...(telefono !== undefined && { telefono }),
+        ...(activo !== undefined && { activo }),
+        ...(rol && { rol })
+      },
+      select: {
+        id: true,
+        email: true,
+        nombre: true,
+        apellido: true,
+        cedula: true,
+        telefono: true,
+        especialidad: true,
+        rol: true,
+        activo: true,
+        creadoEn: true
+      }
+    });
+
+    res.json({
+      message: 'Doctor actualizado exitosamente',
+      doctor: updatedDoctor
+    });
+  } catch (error) {
+    console.error('Error al actualizar doctor:', error);
+    res.status(500).json({ error: 'Error al actualizar doctor' });
   }
 };
 

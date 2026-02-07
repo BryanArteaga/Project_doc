@@ -1,0 +1,110 @@
+.input-container {
+  width: 100%;
+}
+
+.input-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #122056;
+  margin-bottom: 0.5rem;
+}
+
+html.dark .input-label {
+  color: #e2e8f0;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #5B65DC;
+}
+
+html.dark .input-icon {
+  color: #64748b;
+}
+
+.input-right-icon {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #5B65DC;
+}
+
+html.dark .input-right-icon {
+  color: #64748b;
+}
+
+.input-field {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #EEEFFD;
+  background-color: #FAFAFD;
+  color: #122056;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.input-field:focus {
+  border-color: #5B65DC;
+  box-shadow: 0 0 0 3px rgba(91, 101, 220, 0.1);
+}
+
+.input-field:disabled {
+  background-color: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+}
+
+html.dark .input-field:disabled {
+  background-color: #0f172a;
+  color: #64748b;
+  border-color: #1e293b;
+}
+
+html.dark .input-field {
+  background-color: #334155;
+  border-color: #475569;
+  color: #f1f5f9;
+}
+
+html.dark .input-field:focus {
+  border-color: #5B65DC;
+  box-shadow: 0 0 0 3px rgba(91, 101, 220, 0.2);
+}
+
+.input-field.has-left-icon {
+  padding-left: 2.5rem;
+}
+
+.input-field.has-right-icon {
+  padding-right: 3rem;
+}
+
+.input-field.has-error {
+  border-color: #dc2626;
+}
+
+html.dark .input-field.has-error {
+  border-color: #ef4444;
+}
+
+.input-error {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: #dc2626;
+}
+
+html.dark .input-error {
+  color: #f87171;
+}
