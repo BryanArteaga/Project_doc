@@ -8,18 +8,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineScope
 import timber.log.Timber
 
-/**
- * Gestor híbrido de notificaciones
- * 
- * COMPORTAMIENTO:
- * - SIN INTERNET → Notificaciones locales (AlarmManager)
- * - CON INTERNET → Notificaciones push (Firebase FCM)
- * 
- * TIPOS DE NOTIFICACIONES:
- * 1. Recordatorio de salud (diario/semanal/mensual)
- * 2. Recordatorio de ejercicio (10:00 AM y 6:00 PM)
- * 3. Activación de cuenta (SOLO push, cuando doctor activa cuenta)
- */
 class HybridNotificationManager(
     private val context: Context,
     private val scope: CoroutineScope

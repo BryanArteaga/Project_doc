@@ -1,37 +1,25 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
     <!-- Permisos de notificaciones -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
     <!-- Permisos de alarmas exactas (crítico para Android 12+) -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
-
     <!-- Permisos de vibración y audio -->
     <uses-permission android:name="android.permission.VIBRATE"/>
-
     <!-- Permiso para reiniciar alarmas después de reinicio -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-
     <!-- Permiso para despertar el dispositivo (crítico para Doze Mode) -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-
-    <!-- Permiso para ignorar optimizaciones de batería (Android 6+) -->
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-
     <!-- Permiso para notificaciones en pantalla completa (Android 14+) -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
-
     <!-- Permiso para acceso a red (futuro backend) -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
     <!-- Permiso en primer plano para Workers (Android 12+) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-
     <application
         android:name=".DocApplication"
         android:allowBackup="true"
@@ -44,7 +32,6 @@
         android:theme="@style/Theme.Doc"
         android:enableOnBackInvokedCallback="true"
         tools:targetApi="34">
-
         <activity
             android:name=".MainActivity"
             android:windowSoftInputMode="adjustResize"
@@ -52,15 +39,12 @@
             android:screenOrientation="portrait"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.App.Starting"
-            android:showWhenLocked="true"
-            android:turnScreenOn="true">
+            android:theme="@style/Theme.App.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <!-- Firebase Messaging Service para PUSH notifications -->
         <service
             android:name=".services.MyFirebaseMessagingService"
@@ -69,7 +53,6 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
-
         <!-- BroadcastReceiver para cambios de conectividad -->
         <receiver
             android:name=".receiver.NetworkChangeReceiver"
@@ -78,7 +61,6 @@
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
             </intent-filter>
         </receiver>
-
         <!-- BroadcastReceiver para manejar alarmas de notificaciones -->
         <receiver
             android:name=".receiver.NotificationReceiver"

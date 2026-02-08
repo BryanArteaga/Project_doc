@@ -10,6 +10,7 @@ import androidx.core.app.NotificationCompat
 import androidx.work.*
 import com.example.doc.MainActivity
 import com.example.doc.R
+import com.example.doc.receiver.NotificationReceiver
 import com.example.doc.worker.NotificationWorker
 import timber.log.Timber
 import java.util.Calendar
