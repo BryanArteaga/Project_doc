@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.PowerManager
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import com.example.doc.utils.NetworkMonitor
 import com.example.doc.worker.NotificationWorker
 import com.example.doc.worker.ExerciseNotificationWorker
 import timber.log.Timber
@@ -330,7 +331,9 @@ class NotificationReceiver : BroadcastReceiver() {
         try {
             when (intent.action) {
                 ACTION_HEALTH_REMINDER -> {
-                    Timber.d("Enviando notificación de salud")
+                    Timber.d("📱 Notificación de salud recibida")
+                    
+                    // Enviar notificación al usuario
                     val workRequest = OneTimeWorkRequestBuilder<NotificationWorker>().build()
                     WorkManager.getInstance(context).enqueue(workRequest)
 
@@ -346,13 +349,18 @@ class NotificationReceiver : BroadcastReceiver() {
                         }
                     }
 
-                    if (notifType != null && notifDetails != null) {
+                    if (notifType != null && notifDetails != null && !NetworkMonitor.isConnected.value) {
+                        Timber.d("Sin internet - Reprogramando próxima alarma de salud")
                         scheduleNextHealthReminder(context, notifType, notifDetails)
+                    } else if (notifType != null && notifDetails != null) {
+                        Timber.d("✅ Con internet - Firebase PUSH manejará próximas notificaciones")
                     }
                 }
 
                 ACTION_EXERCISE_REMINDER -> {
-                    Timber.d("Enviando notificación de ejercicio")
+                    Timber.d("Notificación de ejercicio recibida")
+                    
+                    // Enviar notificación al usuario
                     val workRequest = OneTimeWorkRequestBuilder<ExerciseNotificationWorker>().build()
                     WorkManager.getInstance(context).enqueue(workRequest)
 
@@ -360,51 +368,65 @@ class NotificationReceiver : BroadcastReceiver() {
                     val hour = if (isMorning) 10 else 18
                     val requestCode = if (isMorning) EXERCISE_MORNING_REQUEST_CODE else EXERCISE_AFTERNOON_REQUEST_CODE
 
-                    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-                    val nextIntent = Intent(context, NotificationReceiver::class.java).apply {
-                        action = ACTION_EXERCISE_REMINDER
-                        putExtra("is_morning", isMorning)
-                    }
-                    val nextPendingIntent = PendingIntent.getBroadcast(
-                        context, requestCode, nextIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
-
-                    val calendar = Calendar.getInstance().apply {
-                        timeInMillis = System.currentTimeMillis()
-                        set(Calendar.HOUR_OF_DAY, hour)
-                        set(Calendar.MINUTE, 0)
-                        set(Calendar.SECOND, 0)
-                        set(Calendar.MILLISECOND, 0)
-                        add(Calendar.DAY_OF_MONTH, 1)
-                    }
-
-                    try {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-                            val alarmClockInfo = AlarmManager.AlarmClockInfo(calendar.timeInMillis, null)
-                            alarmManager.setAlarmClock(alarmClockInfo, nextPendingIntent)
-                        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, nextPendingIntent)
-                        } else {
-                            alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, nextPendingIntent)
+                    // IMPORTANTE: Solo reprogramar si NO hay internet
+                    if (!NetworkMonitor.isConnected.value) {
+                        Timber.d("Sin internet - Reprogramando próxima alarma de ejercicio")
+                        
+                        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                        val nextIntent = Intent(context, NotificationReceiver::class.java).apply {
+                            action = ACTION_EXERCISE_REMINDER
+                            putExtra("is_morning", isMorning)
                         }
-                        Timber.d("Próxima alarma de ejercicio programada")
-                    } catch (e: Exception) {
-                        Timber.e(e, "Error reprogramando")
+                        val nextPendingIntent = PendingIntent.getBroadcast(
+                            context, requestCode, nextIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                        )
+
+                        val calendar = Calendar.getInstance().apply {
+                            timeInMillis = System.currentTimeMillis()
+                            set(Calendar.HOUR_OF_DAY, hour)
+                            set(Calendar.MINUTE, 0)
+                            set(Calendar.SECOND, 0)
+                            set(Calendar.MILLISECOND, 0)
+                            add(Calendar.DAY_OF_MONTH, 1)
+                        }
+
+                        try {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                                val alarmClockInfo = AlarmManager.AlarmClockInfo(calendar.timeInMillis, null)
+                                alarmManager.setAlarmClock(alarmClockInfo, nextPendingIntent)
+                            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, nextPendingIntent)
+                            } else {
+                                alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, nextPendingIntent)
+                            }
+                            Timber.d("⏰ Próxima alarma de ejercicio programada para mañana a las ${if (isMorning) "10:00" else "18:00"}")
+                        } catch (e: Exception) {
+                            Timber.e(e, "❌ Error reprogramando alarma de ejercicio")
+                        }
+                    } else {
+                        Timber.d("Con internet - Firebase PUSH manejará próximas notificaciones de ejercicio")
                     }
                 }
 
                 ACTION_BOOT_COMPLETED, Intent.ACTION_LOCKED_BOOT_COMPLETED, "android.intent.action.QUICKBOOT_POWERON" -> {
+                    Timber.d("Dispositivo reiniciado - Reprogramando alarmas")
+                    
                     val prefs = context.getSharedPreferences("doc_prefs", Context.MODE_PRIVATE)
                     val userId = prefs.getInt("user_id", -1)
                     if (userId != -1) {
                         val notifEnabled = prefs.getBoolean("notif_enabled_$userId", false)
                         if (notifEnabled) {
-                            val notifType = prefs.getString("notif_type_$userId", "daily_fixed") ?: "daily_fixed"
-                            val notifDetails = prefs.getString("notif_details_$userId", "{\"hour\":20,\"minute\":0}") ?: "{\"hour\":20,\"minute\":0}"
-                            scheduleHealthReminder(context, notifType, notifDetails)
-                            scheduleExerciseReminders(context)
-                            Timber.d("Alarmas reprogramadas después de reinicio")
+                            // Solo programar alarmas locales si NO hay internet
+                            if (!NetworkMonitor.isConnected.value) {
+                                val notifType = prefs.getString("notif_type_$userId", "daily_fixed") ?: "daily_fixed"
+                                val notifDetails = prefs.getString("notif_details_$userId", "{\"hour\":20,\"minute\":0}") ?: "{\"hour\":20,\"minute\":0}"
+                                scheduleHealthReminder(context, notifType, notifDetails)
+                                scheduleExerciseReminders(context)
+                                Timber.d("Sin internet - Alarmas reprogramadas después de reinicio")
+                            } else {
+                                Timber.d("Con internet - Se usarán notificaciones PUSH de Firebase")
+                            }
                         }
                     }
                 }

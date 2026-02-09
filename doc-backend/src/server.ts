@@ -4,7 +4,6 @@ import compression from 'compression';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
-import authRoutes from './routes/auth.routes';
 import authDoctorRoutes from './routes/auth.doctor.routes';
 import usuarioRoutes from './routes/usuario.routes';
 import registroSaludRoutes from './routes/registroSalud.routes';
@@ -13,8 +12,12 @@ import doctorRoutes from './routes/doctor.routes';
 import syncRoutes from './routes/sync.routes';
 import notificationRoutes from './routes/notification.routes';
 import { prisma } from './lib/prisma';
+import { initializeFirebase } from './config/firebase';
 
 dotenv.config();
+
+// ✅ Inicializar Firebase Admin SDK
+initializeFirebase();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -109,7 +112,6 @@ app.get('/', (req, res) => {
 });
 
 // Auth routes con rate limiting estricto
-app.use('/api/auth', authLimiter, authRoutes); // Pacientes
 app.use('/api/auth/doctor', authLimiter, authDoctorRoutes); // Doctores y Admins
 
 // Resource routes

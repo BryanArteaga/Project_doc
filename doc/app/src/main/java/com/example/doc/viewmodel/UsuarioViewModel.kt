@@ -4,11 +4,14 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.doc.repository.UsuarioRepository
+import com.example.doc.repository.SyncRepository
 import com.example.doc.data.entities.UsuarioEntity
 import com.example.doc.model.Usuario
 import com.example.doc.utils.UiState
 import com.example.doc.security.InputValidator
 import com.example.doc.utils.NotificationHelper
+import com.example.doc.network.ApiService
+import com.example.doc.network.CreateUsuarioRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +25,8 @@ import javax.inject.Inject
 @HiltViewModel
 class UsuarioViewModel @Inject constructor(
     private val repository: UsuarioRepository,
+    private val syncRepository: SyncRepository,
+    private val apiService: ApiService,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -29,6 +34,16 @@ class UsuarioViewModel @Inject constructor(
 
     private val _usuario = MutableStateFlow<Usuario?>(null)
     val usuario: StateFlow<Usuario?> = _usuario
+
+    // Estados de sincronización
+    private val _isSyncing = MutableStateFlow(false)
+    val isSyncing: StateFlow<Boolean> = _isSyncing
+
+    private val _isSynced = MutableStateFlow(true)
+    val isSynced: StateFlow<Boolean> = _isSynced
+
+    private val _lastSyncTime = MutableStateFlow<String?>(null)
+    val lastSyncTime: StateFlow<String?> = _lastSyncTime
 
     @Suppress("unused")
     private val _uiState = MutableStateFlow<UiState<Usuario>>(UiState.Idle)
@@ -44,6 +59,7 @@ class UsuarioViewModel @Inject constructor(
                                 id = it.id,
                                 cedula = it.cedula,
                                 nombre = it.nombre,
+                                apellido = it.apellido,
                                 edad = it.edad,
                                 peso = it.peso,
                                 altura = it.altura,
@@ -64,6 +80,9 @@ class UsuarioViewModel @Inject constructor(
                         usuario?.let {
                             setupNotifications(it)
                             Timber.d("Usuario cargado: ${it.nombre}")
+
+                            // Ejecutar sincronización automática al cargar usuario
+                            performAutoSync(it.id)
                         }
                     }
             } catch (e: kotlinx.coroutines.CancellationException) {
@@ -122,25 +141,62 @@ class UsuarioViewModel @Inject constructor(
                     }
                 }
 
-                val entity = UsuarioEntity(
-                    id = usuario.id,
-                    cedula = usuario.cedula,
+                // 1️⃣ Primero, crear el usuario en el backend (Supabase)
+                Timber.d("📤 Sincronizando usuario con backend...")
+                val createUsuarioRequest = CreateUsuarioRequest(
                     nombre = usuario.nombre,
-                    edad = usuario.edad,
-                    peso = usuario.peso,
-                    altura = usuario.altura,
-                    sexo = usuario.sexo,
-                    enfermedad = usuario.enfermedad,
-                    colorEnfermedad = usuario.colorEnfermedad,
-                    notifEnabled = usuario.notifEnabled,
-                    notifType = usuario.notifType,
-                    notifDetails = usuario.notifDetails,
-                    glucosaInicial = usuario.glucosaInicial,
-                    colesterolInicial = usuario.colesterolInicial
+                    apellido = usuario.apellido ?: "",
+                    estadoCuenta = "ACTIVE"
+                )
+
+                val backendResponse = try {
+                    val response = apiService.createUsuario(createUsuarioRequest)
+                    if (response.isSuccessful && response.body() != null) {
+                        Timber.d("✅ Usuario creado en backend con ID: ${response.body()!!.usuario.id}")
+                        response.body()
+                    } else {
+                        Timber.w("⚠️ Error al crear usuario en backend: ${response.code()} - ${response.message()}")
+                        null
+                    }
+                } catch (e: Exception) {
+                    Timber.e(e, "❌ Error en llamada backend")
+                    null
+                }
+
+                // 2️⃣ Usar el ID del backend si fue exitoso, si no usar el local
+                val usuarioFinal = if (backendResponse != null) {
+                    // Actualizar ID del usuario con el ID del backend
+                    usuario.copy(id = backendResponse.usuario.id)
+                } else {
+                    Timber.w("⚠️ No se pudo sincronizar con backend, usando ID local")
+                    usuario
+                }
+
+                // 3️⃣ Guardar el usuario localmente con el ID correcto
+                val entity = UsuarioEntity(
+                    id = usuarioFinal.id,
+                    cedula = usuarioFinal.cedula,
+                    nombre = usuarioFinal.nombre,
+                    apellido = usuarioFinal.apellido,
+                    edad = usuarioFinal.edad,
+                    peso = usuarioFinal.peso,
+                    altura = usuarioFinal.altura,
+                    sexo = usuarioFinal.sexo,
+                    enfermedad = usuarioFinal.enfermedad,
+                    colorEnfermedad = usuarioFinal.colorEnfermedad,
+                    notifEnabled = usuarioFinal.notifEnabled,
+                    notifType = usuarioFinal.notifType,
+                    notifDetails = usuarioFinal.notifDetails,
+                    glucosaInicial = usuarioFinal.glucosaInicial,
+                    colesterolInicial = usuarioFinal.colesterolInicial
                 )
                 repository.guardarUsuario(entity)
-                _uiState.value = UiState.Success(usuario)
-                Timber.d("✅ Usuario registrado exitosamente: ${usuario.nombre}")
+
+                // Guardar ID en SharedPreferences para sincronización
+                prefs.edit().putInt("user_id", usuarioFinal.id).apply()
+
+                _uiState.value = UiState.Success(usuarioFinal)
+                Timber.d("✅ Usuario registrado exitosamente: ${usuarioFinal.nombre} (ID: ${usuarioFinal.id})")
 
                 // Forzar recarga del usuario
                 cargarUsuario()
@@ -164,6 +220,7 @@ class UsuarioViewModel @Inject constructor(
                         id = entity.id,
                         cedula = entity.cedula,
                         nombre = entity.nombre,
+                        apellido = entity.apellido,
                         edad = entity.edad,
                         peso = entity.peso,
                         altura = entity.altura,
@@ -195,6 +252,7 @@ class UsuarioViewModel @Inject constructor(
                     id = usuario.id,
                     cedula = usuario.cedula,
                     nombre = usuario.nombre,
+                    apellido = usuario.apellido,
                     edad = usuario.edad,
                     peso = usuario.peso,
                     altura = usuario.altura,
@@ -228,6 +286,7 @@ class UsuarioViewModel @Inject constructor(
                         id = updatedUser.id,
                         cedula = updatedUser.cedula,
                         nombre = updatedUser.nombre,
+                        apellido = updatedUser.apellido,
                         edad = updatedUser.edad,
                         peso = updatedUser.peso,
                         altura = updatedUser.altura,
@@ -286,6 +345,40 @@ class UsuarioViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Sincronización automática cuando se carga el usuario
+     */
+    private fun performAutoSync(usuarioId: Int) {
+        viewModelScope.launch {
+            try {
+                _isSyncing.value = true
+
+                Timber.d("🔄 Iniciando sincronización automática para usuario: $usuarioId")
+
+                val result = syncRepository.fullSync(usuarioId)
+
+                result.onSuccess {
+                    Timber.d("✅ Sincronización automática completada")
+                    _isSynced.value = true
+
+                    // Actualizar tiempo de última sincronización
+                    val lastSync = prefs.getString("last_sync", null)
+                    _lastSyncTime.value = lastSync
+                }
+
+                result.onFailure { error ->
+                    Timber.e(error, "❌ Error en sincronización automática")
+                    _isSynced.value = false
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "❌ Excepción en sincronización automática")
+                _isSynced.value = false
+            } finally {
+                _isSyncing.value = false
+            }
+        }
+    }
+
     private fun setupNotifications(user: Usuario) {
         try {
             Timber.d("Configurando notificaciones para usuario: ${user.nombre}")
@@ -293,15 +386,8 @@ class UsuarioViewModel @Inject constructor(
             // Crear canal de notificaciones
             NotificationHelper.createNotificationChannel(context)
 
-            if (!user.notifEnabled) {
-                // Cancelar notificaciones si están deshabilitadas
-                NotificationHelper.cancelNotifications(context)
-                NotificationHelper.cancelExerciseNotifications(context)
-                Timber.d("Notificaciones deshabilitadas para usuario")
-                return
-            }
-
-            // Guardar detalles de notificación en SharedPreferences para el receiver
+            // Guardar detalles de notificación en SharedPreferences
+            // NO programar alarmas aquí - HybridNotificationManager lo hace automáticamente
             prefs.edit().apply {
                 putInt("user_id", user.id)
                 putString("user_name", user.nombre)
@@ -311,17 +397,18 @@ class UsuarioViewModel @Inject constructor(
                 apply()
             }
 
-            // Programar notificaciones de registro de salud según configuración
-            NotificationHelper.scheduleNotifications(
-                context = context,
-                notifType = user.notifType,
-                notifDetails = user.notifDetails
-            )
+            if (!user.notifEnabled) {
+                // Si notificaciones están deshabilitadas, cancelar alarmas existentes
+                NotificationHelper.cancelNotifications(context)
+                NotificationHelper.cancelExerciseNotifications(context)
+                Timber.d("Notificaciones deshabilitadas para usuario")
+                return
+            }
 
-            // Programar notificaciones de ejercicios (2 por día: 10:00 AM y 6:00 PM)
-            NotificationHelper.scheduleExerciseNotifications(context)
-
-            Timber.d("Notificaciones configuradas exitosamente (Salud + Ejercicios)")
+            // HybridNotificationManager manejará automáticamente la programación de alarmas
+            // según si hay conexión a internet o no.
+            // Solo guardar configuración en prefs para que HybridNotificationManager acceda
+            Timber.d("Configuración de notificaciones guardada - HybridNotificationManager manejará programación")
         } catch (e: Exception) {
             Timber.e(e, "Error al configurar notificaciones")
         }

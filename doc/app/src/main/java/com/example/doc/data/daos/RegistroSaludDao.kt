@@ -10,6 +10,9 @@ interface RegistroSaludDao {
     @Insert
     suspend fun insert(registro: RegistroSaludEntity)
 
+    @Update
+    suspend fun update(registro: RegistroSaludEntity)
+
     @Query("SELECT * FROM registros_salud WHERE usuarioId = :usuarioId ORDER BY fecha DESC")
     suspend fun getRegistrosPorUsuario(usuarioId: Int): List<RegistroSaludEntity>
 
@@ -30,4 +33,16 @@ interface RegistroSaludDao {
     // Obtener conteo de registros
     @Query("SELECT COUNT(*) FROM registros_salud WHERE usuarioId = :usuarioId")
     suspend fun getCountRegistros(usuarioId: Int): Int
+
+    // Obtener registros no sincronizados
+    @Query("SELECT * FROM registros_salud WHERE usuarioId = :usuarioId AND isSynced = 0 ORDER BY fecha DESC")
+    suspend fun getUnsyncedRegistros(usuarioId: Int): List<RegistroSaludEntity>
+
+    // Contar registros no sincronizados
+    @Query("SELECT COUNT(*) FROM registros_salud WHERE usuarioId = :usuarioId AND isSynced = 0")
+    suspend fun getUnsyncedCount(usuarioId: Int): Int
+
+    // Marcar registro como sincronizado
+    @Query("UPDATE registros_salud SET isSynced = 1, syncId = :syncId, lastSyncTimestamp = :timestamp WHERE id = :id")
+    suspend fun markAsSynced(id: Int, syncId: String, timestamp: Long)
 }

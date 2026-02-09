@@ -46,9 +46,13 @@ fun AppNavigation(
         }
 
         composable(
-            route = "${Routes.Condition}?cedula={cedula}&name={name}&edad={edad}&peso={peso}&altura={altura}&sexo={sexo}",
+            route = "${Routes.Condition}?cedula={cedula}&name={name}&apellido={apellido}&edad={edad}&peso={peso}&altura={altura}&sexo={sexo}",
             arguments = listOf(
                 navArgument("name") { type = NavType.StringType },
+                navArgument("apellido") {
+                    type = NavType.StringType
+                    nullable = true
+                },
                 navArgument("cedula") { type = NavType.StringType },
                 navArgument("edad") { type = NavType.IntType },
                 navArgument("peso") { type = NavType.FloatType },
@@ -60,6 +64,7 @@ fun AppNavigation(
             )
         ) { backStackEntry ->
             val name = backStackEntry.arguments?.getString("name") ?: ""
+            val apellido = backStackEntry.arguments?.getString("apellido")  // Nuevo: apellido
             val cedula = backStackEntry.arguments?.getString("cedula")
             val edad = backStackEntry.arguments?.getInt("edad") ?: 0
             val peso = backStackEntry.arguments?.getFloat("peso")?.toDouble() ?: 0.0
@@ -71,6 +76,7 @@ fun AppNavigation(
                 usuarioViewModel,
                 cedula,
                 name,
+                apellido,  // Nuevo: pasar apellido
                 edad,
                 peso,
                 altura,

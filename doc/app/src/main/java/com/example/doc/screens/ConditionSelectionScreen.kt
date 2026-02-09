@@ -13,6 +13,12 @@ import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.doc.R
 import com.example.doc.model.Usuario
+import com.example.doc.utils.UiState
 import com.example.doc.viewmodel.UsuarioViewModel
 import timber.log.Timber
 
@@ -33,6 +40,7 @@ fun ConditionSelectionScreen(
     usuarioViewModel: UsuarioViewModel,
     cedula: String?,
     name: String,
+    apellido: String?,  // Nuevo: apellido
     edad: Int,
     peso: Double,
     altura: Double,
@@ -41,12 +49,47 @@ fun ConditionSelectionScreen(
 ) {
     val configuration = LocalConfiguration.current
     val scroll = rememberScrollState()
+    val uiState by usuarioViewModel.uiState.collectAsState()
+    
+    // Estados para manejar la navegación después del registro
+    var selectedCondition by remember { mutableStateOf<String?>(null) }
+    var selectedColor by remember { mutableStateOf<String?>(null) }
 
     val imc = if (altura > 0) peso / (altura * altura) else 0.0
     val sugerencia = when {
         imc >= 30 -> "Obesidad"
         imc >= 25 -> "Colesterol alto"
         else -> ""
+    }
+
+    // Observar el estado de registro y navegar cuando esté listo
+    LaunchedEffect(uiState) {
+        when (uiState) {
+            is UiState.Success -> {
+                if (selectedCondition != null && selectedColor != null) {
+                    Timber.d("✅ Usuario registrado exitosamente, navegando...")
+                    val prefs = navController.context.getSharedPreferences("medicini_prefs", android.content.Context.MODE_PRIVATE)
+                    val userId = (uiState as UiState.Success<Usuario>).data.id
+                    prefs.edit().putInt("user_id", userId).apply()
+                    Timber.d("📝 SharedPreferences actualizado con user_id: $userId")
+                    
+                    Timber.d("🚀 Llamando callback de navegación...")
+                    onConditionSelected(selectedCondition!!, selectedColor!!)
+                    
+                    // Resetear los estados
+                    selectedCondition = null
+                    selectedColor = null
+                }
+            }
+            is UiState.Error -> {
+                val error = (uiState as UiState.Error).message
+                Timber.e("❌ Error al registrar usuario: $error")
+                // Aquí podrías mostrar un snackbar o dialog con el error
+                selectedCondition = null
+                selectedColor = null
+            }
+            else -> {}
+        }
     }
 
     val conditions = listOf(
@@ -108,11 +151,12 @@ fun ConditionSelectionScreen(
                     conditions.forEach { (condicion, color, icon) ->
                         Button(
                             onClick = {
-                                Timber.d("🔘 Botón de enfermedad clickeado: $condicion")
+                                Timber.d("Botón de enfermedad clickeado: $condicion")
 
                                 val usuario = Usuario(
                                     cedula = cedula,
                                     nombre = name,
+                                    apellido = apellido,
                                     edad = edad,
                                     peso = peso,
                                     altura = String.format(java.util.Locale.US, "%.2f", altura).toDouble(),
@@ -124,16 +168,12 @@ fun ConditionSelectionScreen(
                                     notifDetails = "{\"hour\":20}"
                                 )
 
+                                // Guardar la condición y color seleccionados para navegar después del registro
+                                selectedCondition = condicion
+                                selectedColor = color.toHexColor()
+
                                 Timber.d("✍️ Registrando usuario: ${usuario.nombre}, enfermedad: ${usuario.enfermedad}")
                                 usuarioViewModel.registrarUsuario(usuario)
-
-                                Timber.d("💾 Usuario enviado a guardar, ID local: ${usuario.id}")
-                                val prefs = navController.context.getSharedPreferences("medicini_prefs", Context.MODE_PRIVATE)
-                                prefs.edit().putInt("user_id", usuario.id).apply()
-                                Timber.d("📝 SharedPreferences actualizado con user_id: ${usuario.id}")
-
-                                Timber.d("🚀 Llamando callback de navegación...")
-                                onConditionSelected(condicion, color.toHexColor())
                             },
                             modifier = Modifier
                                 .fillMaxWidth()

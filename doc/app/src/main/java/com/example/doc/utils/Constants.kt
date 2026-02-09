@@ -2,9 +2,12 @@ package com.example.doc.utils
 
 object Constants {
 
+    // 🔌 Backend API Configuration
+    const val API_BASE_URL = "http://192.168.0.196:3000/api/"  // 10.0.2.2 es el localhost del emulador Android
+
     object Database {
         const val NAME = "medicini_db"
-        const val VERSION = 18
+        const val VERSION = 19
     }
 
     object Preferences {

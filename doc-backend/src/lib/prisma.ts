@@ -1,7 +1,11 @@
-import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import path from 'path';
+
+// Import the actual client from the generated output
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { PrismaClient } = require(path.join(__dirname, '../../generated/prisma/index.js'));
 
 // Asegurar que las variables de entorno estén cargadas
 dotenv.config();

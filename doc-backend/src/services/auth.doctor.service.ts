@@ -1,6 +1,5 @@
 import { supabase, supabaseAdmin } from '../lib/supabase';
 import { prisma } from '../lib/prisma';
-import { StaffRole } from '../generated/prisma';
 
 interface DoctorRegisterInput {
   email: string;
@@ -10,7 +9,7 @@ interface DoctorRegisterInput {
   cedula: string;
   telefono?: string;
   especialidad?: string;
-  rol?: StaffRole;
+  rol?: string;
 }
 
 interface DoctorLoginInput {

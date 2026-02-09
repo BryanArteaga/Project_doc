@@ -45,6 +45,7 @@ fun RegisterScreen(navController: NavController, usuarioViewModel: UsuarioViewMo
     val context = LocalContext.current
     var cedula by rememberSaveable { mutableStateOf("") }
     var nombre by rememberSaveable { mutableStateOf("") }
+    var apellido by rememberSaveable { mutableStateOf("") }  // Nuevo: apellido
     var fechaNacimiento by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(""))
     }
@@ -237,6 +238,7 @@ fun RegisterScreen(navController: NavController, usuarioViewModel: UsuarioViewMo
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
+                .imePadding()  // Nuevo: Ajustar cuando aparece el teclado
                 .padding(24.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
@@ -280,7 +282,18 @@ fun RegisterScreen(navController: NavController, usuarioViewModel: UsuarioViewMo
                             nombre = it
                         },
                         label = { Text("Nombre*") },
-                        placeholder = { Text("Juan Perez") },
+                        placeholder = { Text("Juan") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = apellido,
+                        onValueChange = {
+                            apellido = it
+                        },
+                        label = { Text("Apellido") },
+                        placeholder = { Text("Pérez") },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
                     )
@@ -484,7 +497,7 @@ fun RegisterScreen(navController: NavController, usuarioViewModel: UsuarioViewMo
                             }
 
                             navController.navigate(
-                                "${Routes.Condition}?cedula=${cedula.trim()}&name=${nombre.trim()}&edad=${calcularEdad(fechaNacimiento.text)}&peso=${safeDouble(peso.text)}&altura=${safeAltura(altura.text)}&sexo=$sexo"
+                                "${Routes.Condition}?cedula=${cedula.trim()}&name=${nombre.trim()}&apellido=${apellido.trim()}&edad=${calcularEdad(fechaNacimiento.text)}&peso=${safeDouble(peso.text)}&altura=${safeAltura(altura.text)}&sexo=$sexo"
                             )
                         },
                         modifier = Modifier

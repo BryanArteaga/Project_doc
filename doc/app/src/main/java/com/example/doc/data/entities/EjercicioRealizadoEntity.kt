@@ -9,5 +9,8 @@ data class EjercicioRealizadoEntity(
     val id: Int = 0,
     val usuarioId: Int,
     val ejercicioId: Int,
-    val fecha: String // yyyy-MM-dd
+    val fecha: String, // yyyy-MM-dd
+    val syncId: String? = null,
+    val isSynced: Boolean = false,
+    val lastSyncTimestamp: Long? = null
 )

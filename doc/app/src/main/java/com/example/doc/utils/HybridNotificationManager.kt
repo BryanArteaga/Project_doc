@@ -41,14 +41,18 @@ class HybridNotificationManager(
     private fun onInternetAvailable() {
         Timber.d("✅ Internet disponible - Activando Firebase, desactivando AlarmManager")
 
-        // Desactivar AlarmManager
+        // Desactivar alarmas locales
         NotificationReceiver.cancelAllAlarms(context)
         Timber.d("⏰ AlarmManager desactivado")
 
-        // Suscribirse a topics de Firebase
+        // Suscribirse a topics de Firebase para recibir PUSH
         subscribeToTopics()
 
         Timber.d("🔔 Sistema híbrido: MODO PUSH activo")
+        Timber.d("📋 Topics suscritos:")
+        Timber.d("   - exercise_reminders (notificaciones de ejercicio)")
+        Timber.d("   - health_reminders (notificaciones de salud)")
+        Timber.d("   - user_* (notificaciones personales como activación de cuenta)")
     }
 
     /**
@@ -61,22 +65,28 @@ class HybridNotificationManager(
         unsubscribeFromTopics()
         Timber.d("📡 Firebase desuscrito")
 
-        // Activar AlarmManager
-        // 1. Notificaciones de ejercicio (10:00 AM y 6:00 PM)
-        NotificationReceiver.scheduleExerciseReminders(context)
-        Timber.d("⏰ Alarmas de ejercicio programadas: 10:00 AM y 6:00 PM")
-
-        // 2. Notificaciones de salud (según configuración del usuario)
+        // Activar AlarmManager solo si las notificaciones están habilitadas
         val userId = prefs.getInt("user_id", -1)
         if (userId != -1) {
-            val notifType = prefs.getString("notif_type_$userId", "daily_fixed") ?: "daily_fixed"
-            val notifDetails = prefs.getString("notif_details_$userId", "{\"hour\":20,\"minute\":0}")
-                ?: "{\"hour\":20,\"minute\":0}"
+            val notifEnabled = prefs.getBoolean("notif_enabled_$userId", true)
+            
+            if (notifEnabled) {
+                // 1. Notificaciones de ejercicio (10:00 AM y 6:00 PM)
+                NotificationReceiver.scheduleExerciseReminders(context)
+                Timber.d("⏰ Alarmas de ejercicio programadas: 10:00 AM y 6:00 PM")
 
-            NotificationReceiver.scheduleHealthReminder(context, notifType, notifDetails)
-            Timber.d("⏰ Alarmas de salud programadas: type=$notifType")
+                // 2. Notificaciones de salud (según configuración del usuario)
+                val notifType = prefs.getString("notif_type_$userId", "daily_fixed") ?: "daily_fixed"
+                val notifDetails = prefs.getString("notif_details_$userId", "{\"hour\":20,\"minute\":0}")
+                    ?: "{\"hour\":20,\"minute\":0}"
+
+                NotificationReceiver.scheduleHealthReminder(context, notifType, notifDetails)
+                Timber.d("⏰ Alarmas de salud programadas: type=$notifType, details=$notifDetails")
+            } else {
+                Timber.d("ℹ️ Notificaciones deshabilitadas para este usuario")
+            }
         } else {
-            Timber.w("⚠️ No se encontró user_id, no se pueden programar alarmas de salud")
+            Timber.w("⚠️ No se encontró user_id, no se pueden programar alarmas")
         }
 
         Timber.d("🔔 Sistema híbrido: MODO LOCAL activo")

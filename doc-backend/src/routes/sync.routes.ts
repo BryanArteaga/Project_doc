@@ -2,21 +2,22 @@ import { Router } from 'express';
 import {
   push,
   pull,
-  getSyncSummary,
-  markNotificationsAsRead,
+  registerFCMToken,
+  getSyncStatus,
 } from '../controllers/sync.controller';
-import { verifyToken } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// Todas las rutas requieren autenticación (pero no necesitan estar activas)
-// porque la app necesita sincronizar incluso si la cuenta está inactiva
-router.use(verifyToken);
+// ⚠️ RUTAS PÚBLICAS: Sin autenticación JWT
+// El usuarioId se envía en el body de la request
+// En producción, estas rutas deben tener autenticación
 
-// Rutas de sincronización
-router.post('/push', push);
-router.get('/pull', pull);
-router.get('/summary', getSyncSummary);
-router.post('/notifications/read', markNotificationsAsRead);
+// Rutas de sincronización PUSH/PULL
+router.post('/push', push);                      // App envía datos al servidor
+router.get('/pull', pull);                       // App recibe datos del servidor
+
+// Rutas de tokens y estado
+router.post('/register-fcm-token', registerFCMToken);  // Registrar token de FCM
+router.get('/status', getSyncStatus);                  // Obtener estado de sincronización
 
 export default router;

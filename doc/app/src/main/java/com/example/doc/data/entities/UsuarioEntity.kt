@@ -9,6 +9,7 @@ data class UsuarioEntity(
     val id: Int = 0,
     val cedula: String?,
     val nombre: String,
+    val apellido: String? = null,  // Nuevo: apellido del usuario
     val edad: Int,
     val peso: Double,
     val altura: Double, // En metros

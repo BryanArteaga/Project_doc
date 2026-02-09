@@ -1,19 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
-import { AuthService } from '../services/auth.service';
-import { AccountStatus } from '../types/prisma';
-import { StaffRole } from '../generated/prisma';
 import { verifySupabaseToken } from '../lib/supabase';
 import { prisma } from '../lib/prisma';
+import jwt from 'jsonwebtoken';
 
 // Extender tipos de Express
 declare global {
   namespace Express {
     interface Request {
       userId?: number;
-      estadoCuenta?: AccountStatus;
+      estadoCuenta?: string;
       user?: any;
       doctorId?: string;
-      doctorRole?: StaffRole;
+      doctorRole?: string;
       doctorDbId?: number;
     }
   }
@@ -30,7 +28,9 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
       return res.status(401).json({ error: 'Token no proporcionado' });
     }
 
-    const payload = AuthService.verifyToken(token);
+    const secret = process.env.JWT_SECRET || 'your-secret-key';
+    const payload = jwt.verify(token, secret) as any;
+    
     if (!payload) {
       return res.status(401).json({ error: 'Token inválido o expirado' });
     }
@@ -52,7 +52,7 @@ export const requireActive = (req: Request, res: Response, next: NextFunction) =
     return res.status(401).json({ error: 'No autenticado' });
   }
 
-  if (req.estadoCuenta !== AccountStatus.ACTIVE) {
+  if (req.estadoCuenta !== 'ACTIVE') {
     return res.status(403).json({
       error: 'Tu cuenta no está activada',
       estadoCuenta: req.estadoCuenta,

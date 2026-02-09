@@ -28,5 +28,8 @@ data class RegistroSaludEntity(
     val colesterol: Int? = null,
     val calorias: Int,
     val ejercicio: Int,
-    val estadoAnimo: String
+    val estadoAnimo: String,
+    val syncId: String? = null,
+    val isSynced: Boolean = false,
+    val lastSyncTimestamp: Long? = null
 )

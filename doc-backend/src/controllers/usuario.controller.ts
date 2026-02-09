@@ -1,6 +1,39 @@
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../types';
+
+/**
+ * POST /api/usuarios/create
+ * Crear usuario (DESARROLLO: sin autenticación)
+ * Body: { nombre: string, apellido: string, estadoCuenta?: "ACTIVE" | "INACTIVE" }
+ */
+export const createUsuario = async (req: Request, res: Response) => {
+  try {
+    const { nombre, apellido, estadoCuenta = 'ACTIVE' } = req.body;
+    
+    if (!nombre || !apellido) {
+      return res.status(400).json({ error: 'nombre y apellido requeridos' });
+    }
+
+    const usuario = await prisma.usuario.create({
+      data: {
+        nombre,
+        apellido,
+        estadoCuenta
+      }
+    });
+
+    console.log(`✅ Usuario creado: ${usuario.nombre} ${usuario.apellido} (ID: ${usuario.id})`);
+    res.status(201).json({
+      message: 'Usuario creado exitosamente',
+      usuario
+    });
+  } catch (error: any) {
+    console.error('Error al crear usuario:', error);
+    res.status(500).json({ error: 'Error al crear usuario', details: error.message });
+  }
+};
+
 export const getProfile = async (req: AuthRequest, res: Response) => {
   try {
     const usuario = await prisma.usuario.findUnique({

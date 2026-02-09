@@ -8,6 +8,9 @@ interface EjercicioRealizadoDao {
     @Insert
     suspend fun insert(realizado: EjercicioRealizadoEntity)
 
+    @Update
+    suspend fun update(realizado: EjercicioRealizadoEntity)
+
     @Query("SELECT * FROM ejercicios_realizados WHERE usuarioId = :usuarioId AND fecha = :fecha")
     suspend fun getEjerciciosRealizadosHoy(usuarioId: Int, fecha: String): List<EjercicioRealizadoEntity>
 
@@ -16,4 +19,16 @@ interface EjercicioRealizadoDao {
 
     @Query("DELETE FROM ejercicios_realizados WHERE usuarioId = :usuarioId AND ejercicioId = :ejercicioId AND fecha = :fecha")
     suspend fun deleteByUsuarioEjercicioFecha(usuarioId: Int, ejercicioId: Int, fecha: String)
+
+    // Obtener ejercicios no sincronizados
+    @Query("SELECT * FROM ejercicios_realizados WHERE usuarioId = :usuarioId AND isSynced = 0 ORDER BY fecha DESC")
+    suspend fun getUnsyncedEjercicios(usuarioId: Int): List<EjercicioRealizadoEntity>
+
+    // Contar ejercicios no sincronizados
+    @Query("SELECT COUNT(*) FROM ejercicios_realizados WHERE usuarioId = :usuarioId AND isSynced = 0")
+    suspend fun getUnsyncedCount(usuarioId: Int): Int
+
+    // Marcar ejercicio como sincronizado
+    @Query("UPDATE ejercicios_realizados SET isSynced = 1, syncId = :syncId, lastSyncTimestamp = :timestamp WHERE id = :id")
+    suspend fun markAsSynced(id: Int, syncId: String, timestamp: Long)
 }

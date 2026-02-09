@@ -52,6 +52,7 @@ import com.example.doc.R
 import com.example.doc.domain.SaludEvaluator
 import com.example.doc.model.EvaluacionSalud
 import com.example.doc.navigation.Routes
+import com.example.doc.ui.components.SyncStatusIndicator
 import com.example.doc.viewmodel.ConsejoViewModel
 import com.example.doc.viewmodel.PopupViewModel
 import com.example.doc.viewmodel.RegistroSaludViewModel
@@ -74,6 +75,12 @@ fun MainScreen(
     val usuario by usuarioViewModel.usuario.collectAsState()
     val registros by registroSaludViewModel.registros.collectAsState()
     val consejos by consejoViewModel.consejos.collectAsState()
+    
+    // Estados de sincronización
+    val isSyncing by usuarioViewModel.isSyncing.collectAsState()
+    val isSynced by usuarioViewModel.isSynced.collectAsState()
+    val lastSyncTime by usuarioViewModel.lastSyncTime.collectAsState()
+    
     val showNotifDialog = remember { mutableStateOf(false) }
     val context = LocalContext.current
     val sharedPrefs = context.getSharedPreferences("DocPrefs", Context.MODE_PRIVATE)
@@ -300,39 +307,59 @@ fun MainScreen(
                     colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                            .padding(horizontal = 20.dp, vertical = 16.dp)
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Hola, ${user.nombre}",
-                                fontSize = 28.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = colorFondo
-                            )
-                            Text(
-                                text = "¿Cómo te sientes hoy?",
-                                fontSize = 16.sp,
-                                color = Color.Gray,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                        }
-                        IconButton(
-                            onClick = { navController.navigate("perfil") },
+                        // Primera fila: Saludo y perfil
+                        Row(
                             modifier = Modifier
-                                .size(56.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(colorFondo.copy(alpha = 0.1f))
+                                .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Icon(
-                                Icons.Filled.Person,
-                                contentDescription = "Perfil",
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Hola, ${user.nombre}",
+                                    fontSize = 28.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = colorFondo
+                                )
+                                Text(
+                                    text = "¿Cómo te sientes hoy?",
+                                    fontSize = 16.sp,
+                                    color = Color.Gray,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                            IconButton(
+                                onClick = { navController.navigate("perfil") },
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(colorFondo.copy(alpha = 0.1f))
+                            ) {
+                                Icon(
+                                    Icons.Filled.Person,
+                                    contentDescription = "Perfil",
                                 tint = colorFondo,
                                 modifier = Modifier.size(28.dp)
+                            )
+                        }
+                        }
+                        
+                        // Segunda fila: Indicador de sincronización
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            SyncStatusIndicator(
+                                isSynced = isSynced,
+                                isSyncing = isSyncing,
+                                lastSyncTime = lastSyncTime
                             )
                         }
                     }

@@ -56,6 +56,7 @@ fun PerfilScreen(
     val usuario by usuarioViewModel.usuario.collectAsState()
     var isEditing by remember { mutableStateOf(false) }
     var nombre by rememberSaveable { mutableStateOf(usuario?.nombre ?: "") }
+    var apellido by rememberSaveable { mutableStateOf(usuario?.apellido ?: "") }  // Nuevo: apellido
     var cedula by rememberSaveable { mutableStateOf(usuario?.cedula ?: "") }
     var edad by rememberSaveable { mutableStateOf(usuario?.edad?.toString() ?: "") }
     var peso by rememberSaveable { mutableStateOf(usuario?.peso?.toString() ?: "") }
@@ -248,6 +249,14 @@ fun PerfilScreen(
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                     OutlinedTextField(
+                                        value = apellido,
+                                        onValueChange = { apellido = it },
+                                        label = { Text("Apellido") },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    OutlinedTextField(
                                         value = cedula,
                                         onValueChange = { cedula = it },
                                         label = { Text("Cédula") },
@@ -285,6 +294,14 @@ fun PerfilScreen(
                                 label = { Text("Nombre") },
                                 modifier = Modifier.fillMaxWidth()
                             )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            OutlinedTextField(
+                                value = apellido,
+                                onValueChange = { apellido = it },
+                                label = { Text("Apellido") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
                             OutlinedTextField(
                                 value = cedula,
                                 onValueChange = { cedula = it },
@@ -320,6 +337,7 @@ fun PerfilScreen(
                                 onClick = {
                                     isEditing = false
                                     nombre = usuario?.nombre ?: ""
+                                    apellido = usuario?.apellido ?: ""
                                     cedula = usuario?.cedula ?: ""
                                     edad = usuario?.edad?.toString() ?: ""
                                     peso = usuario?.peso?.toString() ?: ""
@@ -368,6 +386,7 @@ fun PerfilScreen(
                                     }
                                     val updatedUser = usuario!!.copy(
                                         nombre = nombre,
+                                        apellido = apellido.trim(),
                                         cedula = cedula.trim(),
                                         edad = edad.toIntOrNull() ?: usuario!!.edad,
                                         peso = peso.toDoubleOrNull() ?: usuario!!.peso,
@@ -410,6 +429,9 @@ fun PerfilScreen(
                             horizontalAlignment = Alignment.Start
                         ) {
                             Text("Nombre: ${usuario?.nombre}", fontSize = 17.sp, fontWeight = FontWeight.Medium)
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text("Apellido: ${usuario?.apellido ?: "No especificado"}", fontSize = 17.sp, fontWeight = FontWeight.Medium)
+                            Spacer(modifier = Modifier.height(6.dp))
                             Text("Cédula: ${usuario?.cedula}", fontSize = 17.sp, fontWeight = FontWeight.Medium)
                             Text("Edad: ${usuario?.edad}", fontSize = 17.sp, fontWeight = FontWeight.Medium)
                             Text("Peso: ${usuario?.peso} kg", fontSize = 17.sp, fontWeight = FontWeight.Medium)
