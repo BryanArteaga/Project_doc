@@ -6,6 +6,8 @@ import { AuthRequest } from '../types';
  * POST /api/usuarios/create
  * Crear usuario (DESARROLLO: sin autenticación)
  * Body: { nombre: string, apellido: string, estadoCuenta?: "ACTIVE" | "INACTIVE" }
+ * 
+ * Todos los usuarios son asignados automáticamente al doctor por defecto (ID del env o 1)
  */
 export const createUsuario = async (req: Request, res: Response) => {
   try {
@@ -15,15 +17,19 @@ export const createUsuario = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'nombre y apellido requeridos' });
     }
 
+    // Obtener ID del doctor por defecto de variable de entorno o usar 1
+    const defaultDoctorId = parseInt(process.env.DEFAULT_DOCTOR_ID || '1');
+
     const usuario = await prisma.usuario.create({
       data: {
         nombre,
         apellido,
-        estadoCuenta
+        estadoCuenta,
+        idDoctorAsignado: defaultDoctorId  // Asignar automáticamente al doctor por defecto
       }
     });
 
-    console.log(`✅ Usuario creado: ${usuario.nombre} ${usuario.apellido} (ID: ${usuario.id})`);
+    console.log(`✅ Usuario creado: ${usuario.nombre} ${usuario.apellido} (ID: ${usuario.id}) - Asignado a Doctor ID: ${defaultDoctorId}`);
     res.status(201).json({
       message: 'Usuario creado exitosamente',
       usuario

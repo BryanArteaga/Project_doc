@@ -60,12 +60,14 @@ object RepositoryModule {
         apiService: ApiService,
         registroSaludDao: RegistroSaludDao,
         ejercicioRealizadoDao: EjercicioRealizadoDao,
+        usuarioDao: UsuarioDao,
         sharedPreferences: SharedPreferences
     ): SyncRepository {
         return SyncRepository(
             apiService = apiService,
             registroSaludDao = registroSaludDao,
             ejercicioRealizadoDao = ejercicioRealizadoDao,
+            usuarioDao = usuarioDao,
             sharedPreferences = sharedPreferences
         )
     }

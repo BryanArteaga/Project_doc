@@ -26,11 +26,9 @@ export interface PushRegistroSaludRequest {
 export interface PushEjercicioRealizadoRequest {
   // usuarioId viene en el nivel superior (SyncPushRequest.usuarioId)
   ejercicioId: number;
+  asignacionId?: number;            // ID de la asignación (opcional)
   fecha: string;                    // yyyy-MM-dd o yyyy-MM-dd HH:mm:ss
-  minutos?: number;                 // minutos reales realizados
-  dificultad?: number;              // 1-10 o 1-5
-  dolor?: number;                   // 1-10 escala dolor
-  completado: boolean;
+  completadoEn: string;             // ISO timestamp
 }
 
 export interface SyncPushRequest {

@@ -35,9 +35,10 @@ object WorkerModule {
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
 
-        // Request periódico: cada 6 horas
+        // Request periódico: cada 15 minutos (mínimo permitido por Android)
+        // Si hay cambios, sincroniza inmediatamente. Si no hay, salta.
         val syncWorkRequest = PeriodicWorkRequestBuilder<SyncWorker>(
-            6, TimeUnit.HOURS
+            15, TimeUnit.MINUTES
         ).setConstraints(constraints)
             .build()
 

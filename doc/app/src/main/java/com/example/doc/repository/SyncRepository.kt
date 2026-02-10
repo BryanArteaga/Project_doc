@@ -3,28 +3,44 @@ package com.example.doc.repository
 import android.content.SharedPreferences
 import com.example.doc.data.daos.EjercicioRealizadoDao
 import com.example.doc.data.daos.RegistroSaludDao
+import com.example.doc.data.daos.UsuarioDao
+import com.example.doc.data.entities.UsuarioEntity
 import com.example.doc.network.ApiService
 import com.example.doc.network.SyncPushRequest
 import com.example.doc.network.PushRegistroSaludRequest
 import com.example.doc.network.PushEjercicioRealizadoRequest
 import com.example.doc.network.FCMTokenRequest
+import com.example.doc.network.CreateUsuarioRequest
 import timber.log.Timber
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.time.LocalDate
 
 /**
  * DTOs para Response
  */
 data class SyncPushResponse(
-    val procesados: Int,
-    val syncId: String,
-    val timestamp: String
+    val success: Boolean,
+    val message: String,
+    val registrosSincronizados: Int,
+    val ejerciciosSincronizados: Int,
+    val timestamp: String,
+    val errores: Map<String, List<String>>? = null
 )
 
 data class SyncPullResponse(
+    val usuario: UsuarioPullDTO,
     val ejercicios: List<EjercicioDTO>,
     val notificaciones: List<NotificacionDTO>,
     val estadoCuenta: EstadoCuentaDTO
+)
+
+data class UsuarioPullDTO(
+    val id: Int,
+    val nombre: String,
+    val apellido: String?,
+    val email: String?,
+    val telefono: String?
 )
 
 data class EjercicioDTO(
@@ -64,8 +80,24 @@ class SyncRepository(
     private val apiService: ApiService,
     private val registroSaludDao: RegistroSaludDao,
     private val ejercicioRealizadoDao: EjercicioRealizadoDao,
+    private val usuarioDao: UsuarioDao,
     private val sharedPreferences: SharedPreferences
 ) {
+
+    /**
+     * Detectar si hay cambios nuevos para sincronizar (ejercicios o registros)
+     */
+    suspend fun hayDatosParaSincronizar(usuarioId: Int): Boolean {
+        return withContext(Dispatchers.IO) {
+            val registrosSinSync = registroSaludDao.getUnsyncedRegistros(usuarioId)
+            val ejerciciosSinSync = ejercicioRealizadoDao.getUnsyncedEjercicios(usuarioId)
+
+            val hayCambios = registrosSinSync.isNotEmpty() || ejerciciosSinSync.isNotEmpty()
+            Timber.d("🔍 Detectar cambios: ${registrosSinSync.size} registros, ${ejerciciosSinSync.size} ejercicios (¿Hay cambios? $hayCambios)")
+
+            hayCambios
+        }
+    }
 
     /**
      * PUSH: Enviar datos locales al backend
@@ -77,17 +109,44 @@ class SyncRepository(
             try {
                 Timber.d("📤 Iniciando PUSH de datos al backend para usuario: $usuarioId")
 
+                // 0️⃣ NUEVA LÓGICA: Verificar si el usuario existe en el backend
+                // Si se registró offline, crear en el backend primero
+                val usuarioEnRoom = usuarioDao.getUsuarioSuspend()
+                if (usuarioEnRoom != null) {
+                    Timber.d("📋 Usuario en Room antes de crear en backend: ID=${usuarioEnRoom.id}, nombre=${usuarioEnRoom.nombre}")
+                    crearUsuarioEnBackendSiNoExiste(usuarioEnRoom)
+                    // Pequeño delay para asegurar que la actualización se propagó
+                    kotlinx.coroutines.delay(100)
+                }
+
+                // 🔄 Refrescar usuarioId del usuario actual en caso que haya cambiado
+                val usuarioActualizado = usuarioDao.getUsuarioSuspend()
+                val usuarioIdActual = usuarioActualizado?.id ?: usuarioId
+                Timber.d("📋 Usuario en Room después de crear en backend: ID=${usuarioActualizado?.id}, nombre=${usuarioActualizado?.nombre}")
+                if (usuarioIdActual != usuarioId) {
+                    Timber.d("🔄 usuarioId actualizado: $usuarioId → $usuarioIdActual (cambió por offline registration)")
+                }
+
                 // 1. Obtener registros de salud sin sincronizar
-                val registrosSinSync = registroSaludDao.getUnsyncedRegistros(usuarioId)
+                val registrosSinSync = registroSaludDao.getUnsyncedRegistros(usuarioIdActual)
                 Timber.d("📋 Registros de salud sin sincronizar: ${registrosSinSync.size}")
 
                 // 2. Obtener ejercicios realizados sin sincronizar
-                val ejerciciosSinSync = ejercicioRealizadoDao.getUnsyncedEjercicios(usuarioId)
+                val ejerciciosSinSync = ejercicioRealizadoDao.getUnsyncedEjercicios(usuarioIdActual)
                 Timber.d("📋 Ejercicios realizados sin sincronizar: ${ejerciciosSinSync.size}")
+                if (ejerciciosSinSync.isEmpty()) {
+                    Timber.w("⚠️ No hay ejercicios sin sincronizar (comprobando si existen ejercicios en BD...)")
+                    // DEBUG: contar total de ejercicios
+                    val totalEjercicios = ejercicioRealizadoDao.getEjerciciosRealizadosHoy(usuarioIdActual, java.time.LocalDate.now().toString())
+                    Timber.d("DEBUG: Total de ejercicios hoy: ${totalEjercicios.size}")
+                    totalEjercicios.forEach { ej ->
+                        Timber.d("  - ID: ${ej.id}, ejercicioId: ${ej.ejercicioId}, isSynced: ${ej.isSynced}, syncId: ${ej.syncId}")
+                    }
+                }
 
-                // 3. Construir request (incluir usuarioId en el body)
+                // 3. Construir request (incluir usuarioId ACTUALIZADO en el body)
                 val pushRequest = SyncPushRequest(
-                    usuarioId = usuarioId,  // Sin JWT, se envía en el body
+                    usuarioId = usuarioIdActual,  // Sin JWT, se envía en el body (ID actualizado)
                     registrosSalud = registrosSinSync.map { rs ->
                         PushRegistroSaludRequest(
                             presionSistolica = rs.presionArterial?.split("/")?.getOrNull(0)?.toIntOrNull(),
@@ -117,16 +176,17 @@ class SyncRepository(
 
                 if (response.isSuccessful) {
                     val body = response.body()!!
-                    Timber.d("✅ PUSH exitoso: ${body.procesados} registros sincronizados, syncId: ${body.syncId}")
+                    Timber.d("✅ PUSH exitoso: ${body.registrosSincronizados} registros, ${body.ejerciciosSincronizados} ejercicios")
 
                     // 5. Marcar como sincronizados localmente
+                    val syncId = body.timestamp  // Usar timestamp como ID de sincronización
                     val timestamp = System.currentTimeMillis()
                     registrosSinSync.forEach { rs ->
-                        registroSaludDao.markAsSynced(rs.id, body.syncId, timestamp)
+                        registroSaludDao.markAsSynced(rs.id, syncId, timestamp)
                     }
 
                     ejerciciosSinSync.forEach { er ->
-                        ejercicioRealizadoDao.markAsSynced(er.id, body.syncId, timestamp)
+                        ejercicioRealizadoDao.markAsSynced(er.id, syncId, timestamp)
                     }
 
                     // 6. Actualizar timestamp de última sincronización
@@ -209,6 +269,13 @@ class SyncRepository(
                 if (pullResult.isFailure) {
                     Timber.e("❌ PULL falló, pero PUSH fue exitoso")
                     return@withContext pullResult.mapCatching { "" }
+                }
+
+                // 3. Actualizar usuario en Room con los datos del backend
+                val pullData = pullResult.getOrNull()
+                if (pullData != null) {
+                    actualizarUsuarioEnRoom(pullData.usuario)
+                    Timber.d("✅ Usuario actualizado en Room con datos del backend")
                 }
 
                 Timber.d("✅ Sincronización completa exitosa")
@@ -314,6 +381,159 @@ class SyncRepository(
                 Timber.d("✅ Estado de sync limpiado")
             } catch (e: Exception) {
                 Timber.e(e, "❌ Error limpiando estado de sync")
+            }
+        }
+    }
+
+    /**
+     * Actualizar usuario en Room con datos del backend (PULL)
+     * Esto asegura que el apellido y otros datos estén siempre sincronizados
+     */
+    private suspend fun actualizarUsuarioEnRoom(usuarioPull: UsuarioPullDTO) {
+        withContext(Dispatchers.IO) {
+            try {
+                // Obtener el usuario actual de Room para conservar campos que no vienen del backend
+                val usuarioActual = usuarioDao.getUsuarioSuspend()
+
+                if (usuarioActual != null) {
+                    // Actualizar solo los campos que vienen del backend
+                    val usuarioActualizado = usuarioActual.copy(
+                        nombre = usuarioPull.nombre,
+                        apellido = usuarioPull.apellido ?: usuarioActual.apellido
+                    )
+
+                    usuarioDao.update(usuarioActualizado)
+                    Timber.d("✅ Usuario actualizado: ${usuarioPull.nombre} ${usuarioPull.apellido}")
+                } else {
+                    Timber.w("⚠️ No hay usuario en Room para actualizar")
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "❌ Error actualizando usuario en Room")
+            }
+        }
+    }
+
+    /**
+     * Crear usuario en el backend si no existe (para registros offline)
+     * Esto permite que usuarios registrados sin internet se sincronicen cuando hay conexión
+     */
+    private suspend fun crearUsuarioEnBackendSiNoExiste(usuarioEntity: UsuarioEntity) {
+        withContext(Dispatchers.IO) {
+            try {
+                Timber.d("🔍 Verificando si usuario ${usuarioEntity.nombre} existe en backend...")
+
+                // Verificar si ya intentamos crear este usuario en el backend
+                val usuarioCreado = sharedPreferences.getBoolean("usuario_creado_en_backend_${usuarioEntity.nombre}", false)
+                val usuarioBackendId = sharedPreferences.getInt("usuario_backend_id_${usuarioEntity.nombre}", -1)
+
+                if (usuarioCreado && usuarioBackendId != -1) {
+                    // Ya se intentó crear, solo actualizar el usuarioId local si es diferente
+                    Timber.d("✅ Usuario ya fue creado en backend con ID: $usuarioBackendId, actualizando localmente...")
+                    if (usuarioBackendId != usuarioEntity.id) {
+                        val oldUsuarioId = usuarioEntity.id
+                        
+                        // Room no permite actualizar PRIMARY KEY con update(), hay que eliminar e insertar
+                        usuarioDao.delete(usuarioEntity)
+                        val usuarioActualizado = usuarioEntity.copy(id = usuarioBackendId)
+                        usuarioDao.insert(usuarioActualizado)
+                        Timber.d("📝 Usuario actualizado en Room: $oldUsuarioId → $usuarioBackendId")
+
+                        // Actualizar registros y ejercicios con el nuevo ID
+                        val registrosAntiguos = registroSaludDao.getAllUnsyncedRegistros()
+                        registrosAntiguos.forEach { registro ->
+                            registroSaludDao.update(registro.copy(usuarioId = usuarioBackendId))
+                        }
+                        Timber.d("📝 ${registrosAntiguos.size} registros actualizados")
+
+                        val ejerciciosAntiguos = ejercicioRealizadoDao.getAllUnsyncedEjercicios()
+                        ejerciciosAntiguos.forEach { ejercicio ->
+                            ejercicioRealizadoDao.update(ejercicio.copy(usuarioId = usuarioBackendId))
+                        }
+                        Timber.d("📝 ${ejerciciosAntiguos.size} ejercicios actualizados")
+
+                        Timber.d("✅ Usuario y datos actualizados con ID de backend: $usuarioBackendId")
+                    }
+                    return@withContext
+                }
+
+                // Intentar hacer PULL para verificar si existe en el backend
+                val pullResponse = apiService.pullSync(usuarioEntity.id)
+
+                if (pullResponse.code() == 404) {
+                    // Usuario no existe en backend, crearlo
+                    Timber.w("⚠️ Usuario no encontrado en backend, creando...")
+
+                    val createRequest = CreateUsuarioRequest(
+                        nombre = usuarioEntity.nombre,
+                        apellido = usuarioEntity.apellido ?: "",
+                        estadoCuenta = "ACTIVE"
+                    )
+
+                    val createResponse = apiService.createUsuario(createRequest)
+
+                    if (createResponse.isSuccessful && createResponse.body() != null) {
+                        val backendUsuarioId = createResponse.body()!!.usuario.id
+                        Timber.d("✅ Usuario creado en backend con ID: $backendUsuarioId (antes era local: ${usuarioEntity.id})")
+
+                        // Si el ID cambió, actualizar en Room (usuario, registros y ejercicios)
+                        if (backendUsuarioId != usuarioEntity.id) {
+                            val oldUsuarioId = usuarioEntity.id
+
+                            // 1. Actualizar usuario (Room no permite update de PRIMARY KEY, hay que delete + insert)
+                            usuarioDao.delete(usuarioEntity)
+                            val usuarioActualizado = usuarioEntity.copy(id = backendUsuarioId)
+                            usuarioDao.insert(usuarioActualizado)
+                            Timber.d("📝 Usuario actualizado en Room: $oldUsuarioId → $backendUsuarioId")
+
+                            // Verificar que se actualizó correctamente
+                            val usuarioVerificacion = usuarioDao.getUsuarioSuspend()
+                            Timber.d("✅ Verificación: usuario en Room ahora es ID=${usuarioVerificacion?.id}")
+
+                            // 2. Actualizar TODOS los registros de salud sin sincronizar (sin filtrar por usuarioId)
+                            // Esto es importante porque pueden tener usuarioId=0 o el ID antiguo
+                            val registrosAntiguos = registroSaludDao.getAllUnsyncedRegistros()
+                            Timber.d("📝 Actualizando ${registrosAntiguos.size} registros de salud...")
+                            registrosAntiguos.forEach { registro ->
+                                val registroActualizado = registro.copy(usuarioId = backendUsuarioId)
+                                registroSaludDao.update(registroActualizado)
+                                Timber.d("   - Registro ID=${registro.id}: usuarioId ${registro.usuarioId} → $backendUsuarioId")
+                            }
+                            if (registrosAntiguos.isNotEmpty()) {
+                                Timber.d("✅ ${registrosAntiguos.size} registros de salud actualizados")
+                            }
+
+                            // 3. Actualizar TODOS los ejercicios realizados sin sincronizar (sin filtrar por usuarioId)
+                            // Esto es importante porque pueden tener usuarioId=0 o el ID antiguo
+                            val ejerciciosAntiguos = ejercicioRealizadoDao.getAllUnsyncedEjercicios()
+                            Timber.d("📝 Actualizando ${ejerciciosAntiguos.size} ejercicios...")
+                            ejerciciosAntiguos.forEach { ejercicio ->
+                                val ejercicioActualizado = ejercicio.copy(usuarioId = backendUsuarioId)
+                                ejercicioRealizadoDao.update(ejercicioActualizado)
+                                Timber.d("   - Ejercicio ID=${ejercicio.id}: usuarioId ${ejercicio.usuarioId} → $backendUsuarioId")
+                            }
+                            if (ejerciciosAntiguos.isNotEmpty()) {
+                                Timber.d("✅ ${ejerciciosAntiguos.size} ejercicios actualizados")
+                            }
+
+                            // Guardar en SharedPreferences que el usuario fue creado exitosamente en backend
+                            sharedPreferences.edit()
+                                .putBoolean("usuario_creado_en_backend_${usuarioEntity.nombre}", true)
+                                .putInt("usuario_backend_id_${usuarioEntity.nombre}", backendUsuarioId)
+                                .apply()
+                            Timber.d("💾 Flag guardado: usuario_creado_en_backend_${usuarioEntity.nombre}=true, ID=$backendUsuarioId")
+                        }
+                    } else {
+                        Timber.e("❌ Error creando usuario en backend: ${createResponse.code()}")
+                    }
+                } else if (pullResponse.isSuccessful) {
+                    // Usuario ya existe en backend
+                    Timber.d("✅ Usuario ya existe en backend con ID: ${usuarioEntity.id}")
+                } else {
+                    Timber.w("⚠️ Error verificando usuario en backend: ${pullResponse.code()}")
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "❌ Error verificando/creando usuario en backend")
+                // No lanzar excepción, permitir que continúe el PUSH
             }
         }
     }

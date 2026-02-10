@@ -27,11 +27,9 @@ const RegistroSaludSchema = z.object({
 const EjercicioRealizadoSchema = z.object({
   // usuarioId NO se requiere aquí (viene en el nivel superior del body)
   ejercicioId: z.number().positive(),
+  asignacionId: z.number().optional(),
   fecha: z.string(), // Acepta fecha con formato flexible "YYYY-MM-DD" o "YYYY-MM-DD HH:mm:ss"
-  minutos: z.number().optional(),
-  dificultad: z.number().optional(),
-  dolor: z.number().optional(),
-  completado: z.boolean().default(true)
+  completadoEn: z.string() // ISO timestamp
 });
 
 const SyncPushSchema = z.object({
@@ -129,11 +127,9 @@ export const push = async (req: Request, res: Response) => {
           data: {
             usuarioId: userId,
             ejercicioId: ejercicio.ejercicioId,
+            asignacionId: ejercicio.asignacionId,
             fecha: ejercicio.fecha,
-            duracionReal: ejercicio.minutos,
-            dificultad: ejercicio.dificultad,
-            dolor: ejercicio.dolor,
-            completadoEn: new Date()
+            completadoEn: ejercicio.completadoEn ? new Date(ejercicio.completadoEn) : new Date()
           }
         });
 

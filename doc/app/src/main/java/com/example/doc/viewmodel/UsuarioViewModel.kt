@@ -22,6 +22,14 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
+enum class SyncState {
+    IDLE,              // No sincronizando, ocultar icono
+    SYNCING,           // Sincronizando...
+    SYNCED,            // Sincronizado ✓
+    PENDING,           // Pendiente (sin internet o error)
+    ERROR              // Error en sincronización
+}
+
 @HiltViewModel
 class UsuarioViewModel @Inject constructor(
     private val repository: UsuarioRepository,
@@ -35,7 +43,10 @@ class UsuarioViewModel @Inject constructor(
     private val _usuario = MutableStateFlow<Usuario?>(null)
     val usuario: StateFlow<Usuario?> = _usuario
 
-    // Estados de sincronización
+    // Estados de sincronización mejorados
+    private val _syncState = MutableStateFlow(SyncState.IDLE)
+    val syncState: StateFlow<SyncState> = _syncState
+
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing
 
@@ -92,6 +103,18 @@ class UsuarioViewModel @Inject constructor(
             } catch (e: Exception) {
                 Timber.e(e, "Error al cargar usuario")
                 _uiState.value = UiState.Error("Error al cargar usuario", e)
+            }
+        }
+
+        // Observar cambios de conectividad y sincronizar cuando hay internet
+        viewModelScope.launch {
+            com.example.doc.utils.NetworkMonitor.isConnected.collect { isConnected ->
+                if (isConnected && _syncState.value == SyncState.PENDING) {
+                    Timber.d("📡 Internet disponible - Sincronizando datos pendientes")
+                    _usuario.value?.let { usuario ->
+                        sincronizarAutomaticamente()
+                    }
+                }
             }
         }
     }
@@ -269,6 +292,9 @@ class UsuarioViewModel @Inject constructor(
                 setupNotifications(usuario)
                 _uiState.value = UiState.Success(usuario)
                 Timber.d("Usuario actualizado: ${usuario.nombre}")
+
+                // Forzar sincronización inmediata al cambiar datos de usuario
+                forzarSincronizacion()
             } catch (e: Exception) {
                 Timber.e(e, "Error al actualizar usuario")
                 _uiState.value = UiState.Error("Error al actualizar usuario", e)
@@ -427,5 +453,135 @@ class UsuarioViewModel @Inject constructor(
                 _uiState.value = UiState.Error("Error al limpiar usuario", e)
             }
         }
+    }
+
+    /**
+     * Sincronización manual (presionar icono)
+     * Muestra estados: SYNCING → SYNCED (oculta después 2s) o PENDING
+     */
+    fun sincronizarManualmente() {
+        viewModelScope.launch {
+            try {
+                _usuario.value?.let { usuario ->
+                    Timber.d("📲 Sincronización MANUAL iniciada para usuario: ${usuario.nombre}")
+                    _syncState.value = SyncState.SYNCING
+                    _isSyncing.value = true
+
+                    val resultado = syncRepository.fullSync(usuario.id)
+
+                    if (resultado.isSuccess) {
+                        _syncState.value = SyncState.SYNCED
+                        _isSynced.value = true
+                        _lastSyncTime.value = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+                        Timber.d("✅ Sincronización manual completada exitosamente")
+
+                        // Ocultar icono después de 2 segundos
+                        kotlinx.coroutines.delay(2000)
+                        _syncState.value = SyncState.IDLE
+                    } else {
+                        // Detectar si el error es por falta de internet
+                        val esFaltaInternet = isNetworkError(resultado.exceptionOrNull())
+                        _syncState.value = if (esFaltaInternet) SyncState.PENDING else SyncState.ERROR
+                        _isSynced.value = false
+                        Timber.e("⚠️ Sincronización manual falló: ${resultado.exceptionOrNull()?.message}")
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "❌ Error en sincronización manual")
+                _syncState.value = if (isNetworkError(e)) SyncState.PENDING else SyncState.ERROR
+                _isSyncing.value = false
+            } finally {
+                _isSyncing.value = false
+            }
+        }
+    }
+
+    /**
+     * Sincronización automática (cada 1 minuto)
+     * Se llama desde SyncWorker
+     */
+    fun sincronizarAutomaticamente() {
+        viewModelScope.launch {
+            try {
+                _usuario.value?.let { usuario ->
+                    // No mostrar SYNCING en automática, solo si hay cambios
+                    Timber.d("⏰ Sincronización AUTOMÁTICA iniciada para usuario: ${usuario.nombre}")
+                    val resultado = syncRepository.fullSync(usuario.id)
+
+                    if (resultado.isSuccess) {
+                        _syncState.value = SyncState.IDLE
+                        _isSynced.value = true
+                        _lastSyncTime.value = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+                        Timber.d("✅ Sincronización automática completada exitosamente")
+                    } else {
+                        // Detectar si el error es por falta de internet
+                        val esFaltaInternet = isNetworkError(resultado.exceptionOrNull())
+                        _syncState.value = if (esFaltaInternet) SyncState.PENDING else SyncState.ERROR
+                        _isSynced.value = false
+                        Timber.e("⚠️ Sincronización automática falló: ${resultado.exceptionOrNull()?.message}")
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "❌ Error en sincronización automática")
+                _syncState.value = if (isNetworkError(e)) SyncState.PENDING else SyncState.ERROR
+                _isSynced.value = false
+            }
+        }
+    }
+
+    /**
+     * Forzar sincronización inmediata (al cambiar datos de usuario)
+     */
+    fun forzarSincronizacion() {
+        viewModelScope.launch {
+            try {
+                _usuario.value?.let { usuario ->
+                    Timber.d("🔄 Sincronización FORZADA iniciada para usuario: ${usuario.nombre}")
+                    _syncState.value = SyncState.SYNCING
+                    _isSyncing.value = true
+                    val resultado = syncRepository.fullSync(usuario.id)
+
+                    if (resultado.isSuccess) {
+                        _syncState.value = SyncState.SYNCED
+                        _isSynced.value = true
+                        _lastSyncTime.value = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+                        Timber.d("✅ Sincronización forzada completada exitosamente")
+
+                        // Ocultar después de 2 segundos
+                        kotlinx.coroutines.delay(2000)
+                        _syncState.value = SyncState.IDLE
+                    } else {
+                        // Detectar si el error es por falta de internet
+                        val esFaltaInternet = isNetworkError(resultado.exceptionOrNull())
+                        _syncState.value = if (esFaltaInternet) SyncState.PENDING else SyncState.ERROR
+                        _isSynced.value = false
+                        Timber.e("❌ Error en sincronización forzada: ${resultado.exceptionOrNull()?.message}")
+                    }
+                    _isSyncing.value = false
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "❌ Error al forzar sincronización")
+                _syncState.value = if (isNetworkError(e)) SyncState.PENDING else SyncState.ERROR
+                _isSyncing.value = false
+            }
+        }
+    }
+
+    /**
+     * Detectar si una excepción es causada por problemas de red
+     */
+    private fun isNetworkError(exception: Throwable?): Boolean {
+        if (exception == null) return false
+        val message = exception.message?.lowercase() ?: ""
+        return message.contains("enetunreach") ||
+                message.contains("unreachable") ||
+                message.contains("connection refused") ||
+                message.contains("failed to connect") ||
+                message.contains("network unreachable") ||
+                message.contains("no network") ||
+                exception is java.net.ConnectException ||
+                exception is java.net.UnknownHostException ||
+                exception is java.net.SocketException ||
+                exception.cause?.let { isNetworkError(it) } ?: false
     }
 }

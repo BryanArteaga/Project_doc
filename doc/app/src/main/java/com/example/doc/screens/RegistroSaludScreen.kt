@@ -382,6 +382,13 @@ fun RegistroSaludScreen(
             contentScale = ContentScale.Crop
         )
 
+        // Overlay más claro para mejorar contraste y legibilidad
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.25f))
+        )
+
         if (isLoading) {
             Box(
                 modifier = Modifier
@@ -540,17 +547,21 @@ fun RegistroSaludScreen(
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     visualTransformation = SafeDecimalVisualTransformation("00.0")
                                 )
-                                Text(
-                                    "IMC calculado: ${
-                                        imc?.let {
-                                            String.format(
-                                                "%.2f",
-                                                it
-                                            )
-                                        } ?: "--"
-                                    }",
-                                    fontSize = 16.sp,
-                                    color = colorCondicion
+                                // IMC como parámetro no editable
+                                OutlinedTextField(
+                                    value = imc?.let {
+                                        String.format("%.2f", it)
+                                    } ?: "--",
+                                    onValueChange = {},  // No permite edición
+                                    label = { Text("IMC (calculado)") },
+                                    enabled = false,  // Campo deshabilitado (no editable)
+                                    textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        disabledTextColor = colorCondicion,
+                                        disabledBorderColor = colorCondicion.copy(alpha = 0.5f),
+                                        disabledLabelColor = colorCondicion.copy(alpha = 0.7f)
+                                    )
                                 )
                             }
 

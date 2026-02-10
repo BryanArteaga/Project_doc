@@ -52,7 +52,7 @@ import com.example.doc.R
 import com.example.doc.domain.SaludEvaluator
 import com.example.doc.model.EvaluacionSalud
 import com.example.doc.navigation.Routes
-import com.example.doc.ui.components.SyncStatusIndicator
+import com.example.doc.ui.components.SyncIconButton
 import com.example.doc.viewmodel.ConsejoViewModel
 import com.example.doc.viewmodel.PopupViewModel
 import com.example.doc.viewmodel.RegistroSaludViewModel
@@ -75,12 +75,13 @@ fun MainScreen(
     val usuario by usuarioViewModel.usuario.collectAsState()
     val registros by registroSaludViewModel.registros.collectAsState()
     val consejos by consejoViewModel.consejos.collectAsState()
-    
+
     // Estados de sincronización
     val isSyncing by usuarioViewModel.isSyncing.collectAsState()
     val isSynced by usuarioViewModel.isSynced.collectAsState()
     val lastSyncTime by usuarioViewModel.lastSyncTime.collectAsState()
-    
+    val syncState by usuarioViewModel.syncState.collectAsState()
+
     val showNotifDialog = remember { mutableStateOf(false) }
     val context = LocalContext.current
     val sharedPrefs = context.getSharedPreferences("DocPrefs", Context.MODE_PRIVATE)
@@ -343,12 +344,12 @@ fun MainScreen(
                                 Icon(
                                     Icons.Filled.Person,
                                     contentDescription = "Perfil",
-                                tint = colorFondo,
-                                modifier = Modifier.size(28.dp)
-                            )
+                                    tint = colorFondo,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
                         }
-                        }
-                        
+
                         // Segunda fila: Indicador de sincronización
                         Row(
                             modifier = Modifier
@@ -356,10 +357,9 @@ fun MainScreen(
                                 .padding(top = 12.dp),
                             horizontalArrangement = Arrangement.End
                         ) {
-                            SyncStatusIndicator(
-                                isSynced = isSynced,
-                                isSyncing = isSyncing,
-                                lastSyncTime = lastSyncTime
+                            SyncIconButton(
+                                syncState = syncState,
+                                onSyncClick = { usuarioViewModel.sincronizarManualmente() }
                             )
                         }
                     }

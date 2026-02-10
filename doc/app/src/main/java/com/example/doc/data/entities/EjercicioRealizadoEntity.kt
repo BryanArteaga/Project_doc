@@ -1,9 +1,15 @@
 package com.example.doc.data.entities
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "ejercicios_realizados")
+@Entity(
+    tableName = "ejercicios_realizados",
+    indices = [
+        Index(value = ["usuarioId", "ejercicioId", "fecha"], unique = true)
+    ]
+)
 data class EjercicioRealizadoEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,

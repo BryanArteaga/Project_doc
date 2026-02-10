@@ -38,6 +38,11 @@ interface RegistroSaludDao {
     @Query("SELECT * FROM registros_salud WHERE usuarioId = :usuarioId AND isSynced = 0 ORDER BY fecha DESC")
     suspend fun getUnsyncedRegistros(usuarioId: Int): List<RegistroSaludEntity>
 
+    // Obtener TODOS los registros no sincronizados (sin filtrar por usuarioId)
+    // Útil cuando el usuarioId ha cambiado por offline registration
+    @Query("SELECT * FROM registros_salud WHERE isSynced = 0 ORDER BY fecha DESC")
+    suspend fun getAllUnsyncedRegistros(): List<RegistroSaludEntity>
+
     // Contar registros no sincronizados
     @Query("SELECT COUNT(*) FROM registros_salud WHERE usuarioId = :usuarioId AND isSynced = 0")
     suspend fun getUnsyncedCount(usuarioId: Int): Int

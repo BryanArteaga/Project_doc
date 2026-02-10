@@ -7,6 +7,7 @@ import androidx.room.RoomDatabase
 import com.example.doc.data.daos.*
 import com.example.doc.data.entities.*
 import com.example.doc.data.migrations.MIGRATION_18_19
+import com.example.doc.data.migrations.MIGRATION_19_20
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 
@@ -18,7 +19,7 @@ import kotlinx.coroutines.Dispatchers
         EjercicioRealizadoEntity::class,
         ConsejoEntity::class
     ],
-    version = 19,
+    version = 20,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -40,7 +41,7 @@ abstract class AppDatabase : RoomDatabase() {
                     "medicini_db"
                 )
                     .addCallback(AppDatabaseCallback(context, scope))
-                    .addMigrations(MIGRATION_18_19)
+                    .addMigrations(MIGRATION_18_19, MIGRATION_19_20)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

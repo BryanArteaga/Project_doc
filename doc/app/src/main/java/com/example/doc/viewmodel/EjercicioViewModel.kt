@@ -108,11 +108,12 @@ class EjercicioViewModel @Inject constructor(
                     com.example.doc.data.entities.EjercicioRealizadoEntity(
                         usuarioId = usuarioId,
                         ejercicioId = ejercicioId,
-                        fecha = fecha
+                        fecha = fecha,
+                        isSynced = false  // Explícitamente NO sincronizado
                     )
                 )
                 cargarRealizadosHoy(usuarioId, fecha)
-                Timber.d("Ejercicio marcado como realizado: $ejercicioId")
+                Timber.d("✅ Ejercicio marcado como realizado: $ejercicioId (isSynced=false)")
             } catch (e: Exception) {
                 Timber.e(e, "Error al marcar ejercicio")
             }

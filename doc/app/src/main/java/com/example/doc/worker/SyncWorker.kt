@@ -13,7 +13,7 @@ import timber.log.Timber
 
 /**
  * SyncWorker - Sincroniza datos con el backend automáticamente
- * 
+ *
  * Se ejecuta periódicamente (cada 6-12 horas) cuando hay conexión
  * También se ejecuta cuando el usuario abre/cierra la app
  */
@@ -42,15 +42,25 @@ class SyncWorker @AssistedInject constructor(
                 return Result.failure()
             }
 
-            // 3. Ejecutar sincronización completa
+            // 3️⃣ NUEVA LÓGICA: Detectar si hay cambios antes de sincronizar
+            val hayCambios = syncRepository.hayDatosParaSincronizar(userId)
+
+            if (!hayCambios) {
+                Timber.d("📭 Sin cambios nuevos, saltando sincronización")
+                return Result.success()
+            }
+
+            Timber.d("📬 Detectados cambios nuevos, iniciando sincronización...")
+
+            // 4. Ejecutar sincronización completa solo si hay cambios
             val syncResult = syncRepository.fullSync(userId)
 
             if (syncResult.isSuccess) {
                 Timber.d("✅ SyncWorker completado exitosamente")
-                
-                // 4. Guardar timestamp de última sincronización exitosa
+
+                // 5. Guardar timestamp de última sincronización exitosa
                 prefs.edit().putLong("last_successful_sync", System.currentTimeMillis()).apply()
-                
+
                 Result.success()
             } else {
                 Timber.e("❌ Error en SyncWorker: ${syncResult.exceptionOrNull()?.message}")
@@ -65,6 +75,6 @@ class SyncWorker @AssistedInject constructor(
 
     companion object {
         const val WORK_NAME = "sync_work"
-        const val SYNC_INTERVAL_HOURS = 6L // Sincronizar cada 6 horas
+        const val SYNC_INTERVAL_MINUTES = 1L // Sincronizar cada 1 minuto (detecta cambios automáticamente)
     }
 }

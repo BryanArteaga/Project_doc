@@ -5,7 +5,7 @@ import com.example.doc.data.entities.EjercicioRealizadoEntity
 
 @Dao
 interface EjercicioRealizadoDao {
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(realizado: EjercicioRealizadoEntity)
 
     @Update
@@ -23,6 +23,11 @@ interface EjercicioRealizadoDao {
     // Obtener ejercicios no sincronizados
     @Query("SELECT * FROM ejercicios_realizados WHERE usuarioId = :usuarioId AND isSynced = 0 ORDER BY fecha DESC")
     suspend fun getUnsyncedEjercicios(usuarioId: Int): List<EjercicioRealizadoEntity>
+
+    // Obtener TODOS los ejercicios no sincronizados (sin filtrar por usuarioId)
+    // Útil cuando el usuarioId ha cambiado por offline registration
+    @Query("SELECT * FROM ejercicios_realizados WHERE isSynced = 0 ORDER BY fecha DESC")
+    suspend fun getAllUnsyncedEjercicios(): List<EjercicioRealizadoEntity>
 
     // Contar ejercicios no sincronizados
     @Query("SELECT COUNT(*) FROM ejercicios_realizados WHERE usuarioId = :usuarioId AND isSynced = 0")
