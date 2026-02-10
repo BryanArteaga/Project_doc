@@ -273,14 +273,48 @@ export const registerFCMToken = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'No autenticado' });
     }
 
-    const { token } = req.body;
+    const { token, deviceId } = req.body;
 
     if (!token || typeof token !== 'string') {
       return res.status(400).json({ error: 'Token de FCM requerido' });
     }
 
-    // Actualizar o crear registro de token FCM
-    const usuario = await prisma.usuario.update({
+    // Buscar si ya existe un dispositivo con este token
+    const existingDevice = await prisma.dispositivo.findFirst({
+      where: {
+        usuarioId: userId,
+        fcmToken: token,
+      },
+    });
+
+    if (existingDevice) {
+      // Actualizar última vez visto
+      await prisma.dispositivo.update({
+        where: { id: existingDevice.id },
+        data: { ultimaVezVisto: new Date() },
+      });
+
+      Timber.debug(`✅ FCM token actualizado para usuario ${userId}`);
+
+      return res.json({
+        success: true,
+        message: 'Token FCM actualizado',
+        deviceId: existingDevice.id,
+      });
+    }
+
+    // Crear nuevo registro de dispositivo
+    const device = await prisma.dispositivo.create({
+      data: {
+        usuarioId: userId,
+        fcmToken: token,
+        deviceId: deviceId || `device_${Date.now()}`,
+        activo: true,
+      },
+    });
+
+    // También actualizar el campo legacy tokenDispositivo del usuario
+    await prisma.usuario.update({
       where: { id: userId },
       data: {
         tokenDispositivo: token,
@@ -293,7 +327,8 @@ export const registerFCMToken = async (req: Request, res: Response) => {
     res.json({
       success: true,
       message: 'Token FCM registrado exitosamente',
-      userId
+      userId,
+      deviceId: device.id
     });
   } catch (error: any) {
     Timber.error(`Error registrando FCM token: ${error.message}`);

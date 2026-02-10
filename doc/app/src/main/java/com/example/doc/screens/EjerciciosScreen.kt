@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,6 +45,9 @@ fun EjerciciosScreen(
     val realizadosHoy by ejercicioViewModel.realizadosHoy.collectAsState()
     val sdf = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
     val hoy = sdf.format(Date())
+    
+    // Verificar si la cuenta está activada
+    val cuentaActivada = usuario?.estadoCuenta == "ACTIVE"
 
     LaunchedEffect(usuario, hoy) {
         usuario?.let {
@@ -125,6 +129,45 @@ fun EjerciciosScreen(
                         color = Color(0xFF757575),
                         modifier = Modifier.padding(start = 4.dp, top = 4.dp)
                     )
+                }
+            }
+            
+            // Mensaje de cuenta pendiente
+            if (!cuentaActivada) {
+                item {
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFFFA500).copy(alpha = 0.2f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Info,
+                                contentDescription = "Info",
+                                tint = Color(0xFFFFA500),
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    "Cuenta pendiente de activación",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF666666)
+                                )
+                                Text(
+                                    "No puedes realizar ejercicios hasta que tu médico active tu cuenta",
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF666666)
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -224,19 +267,25 @@ fun EjerciciosScreen(
                             defaultElevation = if (realizado) 12.dp else 6.dp
                         ),
                         colors = CardDefaults.cardColors(
-                            containerColor = if (realizado)
+                            containerColor = if (!cuentaActivada)
+                                Color.Gray.copy(alpha = 0.3f)
+                            else if (realizado)
                                 Color(0xFFE8F5E9)
                             else
                                 Color.White.copy(alpha = 0.95f)
                         ),
-                        border = if (realizado)
+                        border = if (realizado && cuentaActivada)
                             BorderStroke(2.dp, Color(0xFF4CAF50))
                         else
                             null,
                         modifier = Modifier
                             .fillMaxWidth()
                             .scale(scale)
-                            .clickable { navController.navigate(Routes.exerciseDetails(ejercicio.id)) }
+                            .clickable(enabled = cuentaActivada) { 
+                                if (cuentaActivada) {
+                                    navController.navigate(Routes.exerciseDetails(ejercicio.id))
+                                }
+                            }
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,

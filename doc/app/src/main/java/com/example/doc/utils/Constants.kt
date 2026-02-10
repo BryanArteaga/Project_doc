@@ -7,7 +7,7 @@ object Constants {
 
     object Database {
         const val NAME = "medicini_db"
-        const val VERSION = 20
+        const val VERSION = 21
     }
 
     object Preferences {

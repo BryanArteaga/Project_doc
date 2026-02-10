@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AccountStatus, NotificationType } from '../types/prisma';
 import { z } from 'zod';
+import { sendPushToUser } from './notification.controller';
 
 // Schemas de validación
 const PaginationSchema = z.object({
@@ -227,6 +228,23 @@ export const activatePatient = async (req: Request, res: Response) => {
         },
       },
     });
+
+    // Enviar notificación push al dispositivo móvil
+    try {
+      await sendPushToUser(
+        patientId,
+        '¡Cuenta Activada!',
+        'Tu médico ha activado tu cuenta. Ya puedes usar todas las funciones de la app.',
+        {
+          type: 'account_activated',
+          navigate_to: 'main',
+        }
+      );
+      console.log(`✅ Notificación push enviada al paciente ${patientId}`);
+    } catch (pushError) {
+      console.error('Error al enviar notificación push:', pushError);
+      // No fallar la activación si la notificación push falla
+    }
 
     res.json({
       message: 'Paciente activado exitosamente',

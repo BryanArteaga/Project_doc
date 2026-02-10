@@ -40,7 +40,8 @@ data class UsuarioPullDTO(
     val nombre: String,
     val apellido: String?,
     val email: String?,
-    val telefono: String?
+    val telefono: String?,
+    val estadoCuenta: String? = null  // Agregar estadoCuenta aquí también
 )
 
 data class EjercicioDTO(
@@ -274,7 +275,8 @@ class SyncRepository(
                 // 3. Actualizar usuario en Room con los datos del backend
                 val pullData = pullResult.getOrNull()
                 if (pullData != null) {
-                    actualizarUsuarioEnRoom(pullData.usuario)
+                    // Pasar tanto el usuario como el estadoCuenta
+                    actualizarUsuarioEnRoom(pullData.usuario, pullData.estadoCuenta)
                     Timber.d("✅ Usuario actualizado en Room con datos del backend")
                 }
 
@@ -389,21 +391,28 @@ class SyncRepository(
      * Actualizar usuario en Room con datos del backend (PULL)
      * Esto asegura que el apellido y otros datos estén siempre sincronizados
      */
-    private suspend fun actualizarUsuarioEnRoom(usuarioPull: UsuarioPullDTO) {
+    private suspend fun actualizarUsuarioEnRoom(usuarioPull: UsuarioPullDTO, estadoCuenta: EstadoCuentaDTO) {
         withContext(Dispatchers.IO) {
             try {
                 // Obtener el usuario actual de Room para conservar campos que no vienen del backend
                 val usuarioActual = usuarioDao.getUsuarioSuspend()
 
                 if (usuarioActual != null) {
+                    // Determinar el estadoCuenta basado en el DTO
+                    val estadoCuentaStr = when {
+                        estadoCuenta.activo -> "ACTIVE"
+                        else -> "PENDING"
+                    }
+                    
                     // Actualizar solo los campos que vienen del backend
                     val usuarioActualizado = usuarioActual.copy(
                         nombre = usuarioPull.nombre,
-                        apellido = usuarioPull.apellido ?: usuarioActual.apellido
+                        apellido = usuarioPull.apellido ?: usuarioActual.apellido,
+                        estadoCuenta = estadoCuentaStr
                     )
 
                     usuarioDao.update(usuarioActualizado)
-                    Timber.d("✅ Usuario actualizado: ${usuarioPull.nombre} ${usuarioPull.apellido}")
+                    Timber.d("✅ Usuario actualizado: ${usuarioPull.nombre} ${usuarioPull.apellido} (Estado: $estadoCuentaStr)")
                 } else {
                     Timber.w("⚠️ No hay usuario en Room para actualizar")
                 }

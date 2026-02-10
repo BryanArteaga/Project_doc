@@ -19,7 +19,7 @@ import kotlinx.coroutines.Dispatchers
         EjercicioRealizadoEntity::class,
         ConsejoEntity::class
     ],
-    version = 20,
+    version = 21,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

@@ -55,6 +55,7 @@ model Usuario {
   actualizadoEn         DateTime              @updatedAt
   ejerciciosRealizados  EjercicioRealizado[]
   notificaciones        Notificacion[]
+  dispositivos          Dispositivo[]         @relation("UsuarioDispositivos")
   registrosSalud        RegistroSalud[]
   doctorAsignado        Doctor?               @relation("DoctorPacientes", fields: [idDoctorAsignado], references: [id])
 
@@ -153,6 +154,22 @@ model Notificacion {
   @@map("notificaciones")
 }
 
+model Dispositivo {
+  id             Int      @id @default(autoincrement())
+  usuarioId      Int
+  fcmToken       String   @unique
+  deviceId       String?
+  activo         Boolean  @default(true)
+  ultimaVezVisto DateTime @default(now())
+  creadoEn       DateTime @default(now())
+  actualizadoEn  DateTime @updatedAt
+  usuario        Usuario  @relation("UsuarioDispositivos", fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@index([fcmToken])
+  @@map("dispositivos")
+}
+
 model ConfiguracionSistema {
   id            Int      @id @default(autoincrement())
   clave         String   @unique
@@ -177,9 +194,11 @@ enum AccountStatus {
 }
 
 enum NotificationType {
-  account_activated
+  cuenta_activada
   exercise_assigned
   exercise_reminder
   health_check
   message_from_doctor
+  account_activated
+  health_reminder
 }

@@ -16,6 +16,9 @@ const ViewPatients: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterDisease, setFilterDisease] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'name' | 'cedula'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   useEffect(() => {
     loadPatients();
@@ -39,13 +42,32 @@ const ViewPatients: React.FC = () => {
       patient.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       patient.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
       patient.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (patient.cedula && patient.cedula.includes(searchTerm)) ||
       (patient.enfermedad && patient.enfermedad.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesStatus = 
       filterStatus === 'all' || 
       patient.estadoCuenta === filterStatus;
 
-    return matchesSearch && matchesStatus;
+    const matchesDisease = 
+      filterDisease === 'all' || 
+      patient.enfermedad === filterDisease;
+
+    return matchesSearch && matchesStatus && matchesDisease;
+  }).sort((a, b) => {
+    let comparison = 0;
+    
+    if (sortBy === 'name') {
+      const nameA = `${a.nombre} ${a.apellido}`.toLowerCase();
+      const nameB = `${b.nombre} ${b.apellido}`.toLowerCase();
+      comparison = nameA.localeCompare(nameB);
+    } else if (sortBy === 'cedula') {
+      const cedulaA = a.cedula || '';
+      const cedulaB = b.cedula || '';
+      comparison = cedulaA.localeCompare(cedulaB);
+    }
+    
+    return sortOrder === 'asc' ? comparison : -comparison;
   });
 
   if (loading) {
@@ -96,25 +118,66 @@ const ViewPatients: React.FC = () => {
             <Search className="search-icon" />
             <input
               type="text"
-              placeholder="Buscar por nombre o enfermedad..."
+              placeholder="Buscar por nombre, cédula o enfermedad..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
             />
           </div>
           
-          <div className="status-filter">
-            <label className="filter-label">Estado:</label>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="filter-select"
-            >
-              <option value="all">Todos</option>
-              <option value="ACTIVE">Activos</option>
-              <option value="INACTIVE">Inactivos</option>
-              <option value="SUSPENDED">Suspendidos</option>
-            </select>
+          <div className="filters-row">
+            <div className="filter-group">
+              <label className="filter-label">Enfermedad:</label>
+              <select
+                value={filterDisease}
+                onChange={(e) => setFilterDisease(e.target.value)}
+                className="filter-select"
+              >
+                <option value="all">Todas</option>
+                <option value="Hipertensión">Hipertensión</option>
+                <option value="Diabetes">Diabetes</option>
+                <option value="Obesidad">Obesidad</option>
+                <option value="Colesterol alto">Colesterol alto</option>
+              </select>
+            </div>
+
+            <div className="filter-group">
+              <label className="filter-label">Estado:</label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="filter-select"
+              >
+                <option value="all">Todos</option>
+                <option value="ACTIVE">Activos</option>
+                <option value="INACTIVE">Inactivos</option>
+                <option value="SUSPENDED">Suspendidos</option>
+              </select>
+            </div>
+
+            <div className="filter-group">
+              <label className="filter-label">Ordenar por:</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'name' | 'cedula')}
+                className="filter-select"
+              >
+                <option value="name">Nombre</option>
+                <option value="cedula">Cédula</option>
+              </select>
+            </div>
+
+            <div className="filter-group">
+              <label className="filter-label">Orden:</label>
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+                className="filter-select"
+              >
+                <option value="asc">Ascendente</option>
+                <option value="desc">Descendente</option>
+              </select>
+            </div>
           </div>
         </div>
 

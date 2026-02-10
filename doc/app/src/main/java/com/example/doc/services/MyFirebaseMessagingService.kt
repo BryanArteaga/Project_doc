@@ -229,15 +229,21 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     /**
      * Enviar token FCM al servidor backend
-     * TODO: Implementar cuando tengas el backend listo
      */
     private fun sendTokenToServer(token: String) {
-        Timber.d("TODO: Enviar token al servidor: $token")
+        Timber.d("Enviando token al servidor: $token")
         
-        // Aquí deberías enviar el token a tu backend
-        // Ejemplo:
-        // apiService.updateDeviceToken(userId, token)
+        val prefs = getSharedPreferences("doc_prefs", Context.MODE_PRIVATE)
+        val userId = prefs.getInt("user_id", -1)
         
+        if (userId == -1) {
+            Timber.w("No hay usuario logueado, token no se envía al servidor")
+            return
+        }
+        
+        // Enviar al backend usando Retrofit
+        // TODO: Implementar con inyección de dependencias (Hilt)
         // Por ahora solo lo guardamos localmente
+        // En DocApplication o MainActivity se debe hacer el envío real
     }
 }

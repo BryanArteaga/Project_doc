@@ -452,26 +452,78 @@ fun MainScreen(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        // Verificar estado de cuenta
+                        val cuentaActivada = usuario?.estadoCuenta == "ACTIVE"
+                        
+                        // Mostrar mensaje de cuenta pendiente
+                        if (!cuentaActivada) {
+                            Card(
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFFFFA500).copy(alpha = 0.2f)
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Info,
+                                        contentDescription = "Info",
+                                        tint = Color(0xFFFFA500),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                        "Tu cuenta está pendiente de activación por tu médico",
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF666666),
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+                        
                         Button(
-                            onClick = { navController.navigate("registro_salud") },
+                            onClick = { 
+                                if (cuentaActivada) {
+                                    navController.navigate("registro_salud")
+                                }
+                            },
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (cuentaActivada) Color(0xFF2196F3) else Color.Gray,
+                                disabledContainerColor = Color.Gray
+                            ),
+                            enabled = cuentaActivada
                         ) {
                             Text(
                                 "Registrar datos de salud",
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 17.sp
+                                fontSize = 17.sp,
+                                color = if (cuentaActivada) Color.White else Color.White.copy(alpha = 0.6f)
                             )
                         }
                         Button(
-                            onClick = { navController.navigate("ejercicios") },
+                            onClick = { 
+                                if (cuentaActivada) {
+                                    navController.navigate("ejercicios")
+                                }
+                            },
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (cuentaActivada) Color(0xFF2196F3) else Color.Gray,
+                                disabledContainerColor = Color.Gray
+                            ),
+                            enabled = cuentaActivada
                         ) {
                             Text(
                                 "Ejercicios recomendados",
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 17.sp
+                                fontSize = 17.sp,
+                                color = if (cuentaActivada) Color.White else Color.White.copy(alpha = 0.6f)
                             )
                         }
                     }

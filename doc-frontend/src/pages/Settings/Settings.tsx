@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/common/Layout/Layout';
 import Input from '../../components/common/Input';
 import PageTransition from '../../components/common/PageTransition';
-import { ArrowLeft, User, Mail, Lock, Bell, Eye, Phone, CreditCard, Info } from 'lucide-react';
+import { ArrowLeft, User, Mail, Lock, Eye, Phone, CreditCard, Info } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { auditService, AuditAction, AuditLevel } from '../../utils/audit';
@@ -31,13 +31,6 @@ const Settings: React.FC = () => {
     confirmPassword: ''
   });
 
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: false,
-    newPatients: true,
-    healthRecords: true
-  });
-
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProfileData(prev => ({
       ...prev,
@@ -49,13 +42,6 @@ const Settings: React.FC = () => {
     setPasswordData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
-    }));
-  };
-
-  const handleNotificationChange = (key: string) => {
-    setNotifications(prev => ({
-      ...prev,
-      [key]: !prev[key as keyof typeof notifications]
     }));
   };
 
@@ -152,10 +138,6 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleSaveNotifications = () => {
-    toast.success('Preferencias guardadas');
-  };
-
   return (
     <Layout>
       <PageTransition>
@@ -203,13 +185,6 @@ const Settings: React.FC = () => {
           >
             <Lock className="w-5 h-5" />
             Seguridad
-          </button>
-          <button
-            className={`tab ${activeTab === 'notifications' ? 'active' : ''}`}
-            onClick={() => setActiveTab('notifications')}
-          >
-            <Bell className="w-5 h-5" />
-            Notificaciones
           </button>
         </div>
 
@@ -357,95 +332,6 @@ const Settings: React.FC = () => {
                   }}
                 >
                   {loading ? 'Actualizando...' : 'Actualizar Contraseña'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'notifications' && (
-            <div className="settings-card">
-              <h2 className="card-title">Preferencias de Notificaciones</h2>
-              <div className="notifications-list">
-                <div className="notification-item">
-                  <div>
-                    <h3 className="notification-title">Notificaciones por Email</h3>
-                    <p className="notification-desc">Recibir notificaciones en tu correo</p>
-                  </div>
-                  <label className="switch">
-                    <input
-                      type="checkbox"
-                      checked={notifications.email}
-                      onChange={() => handleNotificationChange('email')}
-                    />
-                    <span className="slider"></span>
-                  </label>
-                </div>
-                <div className="notification-item">
-                  <div>
-                    <h3 className="notification-title">Notificaciones Push</h3>
-                    <p className="notification-desc">Recibir notificaciones en el navegador</p>
-                  </div>
-                  <label className="switch">
-                    <input
-                      type="checkbox"
-                      checked={notifications.push}
-                      onChange={() => handleNotificationChange('push')}
-                    />
-                    <span className="slider"></span>
-                  </label>
-                </div>
-                <div className="notification-item">
-                  <div>
-                    <h3 className="notification-title">Nuevos Pacientes</h3>
-                    <p className="notification-desc">Alertas cuando se registren nuevos pacientes</p>
-                  </div>
-                  <label className="switch">
-                    <input
-                      type="checkbox"
-                      checked={notifications.newPatients}
-                      onChange={() => handleNotificationChange('newPatients')}
-                    />
-                    <span className="slider"></span>
-                  </label>
-                </div>
-                <div className="notification-item">
-                  <div>
-                    <h3 className="notification-title">Registros de Salud</h3>
-                    <p className="notification-desc">Notificar cuando haya nuevos registros</p>
-                  </div>
-                  <label className="switch">
-                    <input
-                      type="checkbox"
-                      checked={notifications.healthRecords}
-                      onChange={() => handleNotificationChange('healthRecords')}
-                    />
-                    <span className="slider"></span>
-                  </label>
-                </div>
-              </div>
-              <div className="card-actions">
-                <button 
-                  onClick={handleSaveNotifications}
-                  style={{
-                    backgroundColor: '#5B65DC',
-                    color: '#ffffff',
-                    border: 'none',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '0.5rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontSize: '1rem',
-                    transition: 'all 0.3s ease',
-                    boxShadow: '0 4px 20px rgba(91, 101, 220, 0.15)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#4A52C4';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#5B65DC';
-                  }}
-                >
-                  Guardar Preferencias
                 </button>
               </div>
             </div>

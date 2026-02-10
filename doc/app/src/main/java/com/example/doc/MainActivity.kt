@@ -20,6 +20,7 @@ import com.example.doc.repository.UsuarioRepository
 import com.example.doc.ui.theme.DocTheme
 import com.example.doc.navigation.AppNavigation
 import com.example.doc.navigation.Routes
+import com.example.doc.utils.FCMTokenManager
 import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +33,10 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
     @Inject
     lateinit var usuarioRepository: UsuarioRepository
+    
+    @Inject
+    lateinit var fcmTokenManager: FCMTokenManager
+    
     @Inject
     lateinit var prefs: SharedPreferences
     private val requestExactAlarmLauncher = registerForActivityResult(
@@ -51,11 +56,13 @@ class MainActivity : ComponentActivity() {
                 Timber.d("Permiso de notificaciones: ${if (isGranted) "concedido" else "denegado"}")
                 if (isGranted) {
                     obtenerFCMToken()
+                    fcmTokenManager.registerFCMToken(this@MainActivity)
                     requestSpecialPermissions()
                 }
             }.launch(Manifest.permission.POST_NOTIFICATIONS)
         } else {
             obtenerFCMToken()
+            fcmTokenManager.registerFCMToken(this)
             requestSpecialPermissions()
         }
         lifecycleScope.launch {

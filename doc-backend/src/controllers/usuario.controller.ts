@@ -36,7 +36,7 @@ export const createUsuario = async (req: Request, res: Response) => {
       enfermedad,
       colorEnfermedad,
       tokenDispositivo,
-      estadoCuenta = 'ACTIVE' 
+      estadoCuenta = 'INACTIVE'  // Cambiar a INACTIVE (enum válido)
     } = req.body;
     
     if (!nombre || !apellido) {

@@ -81,7 +81,8 @@ class UsuarioViewModel @Inject constructor(
                                 notifType = it.notifType,
                                 notifDetails = it.notifDetails,
                                 glucosaInicial = it.glucosaInicial,
-                                colesterolInicial = it.colesterolInicial
+                                colesterolInicial = it.colesterolInicial,
+                                estadoCuenta = it.estadoCuenta
                             )
                         }
                     }
@@ -187,7 +188,7 @@ class UsuarioViewModel @Inject constructor(
                     enfermedad = usuario.enfermedad,
                     colorEnfermedad = usuario.colorEnfermedad,
                     tokenDispositivo = fcmToken,
-                    estadoCuenta = "ACTIVE"
+                    estadoCuenta = "INACTIVE"  // Por defecto INACTIVE
                 )
 
                 val backendResponse = try {
@@ -229,7 +230,8 @@ class UsuarioViewModel @Inject constructor(
                     notifType = usuarioFinal.notifType,
                     notifDetails = usuarioFinal.notifDetails,
                     glucosaInicial = usuarioFinal.glucosaInicial,
-                    colesterolInicial = usuarioFinal.colesterolInicial
+                    colesterolInicial = usuarioFinal.colesterolInicial,
+                    estadoCuenta = "INACTIVE"  // Siempre guardar como INACTIVE localmente
                 )
                 repository.guardarUsuario(entity)
 

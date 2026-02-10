@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../../components/common/Layout/Layout';
 import Loading from '../../components/common/Loading';
 import PageTransition from '../../components/common/PageTransition';
-import { ArrowLeft, User, Activity, TrendingUp, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, User, Activity, TrendingUp, Calendar, ChevronDown, ChevronUp, ArrowUp, ArrowDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
 import './PatientProfile.css';
@@ -51,9 +51,10 @@ const PatientProfile: React.FC = () => {
     const navigate = useNavigate();
     const [data, setData] = useState<PatientData | null>(null);
     const [loading, setLoading] = useState(true);
-    const [expandedStats, setExpandedStats] = useState(false);
     const [expandedHealth, setExpandedHealth] = useState(false);
     const [expandedExercises, setExpandedExercises] = useState(false);
+    const [sortColumn, setSortColumn] = useState<string>('');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
     useEffect(() => {
         loadPatientData();
@@ -95,24 +96,6 @@ const PatientProfile: React.FC = () => {
     const { registrosSalud, ejerciciosRealizados } = data;
     const patient = data;
 
-    // Calcular estadísticas
-    const totalEjercicios = ejerciciosRealizados.length;
-
-    // Agrupar ejercicios por nombre
-    const ejerciciosPorNombre = ejerciciosRealizados.reduce((acc: any, ejercicio) => {
-        const nombre = ejercicio.ejercicio.nombre;
-        if (!acc[nombre]) {
-            acc[nombre] = {
-                nombre: nombre,
-                descripcion: ejercicio.ejercicio.descripcion || '',
-                duracion: ejercicio.ejercicio.duracion || 0,
-                completaciones: []
-            };
-        }
-        acc[nombre].completaciones.push(ejercicio);
-        return acc;
-    }, {});
-
     const latestHealth = registrosSalud[0];
 
     // Color por enfermedad (coinciden con la app Android)
@@ -120,6 +103,115 @@ const PatientProfile: React.FC = () => {
         patient.enfermedad === 'Diabetes' ? '#FFF176' :
             patient.enfermedad === 'Obesidad' ? '#81D4FA' :
                 patient.enfermedad === 'Colesterol alto' ? '#FFA726' : '#6b7280';
+
+    // Función para ordenar registros
+    const handleSort = (column: string) => {
+        if (sortColumn === column) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortColumn(column);
+            setSortOrder('asc');
+        }
+    };
+
+    // Ordenar registros según columna seleccionada
+    const sortedRegistros = [...registrosSalud].sort((a, b) => {
+        if (!sortColumn) return 0;
+        
+        let aValue: any = 0;
+        let bValue: any = 0;
+
+        switch (sortColumn) {
+            case 'id':
+                aValue = a.id;
+                bValue = b.id;
+                break;
+            case 'fecha':
+                aValue = new Date(a.registradoEn).getTime();
+                bValue = new Date(b.registradoEn).getTime();
+                break;
+            case 'hora':
+                const aFechaHora = new Date(a.registradoEn);
+                const bFechaHora = new Date(b.registradoEn);
+                aValue = aFechaHora.getHours() * 60 + aFechaHora.getMinutes();
+                bValue = bFechaHora.getHours() * 60 + bFechaHora.getMinutes();
+                break;
+            case 'presion':
+                aValue = (a.presionSistolica || 0) + (a.presionDiastolica || 0);
+                bValue = (b.presionSistolica || 0) + (b.presionDiastolica || 0);
+                break;
+            case 'glucosa':
+                aValue = a.glucosa || 0;
+                bValue = b.glucosa || 0;
+                break;
+            case 'peso':
+                aValue = a.peso || 0;
+                bValue = b.peso || 0;
+                break;
+            case 'ejercicio':
+                aValue = a.ejercicio || 0;
+                bValue = b.ejercicio || 0;
+                break;
+            case 'calorias':
+                aValue = a.calorias || 0;
+                bValue = b.calorias || 0;
+                break;
+            case 'estadoAnimo':
+                const orden = { 'Bueno': 3, 'Regular': 2, 'Malo': 1 };
+                aValue = orden[a.estadoAnimo as keyof typeof orden] || 0;
+                bValue = orden[b.estadoAnimo as keyof typeof orden] || 0;
+                break;
+        }
+
+        if (sortOrder === 'asc') {
+            if (aValue < bValue) return -1;
+            if (aValue > bValue) return 1;
+            return 0;
+        } else {
+            if (aValue < bValue) return 1;
+            if (aValue > bValue) return -1;
+            return 0;
+        }
+    });
+
+    // Ordenar ejercicios realizados
+    const sortedEjercicios = [...ejerciciosRealizados].sort((a, b) => {
+        if (!sortColumn) return 0;
+        
+        let aValue: any = 0;
+        let bValue: any = 0;
+
+        switch (sortColumn) {
+            case 'ejercicio-id':
+                aValue = a.id;
+                bValue = b.id;
+                break;
+            case 'ejercicio-nombre':
+                aValue = a.ejercicio.nombre.toLowerCase();
+                bValue = b.ejercicio.nombre.toLowerCase();
+                break;
+            case 'ejercicio-fecha':
+                aValue = new Date(a.completadoEn).getTime();
+                bValue = new Date(b.completadoEn).getTime();
+                break;
+            case 'ejercicio-hora':
+                const aEjercicioFecha = new Date(a.completadoEn);
+                const bEjercicioFecha = new Date(b.completadoEn);
+                aValue = aEjercicioFecha.getHours() * 60 + aEjercicioFecha.getMinutes();
+                bValue = bEjercicioFecha.getHours() * 60 + bEjercicioFecha.getMinutes();
+                break;
+        }
+
+        if (sortOrder === 'asc') {
+            if (aValue < bValue) return -1;
+            if (aValue > bValue) return 1;
+            return 0;
+        } else {
+            if (aValue < bValue) return 1;
+            if (aValue > bValue) return -1;
+            return 0;
+        }
+    });
 
     return (
         <Layout>
@@ -155,8 +247,9 @@ const PatientProfile: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Información Básica */}
-                    <div className="profile-grid">
+                    {/* Grid: Información Personal (izquierda) + Columna Derecha (Último Registro + Estadísticas) */}
+                    <div className="profile-grid-custom">
+                        {/* Columna Izquierda: Información Personal */}
                         <div className="info-card">
                             <div className="card-icon">
                                 <User />
@@ -172,207 +265,181 @@ const PatientProfile: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Estadísticas */}
-                        <div className="stats-card">
-                            <div className="card-icon">
-                                <TrendingUp />
-                            </div>
-                            <h3>Resumen de Actividad</h3>
-                            <div className="stats-grid">
-                                <div className="stat-item">
-                                    <div className="stat-value">{registrosSalud.length}</div>
-                                    <div className="stat-label">Registros de Salud</div>
-                                </div>
-                                <div className="stat-item">
-                                    <div className="stat-value">{totalEjercicios}</div>
-                                    <div className="stat-label">Ejercicios Completados</div>
-                                </div>
-                                <div className="stat-item">
-                                    <div className="stat-value">{Object.keys(ejerciciosPorNombre).length}</div>
-                                    <div className="stat-label">Tipos de Ejercicios</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Último Registro de Salud */}
-                    {latestHealth && (
-                        <div className="health-card">
-                            <div className="card-header">
-                                <Activity />
-                                <h3>Último Registro de Salud</h3>
-                                <span className="date">
-                                    {new Date(latestHealth.registradoEn).toLocaleDateString()}
-                                </span>
-                            </div>
-                            <div className="health-metrics">
-                                {/* Hipertensión - Mostrar presión arterial */}
-                                {patient.enfermedad === 'Hipertensión' && latestHealth.presionSistolica && latestHealth.presionDiastolica && (
-                                    <div className="metric">
-                                        <span className="metric-label">Presión Arterial</span>
-                                        <span className="metric-value">{latestHealth.presionSistolica}/{latestHealth.presionDiastolica} mmHg</span>
+                        {/* Columna Derecha: Stack de Último Registro + Estadísticas */}
+                        <div className="right-column">
+                            {/* Último Registro de Salud */}
+                            {latestHealth && (
+                                <div className="health-card">
+                                    <div className="card-header">
+                                        <Activity />
+                                        <h3>Último Registro de Salud</h3>
+                                        <span className="date">
+                                            {new Date(latestHealth.registradoEn).toLocaleDateString()}
+                                        </span>
                                     </div>
-                                )}
-                                {/* Diabetes - Mostrar glucosa */}
-                                {patient.enfermedad === 'Diabetes' && latestHealth.glucosa && (
-                                    <div className="metric">
-                                        <span className="metric-label">Glucosa</span>
-                                        <span className="metric-value">{latestHealth.glucosa} mg/dL</span>
-                                    </div>
-                                )}
-                                {/* Obesidad - Mostrar peso y presión */}
-                                {patient.enfermedad === 'Obesidad' && (
-                                    <>
-                                        {latestHealth.peso && (
-                                            <div className="metric">
-                                                <span className="metric-label">Peso</span>
-                                                <span className="metric-value">{latestHealth.peso} kg</span>
-                                            </div>
-                                        )}
-                                        {latestHealth.presionSistolica && latestHealth.presionDiastolica && (
+                                    <div className="health-metrics">
+                                        {/* Hipertensión - Mostrar presión arterial */}
+                                        {patient.enfermedad === 'Hipertensión' && latestHealth.presionSistolica && latestHealth.presionDiastolica && (
                                             <div className="metric">
                                                 <span className="metric-label">Presión Arterial</span>
                                                 <span className="metric-value">{latestHealth.presionSistolica}/{latestHealth.presionDiastolica} mmHg</span>
                                             </div>
                                         )}
-                                    </>
-                                )}
-                                {/* Colesterol alto - Mostrar glucosa y presión */}
-                                {patient.enfermedad === 'Colesterol alto' && (
-                                    <>
-                                        {latestHealth.glucosa && (
+                                        {/* Diabetes - Mostrar glucosa */}
+                                        {patient.enfermedad === 'Diabetes' && latestHealth.glucosa && (
                                             <div className="metric">
                                                 <span className="metric-label">Glucosa</span>
                                                 <span className="metric-value">{latestHealth.glucosa} mg/dL</span>
                                             </div>
                                         )}
-                                        {latestHealth.presionSistolica && latestHealth.presionDiastolica && (
-                                            <div className="metric">
-                                                <span className="metric-label">Presión Arterial</span>
-                                                <span className="metric-value">{latestHealth.presionSistolica}/{latestHealth.presionDiastolica} mmHg</span>
-                                            </div>
+                                        {/* Obesidad - Mostrar peso y presión */}
+                                        {patient.enfermedad === 'Obesidad' && (
+                                            <>
+                                                {latestHealth.peso && (
+                                                    <div className="metric">
+                                                        <span className="metric-label">Peso</span>
+                                                        <span className="metric-value">{latestHealth.peso} kg</span>
+                                                    </div>
+                                                )}
+                                                {latestHealth.presionSistolica && latestHealth.presionDiastolica && (
+                                                    <div className="metric">
+                                                        <span className="metric-label">Presión Arterial</span>
+                                                        <span className="metric-value">{latestHealth.presionSistolica}/{latestHealth.presionDiastolica} mmHg</span>
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Estadísticas Clínicas - Colapsable */}
-                    {registrosSalud.length > 0 && (() => {
-                        const presiones = registrosSalud.filter(r => r.presionSistolica && r.presionDiastolica);
-                        const glucosas = registrosSalud.filter(r => r.glucosa);
-                        const pesos = registrosSalud.filter(r => r.peso);
-                        const ejercicios = registrosSalud.filter(r => r.ejercicio);
-                        const calorias = registrosSalud.filter(r => r.calorias);
-
-                        const calcularPromedio = (arr: number[]) => arr.length > 0 ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
-
-                        return (
-                            <div className="collapsible-section">
-                                <div className="section-header" onClick={() => setExpandedStats(!expandedStats)}>
-                                    <div className="section-title">
-                                        <TrendingUp />
-                                        <h3>Estadísticas Clínicas</h3>
+                                        {/* Colesterol alto - Mostrar glucosa y presión */}
+                                        {patient.enfermedad === 'Colesterol alto' && (
+                                            <>
+                                                {latestHealth.glucosa && (
+                                                    <div className="metric">
+                                                        <span className="metric-label">Glucosa</span>
+                                                        <span className="metric-value">{latestHealth.glucosa} mg/dL</span>
+                                                    </div>
+                                                )}
+                                                {latestHealth.presionSistolica && latestHealth.presionDiastolica && (
+                                                    <div className="metric">
+                                                        <span className="metric-label">Presión Arterial</span>
+                                                        <span className="metric-value">{latestHealth.presionSistolica}/{latestHealth.presionDiastolica} mmHg</span>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
                                     </div>
-                                    {expandedStats ? <ChevronUp /> : <ChevronDown />}
                                 </div>
-                                {expandedStats && (
-                                    <div className="section-content">
-                                        <div className="clinical-stats-grid">
-                                            {patient.enfermedad === 'Hipertensión' && presiones.length > 0 && (
-                                                <div className="stat-box">
-                                                    <h4>Presión Arterial</h4>
-                                                    <div className="stat-values">
-                                                        <div className="stat-item">
-                                                            <span className="stat-label">Promedio</span>
-                                                            <span className="stat-number">{calcularPromedio(presiones.map(r => r.presionSistolica!))}/{calcularPromedio(presiones.map(r => r.presionDiastolica!))}</span>
-                                                        </div>
-                                                        <div className="stat-item">
-                                                            <span className="stat-label">Mínima</span>
-                                                            <span className="stat-number">{Math.min(...presiones.map(r => r.presionSistolica!))}/{Math.min(...presiones.map(r => r.presionDiastolica!))}</span>
-                                                        </div>
-                                                        <div className="stat-item">
-                                                            <span className="stat-label">Máxima</span>
-                                                            <span className="stat-number">{Math.max(...presiones.map(r => r.presionSistolica!))}/{Math.max(...presiones.map(r => r.presionDiastolica!))}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {patient.enfermedad === 'Diabetes' && glucosas.length > 0 && (
-                                                <div className="stat-box">
-                                                    <h4>Glucosa (mg/dL)</h4>
-                                                    <div className="stat-values">
-                                                        <div className="stat-item">
-                                                            <span className="stat-label">Promedio</span>
-                                                            <span className="stat-number">{calcularPromedio(glucosas.map(r => r.glucosa!))}</span>
-                                                        </div>
-                                                        <div className="stat-item">
-                                                            <span className="stat-label">Mínima</span>
-                                                            <span className="stat-number">{Math.min(...glucosas.map(r => r.glucosa!))}</span>
-                                                        </div>
-                                                        <div className="stat-item">
-                                                            <span className="stat-label">Máxima</span>
-                                                            <span className="stat-number">{Math.max(...glucosas.map(r => r.glucosa!))}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {patient.enfermedad === 'Obesidad' && pesos.length > 0 && (
-                                                <div className="stat-box">
-                                                    <h4>Peso (kg)</h4>
-                                                    <div className="stat-values">
-                                                        <div className="stat-item">
-                                                            <span className="stat-label">Promedio</span>
-                                                            <span className="stat-number">{(pesos.reduce((sum, r) => sum + r.peso!, 0) / pesos.length).toFixed(1)}</span>
-                                                        </div>
-                                                        <div className="stat-item">
-                                                            <span className="stat-label">Mínimo</span>
-                                                            <span className="stat-number">{Math.min(...pesos.map(r => r.peso!))}</span>
-                                                        </div>
-                                                        <div className="stat-item">
-                                                            <span className="stat-label">Máximo</span>
-                                                            <span className="stat-number">{Math.max(...pesos.map(r => r.peso!))}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {ejercicios.length > 0 && (
-                                                <div className="stat-box">
-                                                    <h4>Actividad Física</h4>
-                                                    <div className="stat-values">
-                                                        <div className="stat-item">
-                                                            <span className="stat-label">Total Minutos</span>
-                                                            <span className="stat-number">{ejercicios.reduce((sum, r) => sum + r.ejercicio!, 0)}</span>
-                                                        </div>
-                                                        <div className="stat-item">
-                                                            <span className="stat-label">Promedio/día</span>
-                                                            <span className="stat-number">{calcularPromedio(ejercicios.map(r => r.ejercicio!))}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {calorias.length > 0 && (
-                                                <div className="stat-box">
-                                                    <h4>Calorías Consumidas</h4>
-                                                    <div className="stat-values">
-                                                        <div className="stat-item">
-                                                            <span className="stat-label">Total</span>
-                                                            <span className="stat-number">{calorias.reduce((sum, r) => sum + r.calorias!, 0)}</span>
-                                                        </div>
-                                                        <div className="stat-item">
-                                                            <span className="stat-label">Promedio/día</span>
-                                                            <span className="stat-number">{calcularPromedio(calorias.map(r => r.calorias!))}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
+                            )}
+
+                            {/* Estadísticas Clínicas - Siempre visible */}
+                            {registrosSalud.length > 0 && (() => {
+                                const presiones = registrosSalud.filter(r => r.presionSistolica && r.presionDiastolica);
+                                const glucosas = registrosSalud.filter(r => r.glucosa);
+                                const pesos = registrosSalud.filter(r => r.peso);
+                                const ejercicios = registrosSalud.filter(r => r.ejercicio);
+                                const calorias = registrosSalud.filter(r => r.calorias);
+
+                                const calcularPromedio = (arr: number[]) => arr.length > 0 ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
+
+                                return (
+                                    <div className="stats-section">
+                                        <div className="section-header-static">
+                                            <TrendingUp />
+                                            <h3>Estadísticas Clínicas</h3>
                                         </div>
-                                    </div>
-                                )}
+                                        <div className="clinical-stats-horizontal">
+                                    {patient.enfermedad === 'Hipertensión' && presiones.length > 0 && (
+                                        <div className="stat-compact">
+                                            <div className="stat-compact-title">Presión Arterial</div>
+                                            <div className="stat-compact-row">
+                                                <div className="stat-compact-item">
+                                                    <div className="stat-compact-label">Promedio</div>
+                                                    <div className="stat-compact-value">{calcularPromedio(presiones.map(r => r.presionSistolica!))}/{calcularPromedio(presiones.map(r => r.presionDiastolica!))}</div>
+                                                </div>
+                                                <div className="stat-compact-item">
+                                                    <div className="stat-compact-label">Mínima</div>
+                                                    <div className="stat-compact-value">{Math.min(...presiones.map(r => r.presionSistolica!))}/{Math.min(...presiones.map(r => r.presionDiastolica!))}</div>
+                                                </div>
+                                                <div className="stat-compact-item">
+                                                    <div className="stat-compact-label">Máxima</div>
+                                                    <div className="stat-compact-value">{Math.max(...presiones.map(r => r.presionSistolica!))}/{Math.max(...presiones.map(r => r.presionDiastolica!))}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {patient.enfermedad === 'Diabetes' && glucosas.length > 0 && (
+                                        <div className="stat-compact">
+                                            <div className="stat-compact-title">Glucosa (mg/dL)</div>
+                                            <div className="stat-compact-row">
+                                                <div className="stat-compact-item">
+                                                    <div className="stat-compact-label">Promedio</div>
+                                                    <div className="stat-compact-value">{calcularPromedio(glucosas.map(r => r.glucosa!))}</div>
+                                                </div>
+                                                <div className="stat-compact-item">
+                                                    <div className="stat-compact-label">Mínima</div>
+                                                    <div className="stat-compact-value">{Math.min(...glucosas.map(r => r.glucosa!))}</div>
+                                                </div>
+                                                <div className="stat-compact-item">
+                                                    <div className="stat-compact-label">Máxima</div>
+                                                    <div className="stat-compact-value">{Math.max(...glucosas.map(r => r.glucosa!))}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {patient.enfermedad === 'Obesidad' && pesos.length > 0 && (
+                                        <div className="stat-compact">
+                                            <div className="stat-compact-title">Peso (kg)</div>
+                                            <div className="stat-compact-row">
+                                                <div className="stat-compact-item">
+                                                    <div className="stat-compact-label">Promedio</div>
+                                                    <div className="stat-compact-value">{(pesos.reduce((sum, r) => sum + r.peso!, 0) / pesos.length).toFixed(1)}</div>
+                                                </div>
+                                                <div className="stat-compact-item">
+                                                    <div className="stat-compact-label">Mínimo</div>
+                                                    <div className="stat-compact-value">{Math.min(...pesos.map(r => r.peso!))}</div>
+                                                </div>
+                                                <div className="stat-compact-item">
+                                                    <div className="stat-compact-label">Máximo</div>
+                                                    <div className="stat-compact-value">{Math.max(...pesos.map(r => r.peso!))}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {ejercicios.length > 0 && (
+                                        <div className="stat-compact">
+                                            <div className="stat-compact-title">Actividad Física</div>
+                                            <div className="stat-compact-row">
+                                                <div className="stat-compact-item">
+                                                    <div className="stat-compact-label">Total Minutos</div>
+                                                    <div className="stat-compact-value">{ejercicios.reduce((sum, r) => sum + r.ejercicio!, 0)}</div>
+                                                </div>
+                                                <div className="stat-compact-item">
+                                                    <div className="stat-compact-label">Promedio/día</div>
+                                                    <div className="stat-compact-value">{calcularPromedio(ejercicios.map(r => r.ejercicio!))}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {calorias.length > 0 && (
+                                        <div className="stat-compact">
+                                            <div className="stat-compact-title">Calorías</div>
+                                            <div className="stat-compact-row">
+                                                <div className="stat-compact-item">
+                                                    <div className="stat-compact-label">Total</div>
+                                                    <div className="stat-compact-value">{calorias.reduce((sum, r) => sum + r.calorias!, 0)}</div>
+                                                </div>
+                                                <div className="stat-compact-item">
+                                                    <div className="stat-compact-label">Promedio/día</div>
+                                                    <div className="stat-compact-value">{calcularPromedio(calorias.map(r => r.calorias!))}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         );
                     })()}
+                        </div>
+                    </div>
 
                     {/* Historial de Registros - Colapsable */}
                     <div className="collapsible-section">
@@ -392,39 +459,105 @@ const PatientProfile: React.FC = () => {
                                         <table>
                                             <thead>
                                                 <tr>
-                                                    <th>#</th>
-                                                    <th>Fecha</th>
-                                                    <th>Hora</th>
+                                                    <th onClick={() => handleSort('id')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                                                            #
+                                                            {sortColumn === 'id' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                                        </div>
+                                                    </th>
+                                                    <th onClick={() => handleSort('fecha')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                                                            Fecha
+                                                            {sortColumn === 'fecha' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                                        </div>
+                                                    </th>
+                                                    <th onClick={() => handleSort('hora')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                                                            Hora
+                                                            {sortColumn === 'hora' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                                        </div>
+                                                    </th>
                                                     {/* Hipertensión - solo presión */}
-                                                    {patient.enfermedad === 'Hipertensión' && <th>Presión Arterial</th>}
+                                                    {patient.enfermedad === 'Hipertensión' && (
+                                                        <th onClick={() => handleSort('presion')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                                                                Presión Arterial
+                                                                {sortColumn === 'presion' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                                            </div>
+                                                        </th>
+                                                    )}
                                                     {/* Diabetes - solo glucosa */}
-                                                    {patient.enfermedad === 'Diabetes' && <th>Glucosa (mg/dL)</th>}
+                                                    {patient.enfermedad === 'Diabetes' && (
+                                                        <th onClick={() => handleSort('glucosa')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                                                                Glucosa (mg/dL)
+                                                                {sortColumn === 'glucosa' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                                            </div>
+                                                        </th>
+                                                    )}
                                                     {/* Obesidad - peso y presión */}
                                                     {patient.enfermedad === 'Obesidad' && (
                                                         <>
-                                                            <th>Peso (kg)</th>
-                                                            <th>Presión Arterial</th>
+                                                            <th onClick={() => handleSort('peso')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                                                                    Peso (kg)
+                                                                    {sortColumn === 'peso' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                                                </div>
+                                                            </th>
+                                                            <th onClick={() => handleSort('presion')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                                                                    Presión Arterial
+                                                                    {sortColumn === 'presion' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                                                </div>
+                                                            </th>
                                                         </>
                                                     )}
                                                     {/* Colesterol alto - glucosa y presión */}
                                                     {patient.enfermedad === 'Colesterol alto' && (
                                                         <>
-                                                            <th>Glucosa (mg/dL)</th>
-                                                            <th>Presión Arterial</th>
+                                                            <th onClick={() => handleSort('glucosa')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                                                                    Glucosa (mg/dL)
+                                                                    {sortColumn === 'glucosa' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                                                </div>
+                                                            </th>
+                                                            <th onClick={() => handleSort('presion')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                                                                    Presión Arterial
+                                                                    {sortColumn === 'presion' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                                                </div>
+                                                            </th>
                                                         </>
                                                     )}
                                                     {/* Columnas para todas las enfermedades */}
-                                                    <th>Min. Ejercicio</th>
-                                                    <th>Calorías</th>
-                                                    <th>Estado de Ánimo</th>
+                                                    <th onClick={() => handleSort('ejercicio')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                                                            Min. Ejercicio
+                                                            {sortColumn === 'ejercicio' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                                        </div>
+                                                    </th>
+                                                    <th onClick={() => handleSort('calorias')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                                                            Calorías
+                                                            {sortColumn === 'calorias' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                                        </div>
+                                                    </th>
+                                                    <th onClick={() => handleSort('estadoAnimo')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                                                            Estado de Ánimo
+                                                            {sortColumn === 'estadoAnimo' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                                        </div>
+                                                    </th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {registrosSalud.map((registro, index) => {
+                                                {sortedRegistros.map((registro, index) => {
                                                     const fecha = new Date(registro.registradoEn);
                                                     return (
                                                         <tr key={registro.id}>
-                                                            <td style={{ fontWeight: 700, textAlign: 'center', background: 'var(--bg-secondary)' }}>{registrosSalud.length - index}</td>
+                                                            <td style={{ fontWeight: 700, textAlign: 'center', background: 'var(--bg-secondary)' }}>
+                                                                {index + 1}
+                                                            </td>
                                                             <td style={{ fontWeight: 600 }}>{fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                                                             <td style={{ fontSize: '0.875rem' }}>{fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</td>
                                                             {/* Hipertensión */}
@@ -469,10 +602,10 @@ const PatientProfile: React.FC = () => {
                                                             )}
                                                             {/* Columnas para todas las enfermedades */}
                                                             <td style={{ fontSize: '1.05rem', textAlign: 'center' }}>
-                                                                {registro.ejercicio ? <><strong style={{ color: '#10b981' }}>{registro.ejercicio}</strong> min</> : <span style={{ color: '#9ca3af' }}>-</span>}
+                                                                {registro.ejercicio !== undefined && registro.ejercicio !== null ? <><strong style={{ color: '#10b981' }}>{registro.ejercicio}</strong> min</> : <span style={{ color: '#9ca3af' }}>-</span>}
                                                             </td>
                                                             <td style={{ fontSize: '1.05rem', textAlign: 'center' }}>
-                                                                {registro.calorias ? <><strong style={{ color: '#f59e0b' }}>{registro.calorias}</strong> kcal</> : <span style={{ color: '#9ca3af' }}>-</span>}
+                                                                {registro.calorias !== undefined && registro.calorias !== null ? <><strong style={{ color: '#f59e0b' }}>{registro.calorias}</strong> kcal</> : <span style={{ color: '#9ca3af' }}>-</span>}
                                                             </td>
                                                             <td style={{ fontSize: '0.95rem', textAlign: 'center' }}>
                                                                 {registro.estadoAnimo ? (
@@ -515,18 +648,40 @@ const PatientProfile: React.FC = () => {
                                         <table>
                                             <thead>
                                                 <tr>
-                                                    <th>#</th>
-                                                    <th>Ejercicio</th>
-                                                    <th>Fecha</th>
-                                                    <th>Hora</th>
+                                                    <th onClick={() => handleSort('ejercicio-id')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                                                            #
+                                                            {sortColumn === 'ejercicio-id' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                                        </div>
+                                                    </th>
+                                                    <th onClick={() => handleSort('ejercicio-nombre')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                                                            Ejercicio
+                                                            {sortColumn === 'ejercicio-nombre' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                                        </div>
+                                                    </th>
+                                                    <th onClick={() => handleSort('ejercicio-fecha')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                                                            Fecha
+                                                            {sortColumn === 'ejercicio-fecha' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                                        </div>
+                                                    </th>
+                                                    <th onClick={() => handleSort('ejercicio-hora')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                                                            Hora
+                                                            {sortColumn === 'ejercicio-hora' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                                        </div>
+                                                    </th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {ejerciciosRealizados.map((ejercicio, index) => {
+                                                {sortedEjercicios.map((ejercicio, index) => {
                                                     const fecha = new Date(ejercicio.completadoEn);
                                                     return (
-                                                        <tr key={index}>
-                                                            <td style={{ fontWeight: 700, textAlign: 'center', background: 'var(--bg-secondary)' }}>{ejerciciosRealizados.length - index}</td>
+                                                        <tr key={ejercicio.id}>
+                                                            <td style={{ fontWeight: 700, textAlign: 'center', background: 'var(--bg-secondary)' }}>
+                                                                {index + 1}
+                                                            </td>
                                                             <td style={{ fontSize: '1rem' }}>
                                                                 <span style={{ color: enfermedadColor, fontWeight: 600 }}>
                                                                     {ejercicio.ejercicio.nombre}
