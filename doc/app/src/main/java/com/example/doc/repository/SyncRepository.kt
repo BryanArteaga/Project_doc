@@ -463,9 +463,28 @@ class SyncRepository(
                     // Usuario no existe en backend, crearlo
                     Timber.w("⚠️ Usuario no encontrado en backend, creando...")
 
+                    // Obtener token FCM
+                    val fcmToken = sharedPreferences.getString("fcm_token", null)
+                    
+                    // Calcular fecha de nacimiento aproximada si tenemos edad
+                    val fechaNacimiento = usuarioEntity.edad?.let { edad ->
+                        val currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+                        val birthYear = currentYear - edad
+                        "$birthYear-01-01"  // Usar 1 de enero como fecha aproximada
+                    }
+
                     val createRequest = CreateUsuarioRequest(
                         nombre = usuarioEntity.nombre,
                         apellido = usuarioEntity.apellido ?: "",
+                        cedula = usuarioEntity.cedula,
+                        fechaNacimiento = fechaNacimiento,
+                        edad = usuarioEntity.edad,
+                        peso = usuarioEntity.peso,
+                        altura = usuarioEntity.altura,
+                        sexo = usuarioEntity.sexo,
+                        enfermedad = usuarioEntity.enfermedad,
+                        colorEnfermedad = usuarioEntity.colorEnfermedad,
+                        tokenDispositivo = fcmToken,
                         estadoCuenta = "ACTIVE"
                     )
 

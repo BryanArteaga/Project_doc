@@ -32,13 +32,15 @@ export const getPatients = async (req: Request, res: Response) => {
         },
         select: {
           id: true,
-          email: true,
           nombre: true,
           apellido: true,
-          telefonoPersonal: true,
+          cedula: true,
           estadoCuenta: true,
           registradoEn: true,
           activadoEn: true,
+          edad: true,
+          sexo: true,
+          enfermedad: true,
         },
         skip,
         take: limit,
@@ -89,16 +91,18 @@ export const getPatient = async (req: Request, res: Response) => {
           orderBy: { registradoEn: 'desc' },
           take: 20,
         },
-        asignacionesEjercicio: {
-          orderBy: { creadoEn: 'desc' },
+        ejerciciosRealizados: {
+          orderBy: { completadoEn: 'desc' },
+          take: 50,
           include: {
-            ejercicio: true,
-            completaciones: true,
+            ejercicio: {
+              select: {
+                nombre: true,
+                descripcion: true,
+                duracion: true,
+              }
+            },
           },
-        },
-        notificaciones: {
-          orderBy: { creadoEn: 'desc' },
-          take: 10,
         },
       },
     });
@@ -142,11 +146,11 @@ export const getPendingPatients = async (req: Request, res: Response) => {
         },
         select: {
           id: true,
-          email: true,
           nombre: true,
           apellido: true,
-          telefonoPersonal: true,
+          cedula: true,
           registradoEn: true,
+          estadoCuenta: true,
         },
         skip,
         take: limit,
@@ -228,9 +232,9 @@ export const activatePatient = async (req: Request, res: Response) => {
       message: 'Paciente activado exitosamente',
       patient: {
         id: updated.id,
-        email: updated.email,
         nombre: updated.nombre,
         apellido: updated.apellido,
+        cedula: updated.cedula,
         estadoCuenta: updated.estadoCuenta,
         activadoEn: updated.activadoEn,
       },
@@ -276,9 +280,9 @@ export const deactivatePatient = async (req: Request, res: Response) => {
       message: 'Paciente desactivado exitosamente',
       patient: {
         id: updated.id,
-        email: updated.email,
         nombre: updated.nombre,
         apellido: updated.apellido,
+        cedula: updated.cedula,
         estadoCuenta: updated.estadoCuenta,
       },
     });
@@ -325,9 +329,9 @@ export const assignPatientToDoctor = async (req: Request, res: Response) => {
       message: 'Paciente asignado al doctor exitosamente',
       patient: {
         id: updated.id,
-        email: updated.email,
         nombre: updated.nombre,
         apellido: updated.apellido,
+        cedula: updated.cedula,
         idDoctorAsignado: updated.idDoctorAsignado,
       },
     });

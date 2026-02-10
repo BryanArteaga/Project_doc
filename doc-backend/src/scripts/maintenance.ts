@@ -41,19 +41,19 @@ export async function getDatabaseStats() {
     console.log('📊 Obteniendo estadísticas de la base de datos...');
 
     // Conexiones activas
-    const connections = await prisma.$queryRawUnsafe<any[]>(`
+    const connections = await (prisma.$queryRawUnsafe as any)(`
       SELECT count(*) as count 
       FROM pg_stat_activity 
       WHERE datname = current_database()
-    `);
+    `) as any[];
 
     // Tamaño de la base de datos
-    const dbSize = await prisma.$queryRawUnsafe<any[]>(`
+    const dbSize = await (prisma.$queryRawUnsafe as any)(`
       SELECT pg_size_pretty(pg_database_size(current_database())) as size
-    `);
+    `) as any[];
 
     // Tamaño de tablas principales
-    const tableSizes = await prisma.$queryRawUnsafe<any[]>(`
+    const tableSizes = await (prisma.$queryRawUnsafe as any)(`
       SELECT 
         tablename,
         pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size
@@ -61,7 +61,7 @@ export async function getDatabaseStats() {
       WHERE schemaname = 'public'
       ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC
       LIMIT 10
-    `);
+    `) as any[];
 
     // Convertir BigInt a Number para JSON.stringify
     const stats = {

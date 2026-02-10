@@ -17,6 +17,7 @@ const ManagePatients = lazy(() => import('./pages/ManagePatients'));
 const ManageDoctors = lazy(() => import('./pages/ManageDoctors'));
 const Settings = lazy(() => import('./pages/Settings'));
 const ViewPatients = lazy(() => import('./pages/ViewPatients'));
+const PatientProfile = lazy(() => import('./pages/PatientProfile'));
 const AuditLogs = lazy(() => import('./pages/AuditLogs/AuditLogs'));
 
 // Componente para proteger rutas que requieren autenticación
@@ -102,6 +103,15 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ViewPatients />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/dashboard/patients/:id"
+        element={
+          <ProtectedRoute>
+            <PatientProfile />
           </ProtectedRoute>
         }
       />

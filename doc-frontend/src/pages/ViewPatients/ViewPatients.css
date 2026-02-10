@@ -163,11 +163,12 @@ html.dark .filter-select {
   flex-direction: column;
 }
 
-.patient-card:hover {
+/* Hover effect disabled for better visibility in dark mode */
+/* .patient-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 10px 40px rgba(91, 101, 220, 0.2);
   border-color: #5B65DC;
-}
+} */
 
 html.dark .patient-card {
   background-color: #1e293b;

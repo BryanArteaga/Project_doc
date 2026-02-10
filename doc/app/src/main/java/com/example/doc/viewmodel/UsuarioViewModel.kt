@@ -166,9 +166,27 @@ class UsuarioViewModel @Inject constructor(
 
                 // 1️⃣ Primero, crear el usuario en el backend (Supabase)
                 Timber.d("📤 Sincronizando usuario con backend...")
+                val fcmToken = prefs.getString("fcm_token", null)
+                
+                // Calcular fecha de nacimiento aproximada si tenemos edad
+                val fechaNacimiento = usuario.edad?.let { edad ->
+                    val currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+                    val birthYear = currentYear - edad
+                    "$birthYear-01-01"  // Usar 1 de enero como fecha aproximada
+                }
+                
                 val createUsuarioRequest = CreateUsuarioRequest(
                     nombre = usuario.nombre,
                     apellido = usuario.apellido ?: "",
+                    cedula = usuario.cedula,
+                    fechaNacimiento = fechaNacimiento,
+                    edad = usuario.edad,
+                    peso = usuario.peso,
+                    altura = usuario.altura,
+                    sexo = usuario.sexo,
+                    enfermedad = usuario.enfermedad,
+                    colorEnfermedad = usuario.colorEnfermedad,
+                    tokenDispositivo = fcmToken,
                     estadoCuenta = "ACTIVE"
                 )
 

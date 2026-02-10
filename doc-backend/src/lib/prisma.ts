@@ -23,9 +23,23 @@ const prismaClientSingleton = () => {
     connectionString,
     max: 5, // Reducido de 10 a 5 para ahorrar memoria
     min: 1, // Mínimo de conexiones
-    idleTimeoutMillis: 20000, // Cerrar conexiones inactivas después de 20s (antes 30s)
-    connectionTimeoutMillis: 2000, // Timeout de conexión 2s
+    idleTimeoutMillis: 30000, // Cerrar conexiones inactivas después de 30s
+    connectionTimeoutMillis: 10000, // Timeout de conexión 10s (aumentado de 2s)
     allowExitOnIdle: true, // Permitir que el proceso termine si no hay conexiones activas
+    // Configuración adicional para mejor manejo de errores
+    statement_timeout: 10000, // Timeout de queries 10s
+    query_timeout: 10000, // Timeout de queries 10s
+  });
+
+  // Event handlers para debugging
+  pool.on('error', (err) => {
+    console.error('Error inesperado en pool de conexiones:', err);
+  });
+
+  pool.on('connect', () => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ Nueva conexión a la base de datos establecida');
+    }
   });
   
   const adapter = new PrismaPg(pool);

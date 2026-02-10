@@ -120,7 +120,7 @@ const ManagePatients: React.FC = () => {
           <Search className="search-icon" />
           <input
             type="text"
-            placeholder="Buscar por nombre, apellido o email..."
+            placeholder="Buscar por nombre o apellido..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"

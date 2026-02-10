@@ -45,6 +45,15 @@ data class FCMTokenRequest(
 data class CreateUsuarioRequest(
     val nombre: String,
     val apellido: String,
+    val cedula: String? = null,
+    val fechaNacimiento: String? = null,
+    val edad: Int? = null,
+    val peso: Double? = null,
+    val altura: Double? = null,
+    val sexo: String? = null,
+    val enfermedad: String? = null,
+    val colorEnfermedad: String? = null,
+    val tokenDispositivo: String? = null,
     val estadoCuenta: String = "ACTIVE"
 )
 

@@ -5,27 +5,66 @@ import { AuthRequest } from '../types';
 /**
  * POST /api/usuarios/create
  * Crear usuario (DESARROLLO: sin autenticación)
- * Body: { nombre: string, apellido: string, estadoCuenta?: "ACTIVE" | "INACTIVE" }
+ * Body: { 
+ *   nombre: string, 
+ *   apellido: string, 
+ *   cedula?: string,
+ *   fechaNacimiento?: string,  // Formato ISO (YYYY-MM-DD)
+ *   edad?: number,
+ *   peso?: number,
+ *   altura?: number,
+ *   sexo?: string,
+ *   enfermedad?: string,
+ *   colorEnfermedad?: string,
+ *   tokenDispositivo?: string,
+ *   estadoCuenta?: "ACTIVE" | "INACTIVE" 
+ * }
  * 
- * Todos los usuarios son asignados automáticamente al doctor por defecto (ID del env o 1)
+ * Todos los usuarios son asignados automáticamente al doctor por defecto (ID del env o 2)
  */
 export const createUsuario = async (req: Request, res: Response) => {
   try {
-    const { nombre, apellido, estadoCuenta = 'ACTIVE' } = req.body;
+    const { 
+      nombre, 
+      apellido, 
+      cedula,
+      fechaNacimiento,
+      edad,
+      peso,
+      altura,
+      sexo,
+      enfermedad,
+      colorEnfermedad,
+      tokenDispositivo,
+      estadoCuenta = 'ACTIVE' 
+    } = req.body;
     
     if (!nombre || !apellido) {
       return res.status(400).json({ error: 'nombre y apellido requeridos' });
     }
 
-    // Obtener ID del doctor por defecto de variable de entorno o usar 1
-    const defaultDoctorId = parseInt(process.env.DEFAULT_DOCTOR_ID || '1');
+    // Obtener ID del doctor por defecto de variable de entorno o usar 2
+    const defaultDoctorId = parseInt(process.env.DEFAULT_DOCTOR_ID || '2');
 
     const usuario = await prisma.usuario.create({
       data: {
         nombre,
         apellido,
+        cedula: cedula || null,
+        fechaNacimiento: fechaNacimiento ? new Date(fechaNacimiento) : null,
+        edad: edad || null,
+        peso: peso || null,
+        altura: altura || null,
+        sexo: sexo || null,
+        enfermedad: enfermedad || null,
+        colorEnfermedad: colorEnfermedad || null,
+        tokenDispositivo: tokenDispositivo || null,
         estadoCuenta,
-        idDoctorAsignado: defaultDoctorId  // Asignar automáticamente al doctor por defecto
+        idDoctorAsignado: defaultDoctorId,  // Asignar automáticamente al doctor por defecto
+        // Si estadoCuenta es ACTIVE, marcarlo como activado automáticamente
+        activadoEn: estadoCuenta === 'ACTIVE' ? new Date() : null,
+        activadoPor: estadoCuenta === 'ACTIVE' ? defaultDoctorId : null,
+        ultimaSincronizacion: new Date(),
       }
     });
 

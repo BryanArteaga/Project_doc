@@ -248,7 +248,7 @@ const ManageDoctors: React.FC = () => {
           <Search className="search-icon" />
           <input
             type="text"
-            placeholder="Buscar por nombre, email o especialidad..."
+            placeholder="Buscar por nombre o especialidad..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"

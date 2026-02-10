@@ -4,7 +4,7 @@ import Layout from '../../components/common/Layout/Layout';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
 import PageTransition from '../../components/common/PageTransition';
-import { ArrowLeft, Search, Eye, FileText } from 'lucide-react';
+import { ArrowLeft, Search, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { doctorService } from '../../services/doctor.service';
 import type { Patient } from '../../types';
@@ -96,7 +96,7 @@ const ViewPatients: React.FC = () => {
             <Search className="search-icon" />
             <input
               type="text"
-              placeholder="Buscar por nombre, email o enfermedad..."
+              placeholder="Buscar por nombre o enfermedad..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
@@ -127,17 +127,24 @@ const ViewPatients: React.FC = () => {
               <p className="empty-subtext">Intenta con otros filtros de búsqueda</p>
             </div>
           ) : (
-            filteredPatients.map((patient) => (
-              <div key={patient.id} className="patient-card">
+            filteredPatients.map((patient) => {
+              // Colores por enfermedad (coinciden con la app Android)
+              const enfermedadColor = patient.enfermedad === 'Hipertensión' ? '#D32F2F' :
+                                      patient.enfermedad === 'Diabetes' ? '#FFF176' :
+                                      patient.enfermedad === 'Obesidad' ? '#81D4FA' :
+                                      patient.enfermedad === 'Colesterol alto' ? '#FFA726' : '#6b7280';
+              
+              return (
+              <div key={patient.id} className="patient-card" style={{ borderLeft: `5px solid ${enfermedadColor}` }}>
                 <div className="patient-card-header">
-                  <div className="patient-avatar">
+                  <div className="patient-avatar" style={{ background: enfermedadColor }}>
                     {patient.nombre.charAt(0)}{patient.apellido.charAt(0)}
                   </div>
                   <div className="patient-card-info">
                     <h3 className="patient-card-name">
                       {patient.nombre} {patient.apellido}
                     </h3>
-                    <p className="patient-card-email">{patient.email}</p>
+                    {patient.cedula && <p className="patient-card-email">{patient.cedula}</p>}
                   </div>
                   <span className={`status-badge status-${patient.estadoCuenta.toLowerCase()}`}>
                     {patient.estadoCuenta === 'ACTIVE' ? 'Activo' : 
@@ -149,13 +156,11 @@ const ViewPatients: React.FC = () => {
                   {patient.enfermedad && (
                     <div className="patient-card-item">
                       <span className="item-label">Enfermedad:</span>
-                      <span className="item-value">{patient.enfermedad}</span>
-                    </div>
-                  )}
-                  {patient.telefonoPersonal && (
-                    <div className="patient-card-item">
-                      <span className="item-label">Teléfono:</span>
-                      <span className="item-value">{patient.telefonoPersonal}</span>
+                      <span className="item-value" style={{ 
+                        color: enfermedadColor, 
+                        fontWeight: 600,
+                        fontSize: '1.1rem'
+                      }}>{patient.enfermedad}</span>
                     </div>
                   )}
                   {patient.edad && (
@@ -181,17 +186,10 @@ const ViewPatients: React.FC = () => {
                     <Eye className="w-4 h-4 mr-1" />
                     Ver Perfil
                   </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => navigate(`/dashboard/patients/${patient.id}/report`)}
-                  >
-                    <FileText className="w-4 h-4 mr-1" />
-                    Reporte
-                  </Button>
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
