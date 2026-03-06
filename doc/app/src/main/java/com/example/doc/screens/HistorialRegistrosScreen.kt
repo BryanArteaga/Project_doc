@@ -118,11 +118,16 @@ private fun RegistroCard(registro: RegistroSaludEntity) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    registro.presionArterial?.let {
-                        InfoItem("Presión:", it)
+                    // Mostrar presión sistólica/diastólica
+                    if (registro.presionSistolica != null || registro.presionDiastolica != null) {
+                        val presionText = "${registro.presionSistolica ?: "?"}/${registro.presionDiastolica ?: "?"}"
+                        InfoItem("Presión:", "$presionText mmHg")
                     }
                     registro.glucosa?.let {
                         InfoItem("Glucosa:", "$it mg/dL")
+                    }
+                    registro.temperatura?.let {
+                        InfoItem("Temperatura:", String.format("%.1f°C", it))
                     }
                 }
 
@@ -130,8 +135,11 @@ private fun RegistroCard(registro: RegistroSaludEntity) {
                     registro.colesterol?.let {
                         InfoItem("Colesterol:", "$it mg/dL")
                     }
-                    registro.imc?.let {
-                        InfoItem("IMC:", String.format("%.1f", it))
+                    registro.peso?.let {
+                        InfoItem("Peso:", String.format("%.1f kg", it))
+                    }
+                    registro.calorias?.let {
+                        InfoItem("Calorías:", "$it kcal")
                     }
                 }
             }

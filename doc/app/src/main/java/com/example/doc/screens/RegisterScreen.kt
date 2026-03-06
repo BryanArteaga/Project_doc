@@ -32,10 +32,12 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.doc.R
 import com.example.doc.navigation.Routes
+import com.example.doc.security.InputValidator
 import com.example.doc.utils.SafeDecimalVisualTransformation
 import com.example.doc.utils.rememberDebouncer
 import com.example.doc.viewmodel.UsuarioViewModel
 import kotlinx.coroutines.delay
+import timber.log.Timber
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -302,12 +304,14 @@ fun RegisterScreen(navController: NavController, usuarioViewModel: UsuarioViewMo
                         value = cedula,
                         onValueChange = { newValue ->
                             cedula = newValue
-                            // Validación con debounce para no ejecutar en cada tecla
+                            // Validación con debounce: usar algoritmo módulo 10 ecuatoriano
                             validationDebouncer.debounce {
-                                cedulaError = if (newValue.isNotEmpty() && newValue.length != 10) {
-                                    "La cédula debe tener 10 dígitos"
-                                } else if (newValue.isNotEmpty() && !newValue.all { it.isDigit() }) {
-                                    "La cédula solo debe contener números"
+                                cedulaError = if (newValue.isNotEmpty()) {
+                                    if (!InputValidator.isValidCedula(newValue)) {
+                                        InputValidator.getMensajeErrorCedula(newValue)
+                                    } else {
+                                        null
+                                    }
                                 } else {
                                     null
                                 }
@@ -445,9 +449,9 @@ fun RegisterScreen(navController: NavController, usuarioViewModel: UsuarioViewMo
                                 }
                             }
 
-                            //validacion numero de cedula
-                            if (cedula.isNotBlank() && (cedula.length != 10 || !cedula.all { it.isDigit() })) {
-                                errors.add("La cédula debe tener 10 dígitos numéricos")
+                            // Validación de cédula: usar algoritmo módulo 10 ecuatoriano
+                            if (cedula.isNotBlank() && !InputValidator.isValidCedula(cedula)) {
+                                errors.add(InputValidator.getMensajeErrorCedula(cedula))
                             }
 
                             if (fechaNacimiento.text.isNotBlank()) {
@@ -496,6 +500,8 @@ fun RegisterScreen(navController: NavController, usuarioViewModel: UsuarioViewMo
                                 return@Button
                             }
 
+                            // ✅ Cédula válida y todos los campos completos - navegar a seleccion de condicion
+                            Timber.d("✅ Validación exitosa - cedula válida: $cedula")
                             navController.navigate(
                                 "${Routes.Condition}?cedula=${cedula.trim()}&name=${nombre.trim()}&apellido=${apellido.trim()}&edad=${calcularEdad(fechaNacimiento.text)}&peso=${safeDouble(peso.text)}&altura=${safeAltura(altura.text)}&sexo=$sexo"
                             )

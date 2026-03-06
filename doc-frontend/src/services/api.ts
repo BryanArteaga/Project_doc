@@ -35,9 +35,10 @@ api.interceptors.response.use(
       if (!isLoginRequest) {
         localStorage.removeItem('doctor_token');
         localStorage.removeItem('doctor_data');
+        // Usar location.replace para limpiar el historial
         setTimeout(() => {
-          window.location.href = '/login';
-        }, 500);
+          window.location.replace('/login');
+        }, 100);
       }
     }
     return Promise.reject(error);

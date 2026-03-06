@@ -222,9 +222,13 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         // Mostrar notificación
         val notificationId = System.currentTimeMillis().toInt()
-        notificationManager.notify(notificationId, notificationBuilder.build())
-
-        Timber.d("Notificación mostrada: ID=$notificationId, Type=$notificationType")
+        
+        try {
+            notificationManager.notify(notificationId, notificationBuilder.build())
+            Timber.d("✅ Notificación mostrada: ID=$notificationId, Type=$notificationType, Title=$title")
+        } catch (e: Exception) {
+            Timber.e(e, "❌ Error mostrando notificación: $title")
+        }
     }
 
     /**
@@ -236,14 +240,15 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val prefs = getSharedPreferences("doc_prefs", Context.MODE_PRIVATE)
         val userId = prefs.getInt("user_id", -1)
         
-        if (userId == -1) {
-            Timber.w("No hay usuario logueado, token no se envía al servidor")
-            return
-        }
+        // ✅ PERMITIR ENVÍO INCLUSO SIN USER_ID
+        // El token se registra como "temporal" y se asocia al usuario cuando se crea la cuenta
+        // O se envía con userId si ya existe sesión
         
-        // Enviar al backend usando Retrofit
-        // TODO: Implementar con inyección de dependencias (Hilt)
-        // Por ahora solo lo guardamos localmente
-        // En DocApplication o MainActivity se debe hacer el envío real
+        Timber.d("📤 Enviando token: userId=${if(userId == -1) "sin usuario" else userId}")
+        
+        // Enviar al backend usando Retrofit - MainActivity/UsuarioViewModel lo hace
+        // a través de FCMTokenManager
     }
 }
+
+

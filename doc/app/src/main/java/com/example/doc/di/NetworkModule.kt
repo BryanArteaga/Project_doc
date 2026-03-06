@@ -14,6 +14,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 import java.util.concurrent.TimeUnit
+import com.google.gson.GsonBuilder
+import com.example.doc.network.LongTimestampDeserializer
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -82,16 +84,20 @@ object NetworkModule {
     }
 
     /**
-     * Retrofit Instance
+     * Retrofit Instance con Gson configurado para Android 7 compatibility
      */
     @Provides
     @Singleton
     fun provideRetrofit(
         okHttpClient: OkHttpClient
     ): Retrofit {
+        val gson = GsonBuilder()
+            .registerTypeAdapter(Long::class.java, LongTimestampDeserializer())
+            .create()
+        
         return Retrofit.Builder()
             .baseUrl(Constants.API_BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .client(okHttpClient)
             .build()
     }

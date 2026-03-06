@@ -18,7 +18,7 @@ export interface PushRegistroSaludRequest {
   temperatura?: number;
   peso?: number;
   calorias?: number;
-  ejercicio?: number;               // minutos
+  ejercicio?: string;               // nombre/tipo del ejercicio
   estadoAnimo?: string;             // Happy, Neutral, Sad
   notas?: string;
 }
@@ -60,6 +60,23 @@ export interface EjercicioResponse {
   intensidad: string | null;
 }
 
+export interface RegistroSaludResponse {
+  id: number;
+  fecha: string;
+  hora?: string;
+  presionSistolica?: number;
+  presionDiastolica?: number;
+  glucosa?: number;
+  colesterol?: number;
+  temperatura?: number;
+  peso?: number;
+  calorias?: number;
+  ejercicio?: string;
+  estadoAnimo?: string;
+  notas?: string;
+  registradoEn: number; // Timestamp en milisegundos
+}
+
 export interface NotificacionResponse {
   id: number;
   titulo: string;
@@ -81,11 +98,30 @@ export interface UsuarioResponse {
   apellido: string;
   email: string;
   telefono: string | null;
+  edad?: number;
+  peso?: number;
+  altura?: number;
+  sexo?: string;
+  enfermedad?: string;
+  colorEnfermedad?: string;
+  // ✅ NUEVO: Configuración de notificaciones del usuario
+  notifEnabled: boolean;
+  notifType: string;
+  notifDetails: string;
+}
+  // 🔧 Agregar datos personales para sincronización completa
+  edad: number | null;
+  peso: number | null;
+  altura: number | null;
+  sexo: string | null;
+  enfermedad: string | null;
+  colorEnfermedad: string | null;
 }
 
 export interface SyncPullResponse {
   success: boolean;
   usuario: UsuarioResponse;
+  registrosSalud: RegistroSaludResponse[];  // ✅ NUEVO: Incluir registros de salud históricos
   ejercicios: EjercicioResponse[];
   notificaciones: NotificacionResponse[];
   estadoCuenta: EstadoAccountResponse;

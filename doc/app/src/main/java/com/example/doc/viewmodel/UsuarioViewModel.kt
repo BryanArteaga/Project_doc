@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.doc.repository.UsuarioRepository
+import com.google.firebase.messaging.FirebaseMessaging
 import com.example.doc.repository.SyncRepository
 import com.example.doc.data.entities.UsuarioEntity
 import com.example.doc.model.Usuario
@@ -12,6 +13,7 @@ import com.example.doc.security.InputValidator
 import com.example.doc.utils.NotificationHelper
 import com.example.doc.network.ApiService
 import com.example.doc.network.CreateUsuarioRequest
+import com.example.doc.utils.NetworkMonitor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,6 +57,13 @@ class UsuarioViewModel @Inject constructor(
 
     private val _lastSyncTime = MutableStateFlow<String?>(null)
     val lastSyncTime: StateFlow<String?> = _lastSyncTime
+
+    // 🔄 Overlay de sincronización profesional
+    private val _syncOverlayVisible = MutableStateFlow(false)
+    val syncOverlayVisible: StateFlow<Boolean> = _syncOverlayVisible
+
+    private val _syncOverlayMessage = MutableStateFlow("Sincronizando...")
+    val syncOverlayMessage: StateFlow<String> = _syncOverlayMessage
 
     @Suppress("unused")
     private val _uiState = MutableStateFlow<UiState<Usuario>>(UiState.Idle)
@@ -109,11 +118,29 @@ class UsuarioViewModel @Inject constructor(
 
         // Observar cambios de conectividad y sincronizar cuando hay internet
         viewModelScope.launch {
+            var lastSyncCheckTime = 0L
             com.example.doc.utils.NetworkMonitor.isConnected.collect { isConnected ->
-                if (isConnected && _syncState.value == SyncState.PENDING) {
-                    Timber.d("📡 Internet disponible - Sincronizando datos pendientes")
-                    _usuario.value?.let { usuario ->
-                        sincronizarAutomaticamente()
+                if (isConnected) {
+                    val usuario = _usuario.value
+                    if (usuario != null) {
+                        // Evitar sincronizaciones más de 1 vez por minuto
+                        val now = System.currentTimeMillis()
+                        if (now - lastSyncCheckTime > 60000) { // 60 segundos
+                            lastSyncCheckTime = now
+                            
+                            Timber.d("📡 Internet disponible - Evaluando si sincronizar...")
+                            
+                            // Verificar si ya se ejecutó el overlay de forma exitosa
+                            val alreadyExecutedFlag = prefs.getBoolean("auto_sync_overlay_executed_${usuario.id}", false)
+                            
+                            // Si NO se ha ejecutado de forma exitosa, intentar sincronizar
+                            if (!alreadyExecutedFlag) {
+                                Timber.d("🔄 Reconexión detectada - Sincronizando automáticamente (Flag: $alreadyExecutedFlag)")
+                                sincronizarAutomaticamente()
+                            } else {
+                                Timber.d("✅ Ya fue sincronizado exitosamente, sin acción necesaria")
+                            }
+                        }
                     }
                 }
             }
@@ -188,7 +215,7 @@ class UsuarioViewModel @Inject constructor(
                     enfermedad = usuario.enfermedad,
                     colorEnfermedad = usuario.colorEnfermedad,
                     tokenDispositivo = fcmToken,
-                    estadoCuenta = "INACTIVE"  // Por defecto INACTIVE
+                    estadoCuenta = "ACTIVE"  // Por defecto ACTIVE
                 )
 
                 val backendResponse = try {
@@ -231,12 +258,21 @@ class UsuarioViewModel @Inject constructor(
                     notifDetails = usuarioFinal.notifDetails,
                     glucosaInicial = usuarioFinal.glucosaInicial,
                     colesterolInicial = usuarioFinal.colesterolInicial,
-                    estadoCuenta = "INACTIVE"  // Siempre guardar como INACTIVE localmente
+                    estadoCuenta = "ACTIVE"
                 )
                 repository.guardarUsuario(entity)
 
                 // Guardar ID en SharedPreferences para sincronización
                 prefs.edit().putInt("user_id", usuarioFinal.id).apply()
+
+                // Suscribirse al tema de notificaciones personales inmediatamente
+                FirebaseMessaging.getInstance().subscribeToTopic("user_${usuarioFinal.id}")
+                    .addOnSuccessListener {
+                        Timber.d("✅ Suscrito al tema personal: user_${usuarioFinal.id}")
+                    }
+                    .addOnFailureListener { e ->
+                        Timber.e(e, "❌ Error al suscribirse a tema personal: user_${usuarioFinal.id}")
+                    }
 
                 _uiState.value = UiState.Success(usuarioFinal)
                 Timber.d("✅ Usuario registrado exitosamente: ${usuarioFinal.nombre} (ID: ${usuarioFinal.id})")
@@ -284,6 +320,32 @@ class UsuarioViewModel @Inject constructor(
             } catch (e: Exception) {
                 Timber.e(e, "❌ Error al cargar usuario")
             }
+        }
+    }
+
+    /**
+     * 🔍 Verificar si un usuario existe localmente por cédula
+     * (Usado para detectar si es un registro nuevo o usuario existente)
+     */
+    suspend fun usuarioExisteLocalmente(cedula: String?): Boolean {
+        return try {
+            repository.existePorCedula(cedula)
+        } catch (e: Exception) {
+            Timber.e(e, "❌ Error verificando usuario por cédula")
+            false
+        }
+    }
+
+    /**
+     * 🔍 Obtener usuario localmente por cédula
+     * (Usado para cargar datos de usuario existente)
+     */
+    suspend fun obtenerUsuarioLocalmente(cedula: String?): UsuarioEntity? {
+        return try {
+            repository.obtenerPorCedula(cedula)
+        } catch (e: Exception) {
+            Timber.e(e, "❌ Error obteniendo usuario por cédula")
+            null
         }
     }
 
@@ -380,9 +442,27 @@ class UsuarioViewModel @Inject constructor(
                         glucosaInicial = updated.glucosaInicial,
                         colesterolInicial = updated.colesterolInicial
                     )
+                    // Actualizar localmente
                     repository.actualizarUsuario(entity)
                     setupNotifications(updated)
                     Timber.d("Notificaciones actualizadas: enabled=$enabled, type=$type")
+
+                    // 🔄 SINCRONIZAR CON BACKEND
+                    try {
+                        val response = syncRepository.actualizarNotificacionesEnBackend(
+                            usuarioId = updated.id,
+                            notifEnabled = enabled,
+                            notifType = type,
+                            notifDetails = details
+                        )
+                        if (response != null) {
+                            Timber.d("✅ Notificaciones sincronizadas con backend")
+                        } else {
+                            Timber.w("⚠️ Error al sincronizar notificaciones con backend")
+                        }
+                    } catch (syncError: Exception) {
+                        Timber.e(syncError, "❌ Error sincronizando notificaciones")
+                    }
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Error al actualizar notificaciones")
@@ -401,6 +481,28 @@ class UsuarioViewModel @Inject constructor(
 
                 Timber.d("🔄 Iniciando sincronización automática para usuario: $usuarioId")
 
+                // 🔍 NUEVO: Si es la primera sincronización y hay cédula, intentar recuperar cuenta
+                val usuario = _usuario.value
+                if (usuario?.cedula != null && 
+                    prefs.getBoolean("primer_sync_intento", true) &&
+                    NetworkMonitor.isConnected.value) {
+                    
+                    Timber.d("🔍 Primer intento de sync con internet - Buscando usuario por cédula...")
+                    val searchResult = syncRepository.searchAndSyncByCedula(usuario.cedula!!)
+                    
+                    if (searchResult.isSuccess && searchResult.getOrNull() != null) {
+                        Timber.d("✅ Usuario recuperado por cédula, sincronización completada")
+                        prefs.edit().putBoolean("primer_sync_intento", false).apply()
+                        _isSynced.value = true
+                        _isSyncing.value = false
+                        return@launch
+                    } else {
+                        Timber.d("ℹ️ Usuario no encontrado por cédula, continuando con fullSync normal")
+                        prefs.edit().putBoolean("primer_sync_intento", false).apply()
+                    }
+                }
+
+                // Sync normal
                 val result = syncRepository.fullSync(usuarioId)
 
                 result.onSuccess {
@@ -464,6 +566,12 @@ class UsuarioViewModel @Inject constructor(
     fun limpiarUsuario() {
         viewModelScope.launch {
             try {
+                // Limpiar todas las banderas de sync para este usuario antes de eliminarlo
+                val usuarioActual = usuario.value
+                if (usuarioActual != null) {
+                    prefs.edit().remove("auto_sync_overlay_executed_${usuarioActual.id}").apply()
+                }
+                
                 repository.eliminarTodos()
                 NotificationHelper.cancelNotifications(context)
                 NotificationHelper.cancelExerciseNotifications(context)
@@ -518,14 +626,36 @@ class UsuarioViewModel @Inject constructor(
 
     /**
      * Sincronización automática (cada 1 minuto)
-     * Se llama desde SyncWorker
+     * Se llama desde SyncWorker O cuando se reconecta internet
      */
     fun sincronizarAutomaticamente() {
         viewModelScope.launch {
             try {
                 _usuario.value?.let { usuario ->
-                    // No mostrar SYNCING en automática, solo si hay cambios
                     Timber.d("⏰ Sincronización AUTOMÁTICA iniciada para usuario: ${usuario.nombre}")
+                    
+                    // 🔍 Intentar recuperar por cédula si es el primer intento
+                    if (usuario.cedula != null && 
+                        prefs.getBoolean("primer_sync_intento", true) &&
+                        NetworkMonitor.isConnected.value) {
+                        
+                        Timber.d("🔍 Primer intento de sync - Buscando usuario por cédula...")
+                        val searchResult = syncRepository.searchAndSyncByCedula(usuario.cedula!!)
+                        
+                        if (searchResult.isSuccess && searchResult.getOrNull() != null) {
+                            Timber.d("✅ Usuario recuperado por cédula en sincronización automática")
+                            prefs.edit().putBoolean("primer_sync_intento", false).apply()
+                            _syncState.value = SyncState.IDLE
+                            _isSynced.value = true
+                            _lastSyncTime.value = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+                            return@launch
+                        } else {
+                            Timber.d("ℹ️ Usuario no encontrado por cédula, continuando con fullSync")
+                            prefs.edit().putBoolean("primer_sync_intento", false).apply()
+                        }
+                    }
+                    
+                    // Sync normal
                     val resultado = syncRepository.fullSync(usuario.id)
 
                     if (resultado.isSuccess) {
@@ -588,7 +718,109 @@ class UsuarioViewModel @Inject constructor(
     }
 
     /**
-     * Detectar si una excepción es causada por problemas de red
+     * Sincronización automática profesional CON OVERLAY
+     * Se muestra una pantalla bonita mientras se sincroniza
+     * Ideal para cuando el usuario ya estaba registrado y vuelve a entrar
+     * Se ejecuta solo UNA VEZ por usuario (persiste entre sesiones)
+     */
+    fun performAutoSyncWithOverlay(usuarioId: Int) {
+        viewModelScope.launch {
+            try {
+                // Evitar ejecutar múltiples veces si usuario se actualiza constantemente
+                // Usar SharedPreferences para que persista entre sesiones
+                val alreadyExecuted = prefs.getBoolean("auto_sync_overlay_executed_$usuarioId", false)
+                if (alreadyExecuted) {
+                    Timber.d("↩️ Auto-sync con overlay ya ejecutado para usuario $usuarioId, saltando...")
+                    return@launch
+                }
+                
+                // ⚠️ NO marcar como ejecutado aquí, solo DESPUÉS de sincronizar exitosamente
+
+                // Mostrar overlay
+                _syncOverlayVisible.value = true
+                _syncOverlayMessage.value = "Verificando usuario..."
+                Timber.d("🔄 Iniciando sincronización automática CON OVERLAY para usuario: $usuarioId")
+
+                // Pequeño delay para que se vea la animación
+                kotlinx.coroutines.delay(500)
+
+                // 🔍 Si es la primera sincronización y hay cédula, intentar recuperar cuenta
+                val usuario = _usuario.value
+                if (usuario?.cedula != null && 
+                    prefs.getBoolean("primer_sync_intento", true) &&
+                    NetworkMonitor.isConnected.value) {
+                    
+                    _syncOverlayMessage.value = "Cargando perfil..."
+                    Timber.d("🔍 Primer intento de sync con internet - Buscando usuario por cédula...")
+                    val searchResult = syncRepository.searchAndSyncByCedula(usuario.cedula!!)
+                    
+                    if (searchResult.isSuccess && searchResult.getOrNull() != null) {
+                        Timber.d("✅ Usuario recuperado por cédula")
+                        prefs.edit().putBoolean("primer_sync_intento", false).apply()
+                        
+                        _syncOverlayMessage.value = "Sincronizando datos personales..."
+                        kotlinx.coroutines.delay(1000)
+                        
+                        _syncOverlayMessage.value = "Cargando ejercicios..."
+                        kotlinx.coroutines.delay(800)
+                        
+                        _syncOverlayMessage.value = "Finalizando..."
+                        kotlinx.coroutines.delay(500)
+                        
+                        _isSynced.value = true
+                        _syncOverlayVisible.value = false
+                        
+                        // ✅ Sincronización exitosa por cédula - marcar bandera
+                        prefs.edit().putBoolean("auto_sync_overlay_executed_$usuarioId", true).apply()
+                        Timber.d("✅ Sincronización completada con overlay - Bandera grabada")
+                        return@launch
+                    } else {
+                        Timber.d("ℹ️ Usuario no encontrado por cédula, continuando con fullSync normal")
+                        prefs.edit().putBoolean("primer_sync_intento", false).apply()
+                    }
+                }
+
+                // Sync normal
+                _syncOverlayMessage.value = "Sincronizando datos personales..."
+                val result = syncRepository.fullSync(usuarioId)
+
+                result.onSuccess {
+                    Timber.d("✅ Sincronización automática completada con overlay")
+                    
+                    _syncOverlayMessage.value = "Cargando ejercicios..."
+                    kotlinx.coroutines.delay(800)
+                    
+                    _syncOverlayMessage.value = "Finalizando..."
+                    kotlinx.coroutines.delay(500)
+                    
+                    _isSynced.value = true
+                    _lastSyncTime.value = prefs.getString("last_sync", null)
+                    
+                    // ✅ Sincronización exitosa - marcar bandera SOLO AQUÍ
+                    prefs.edit().putBoolean("auto_sync_overlay_executed_$usuarioId", true).apply()
+                    Timber.d("✅ Bandera de auto-sync guardada en SharedPreferences")
+                }
+
+                result.onFailure { error ->
+                    Timber.e(error, "❌ Error en sincronización automática con overlay")
+                    _isSynced.value = false
+                    
+                    // ❌ NO marcar bandera si falla - permitir reintento cuando se reconecte
+                    Timber.d("⚠️ NO se marcó bandera - permitirá reintento cuando haya internet")
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "❌ Excepción en sincronización automática con overlay")
+                _isSynced.value = false
+                // ❌ NO marcar bandera si falla
+            } finally {
+                // Ocultar overlay al finalizar
+                _syncOverlayVisible.value = false
+            }
+        }
+    }
+
+    /**
+     * Detectar si el error es causado por problemas de red
      */
     private fun isNetworkError(exception: Throwable?): Boolean {
         if (exception == null) return false

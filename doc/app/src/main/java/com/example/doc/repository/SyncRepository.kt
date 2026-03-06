@@ -1,6 +1,8 @@
 package com.example.doc.repository
 
 import android.content.SharedPreferences
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.example.doc.data.daos.EjercicioRealizadoDao
 import com.example.doc.data.daos.RegistroSaludDao
 import com.example.doc.data.daos.UsuarioDao
@@ -14,7 +16,9 @@ import com.example.doc.network.CreateUsuarioRequest
 import timber.log.Timber
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.time.LocalDate
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 /**
  * DTOs para Response
@@ -32,7 +36,25 @@ data class SyncPullResponse(
     val usuario: UsuarioPullDTO,
     val ejercicios: List<EjercicioDTO>,
     val notificaciones: List<NotificacionDTO>,
-    val estadoCuenta: EstadoCuentaDTO
+    val estadoCuenta: EstadoCuentaDTO,
+    val registrosSalud: List<RegistroSaludDTO> = emptyList()  // ✅ NUEVO: Registros históricos del backend
+)
+
+data class RegistroSaludDTO(
+    val id: Int,
+    val fecha: String,
+    val hora: String? = null,
+    val presionSistolica: Int? = null,
+    val presionDiastolica: Int? = null,
+    val glucosa: Int? = null,
+    val colesterol: Int? = null,
+    val temperatura: Double? = null,
+    val peso: Double? = null,
+    val calorias: Int? = null,
+    val ejercicio: String? = null,
+    val estadoAnimo: String? = null,
+    val notas: String? = null,
+    val registradoEn: Long
 )
 
 data class UsuarioPullDTO(
@@ -41,7 +63,18 @@ data class UsuarioPullDTO(
     val apellido: String?,
     val email: String?,
     val telefono: String?,
-    val estadoCuenta: String? = null  // Agregar estadoCuenta aquí también
+    val estadoCuenta: String? = null,
+    // 🔧 Datos personales que ahora vienen del backend
+    val edad: Int? = null,
+    val peso: Double? = null,
+    val altura: Double? = null,
+    val sexo: String? = null,
+    val enfermedad: String? = null,
+    val colorEnfermedad: String? = null,
+    // ✅ NUEVO: Configuración de notificaciones (no mostrar pop-up si existe config)
+    val notifEnabled: Boolean = true,
+    val notifType: String = "daily_fixed",
+    val notifDetails: String = "{\"hour\":20}"
 )
 
 data class EjercicioDTO(
@@ -105,6 +138,7 @@ class SyncRepository(
      * - Datos de salud registrados
      * - Ejercicios completados
      */
+    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun pushDataToBackend(usuarioId: Int): Result<SyncPushResponse> {
         return withContext(Dispatchers.IO) {
             try {
@@ -120,7 +154,6 @@ class SyncRepository(
                     kotlinx.coroutines.delay(100)
                 }
 
-                // 🔄 Refrescar usuarioId del usuario actual en caso que haya cambiado
                 val usuarioActualizado = usuarioDao.getUsuarioSuspend()
                 val usuarioIdActual = usuarioActualizado?.id ?: usuarioId
                 Timber.d("📋 Usuario en Room después de crear en backend: ID=${usuarioActualizado?.id}, nombre=${usuarioActualizado?.nombre}")
@@ -138,7 +171,8 @@ class SyncRepository(
                 if (ejerciciosSinSync.isEmpty()) {
                     Timber.w("⚠️ No hay ejercicios sin sincronizar (comprobando si existen ejercicios en BD...)")
                     // DEBUG: contar total de ejercicios
-                    val totalEjercicios = ejercicioRealizadoDao.getEjerciciosRealizadosHoy(usuarioIdActual, java.time.LocalDate.now().toString())
+                    val todayString = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Calendar.getInstance().time)
+                    val totalEjercicios = ejercicioRealizadoDao.getEjerciciosRealizadosHoy(usuarioIdActual, todayString)
                     Timber.d("DEBUG: Total de ejercicios hoy: ${totalEjercicios.size}")
                     totalEjercicios.forEach { ej ->
                         Timber.d("  - ID: ${ej.id}, ejercicioId: ${ej.ejercicioId}, isSynced: ${ej.isSynced}, syncId: ${ej.syncId}")
@@ -150,13 +184,16 @@ class SyncRepository(
                     usuarioId = usuarioIdActual,  // Sin JWT, se envía en el body (ID actualizado)
                     registrosSalud = registrosSinSync.map { rs ->
                         PushRegistroSaludRequest(
-                            presionSistolica = rs.presionArterial?.split("/")?.getOrNull(0)?.toIntOrNull(),
-                            presionDiastolica = rs.presionArterial?.split("/")?.getOrNull(1)?.toIntOrNull(),
+                            presionSistolica = rs.presionSistolica?.toFloat(),
+                            presionDiastolica = rs.presionDiastolica?.toFloat(),
                             glucosa = rs.glucosa?.toFloat(),
                             colesterol = rs.colesterol?.toFloat(),
+                            temperatura = rs.temperatura?.toFloat(),
+                            peso = rs.peso?.toFloat(),
                             calorias = rs.calorias,
-                            ejercicio = rs.ejercicio,
+                            ejercicio = rs.ejercicio?.toString(), // 🔧 Asegurar que sea String
                             estadoAnimo = rs.estadoAnimo,
+                            notas = rs.notas,
                             fecha = rs.fecha,
                             hora = rs.hora
                         )
@@ -223,7 +260,37 @@ class SyncRepository(
 
                 if (response.isSuccessful) {
                     val body = response.body()!!
-                    Timber.d("✅ PULL exitoso: ${body.ejercicios.size} ejercicios, ${body.notificaciones.size} notificaciones")
+                    Timber.d("✅ PULL exitoso: ${body.ejercicios.size} ejercicios, ${body.notificaciones.size} notificaciones, ${body.registrosSalud.size} registros históricos")
+
+                    // ✅ NUEVO: Guardar registros de salud históricos en Room
+                    if (body.registrosSalud.isNotEmpty()) {
+                        try {
+                            body.registrosSalud.forEach { registroDto ->
+                                val entity = com.example.doc.data.entities.RegistroSaludEntity(
+                                    id = registroDto.id,
+                                    usuarioId = usuarioId,
+                                    fecha = registroDto.fecha,
+                                    hora = registroDto.hora,
+                                    presionSistolica = registroDto.presionSistolica,
+                                    presionDiastolica = registroDto.presionDiastolica,
+                                    glucosa = registroDto.glucosa,
+                                    colesterol = registroDto.colesterol,
+                                    temperatura = registroDto.temperatura,
+                                    peso = registroDto.peso,
+                                    calorias = registroDto.calorias,
+                                    ejercicio = registroDto.ejercicio,
+                                    estadoAnimo = registroDto.estadoAnimo,
+                                    notas = registroDto.notas,
+                                    registradoEn = registroDto.registradoEn,
+                                    isSynced = true  // Ya están en el backend
+                                )
+                                registroSaludDao.upsert(entity)
+                            }
+                            Timber.d("✅ ${body.registrosSalud.size} registros históricos guardados en Room")
+                        } catch (e: Exception) {
+                            Timber.e(e, "❌ Error guardando registros históricos en Room")
+                        }
+                    }
 
                     // Verificar estado de cuenta
                     if (!body.estadoCuenta.activo) {
@@ -404,15 +471,36 @@ class SyncRepository(
                         else -> "PENDING"
                     }
                     
-                    // Actualizar solo los campos que vienen del backend
+                    // 🔧 Actualizar TODOS los campos que vienen del backend (incluyendo datos personales)
                     val usuarioActualizado = usuarioActual.copy(
+                        id = usuarioPull.id,  // Actualizar ID si cambió
                         nombre = usuarioPull.nombre,
                         apellido = usuarioPull.apellido ?: usuarioActual.apellido,
+                        edad = usuarioPull.edad ?: usuarioActual.edad,  // Usar backend si viene, sino mantener local
+                        peso = usuarioPull.peso ?: usuarioActual.peso,
+                        altura = usuarioPull.altura ?: usuarioActual.altura,
+                        sexo = usuarioPull.sexo ?: usuarioActual.sexo,
+                        enfermedad = usuarioPull.enfermedad ?: usuarioActual.enfermedad,  // IMPORTANTE: sincronizar enfermedad
+                        colorEnfermedad = usuarioPull.colorEnfermedad ?: usuarioActual.colorEnfermedad,
+                        // ✅ NUEVO: Actualizar configuración de notificaciones desde backend
+                        notifEnabled = usuarioPull.notifEnabled,
+                        notifType = usuarioPull.notifType,
+                        notifDetails = usuarioPull.notifDetails,
                         estadoCuenta = estadoCuentaStr
                     )
 
-                    usuarioDao.update(usuarioActualizado)
-                    Timber.d("✅ Usuario actualizado: ${usuarioPull.nombre} ${usuarioPull.apellido} (Estado: $estadoCuentaStr)")
+                    // Borrar usuario con ID viejo si cambió
+                    if (usuarioActual.id != usuarioPull.id) {
+                        Timber.d("📝 Actualizando ID de usuario en Room: ${usuarioActual.id} → ${usuarioPull.id}")
+                        usuarioDao.delete(usuarioActual)
+                        usuarioDao.insert(usuarioActualizado)
+                    } else {
+                        usuarioDao.update(usuarioActualizado)
+                    }
+                    
+                    Timber.d("✅ Usuario actualizado: ${usuarioPull.nombre} ${usuarioPull.apellido}")
+                    Timber.d("   📋 Edad: ${usuarioActualizado.edad}, Peso: ${usuarioActualizado.peso}kg, Altura: ${usuarioActualizado.altura}m")
+                    Timber.d("   🏥 Enfermedad: ${usuarioActualizado.enfermedad}, Color: ${usuarioActualizado.colorEnfermedad}")
                 } else {
                     Timber.w("⚠️ No hay usuario en Room para actualizar")
                 }
@@ -562,6 +650,94 @@ class SyncRepository(
             } catch (e: Exception) {
                 Timber.e(e, "❌ Error verificando/creando usuario en backend")
                 // No lanzar excepción, permitir que continúe el PUSH
+            }
+        }
+    }
+
+    /**
+     * Actualizar notificaciones en el backend
+     * Se llama cuando el usuario cambia configuración de notificaciones desde Perfil
+     */
+    suspend fun actualizarNotificacionesEnBackend(
+        usuarioId: Int,
+        notifEnabled: Boolean,
+        notifType: String,
+        notifDetails: String
+    ): String? = withContext(Dispatchers.IO) {
+        try {
+            val requestBody = com.example.doc.network.UpdateProfileRequest(
+                usuarioId = usuarioId,
+                notifEnabled = notifEnabled,
+                notifType = notifType,
+                notifDetails = notifDetails
+            )
+
+            val response = apiService.updateProfile(requestBody)
+
+            if (response.isSuccessful && response.body() != null) {
+                Timber.d("✅ Notificaciones actualizadas en backend para usuario $usuarioId")
+                response.body()?.toString()
+            } else {
+                Timber.e("❌ Error actualizando notificaciones: ${response.code()}")
+                null
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "❌ Error al actualizar notificaciones en backend")
+            null
+        }
+    }
+
+    /**
+     * 🔍 BÚSQUEDA Y SINCRONIZACIÓN OFFLINE-FIRST
+     * Cuando app se reinstala o se abre con internet:
+     * 1. Busca usuario por cédula en backend
+     * 2. Si existe: actualiza Room y auto-sincroniza
+     * 3. Si no existe: permite que continúe el registro normal
+     */
+    suspend fun searchAndSyncByCedula(cedula: String): Result<Int?> {
+        return withContext(Dispatchers.IO) {
+            try {
+                Timber.d("🔍 Buscando usuario por cédula en backend: $cedula")
+
+                val response = apiService.searchUserByCedula(cedula)
+
+                if (!response.isSuccessful) {
+                    Timber.w("⚠️ Usuario no encontrado por cédula en backend")
+                    return@withContext Result.success(null)  // Usuario no existe, permitir nuevo registro
+                }
+
+                val body = response.body()
+                if (body?.found == true && body.usuario != null) {
+                    Timber.d("✅ Usuario encontrado en backend con ID: ${body.usuario.id}")
+
+                    // Actualizar Room con datos del backend
+                    val usuarioActual = usuarioDao.getUsuarioSuspend()
+                    if (usuarioActual != null) {
+                        val usuarioActualizado = usuarioActual.copy(
+                            id = body.usuario.id  // Sincronizar ID con backend
+                        )
+                        usuarioDao.updateUsuario(usuarioActualizado)
+                        Timber.d("💾 Room actualizado con usuario de backend ID=${body.usuario.id}")
+
+                        // Ejecutar sync automático
+                        Timber.d("🔄 Ejecutando sincronización automática para usuario recuperado...")
+                        val syncResult = fullSync(body.usuario.id)
+
+                        if (syncResult.isSuccess) {
+                            Timber.d("✅ Sincronización automática exitosa para usuario recuperado")
+                        } else {
+                            Timber.w("⚠️ Sincronización automática falló: ${syncResult.exceptionOrNull()?.message}")
+                        }
+                    }
+
+                    return@withContext Result.success(body.usuario.id)
+                } else {
+                    Timber.w("⚠️ Usuario no encontrado o respuesta vacía")
+                    return@withContext Result.success(null)
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "❌ Error buscando usuario por cédula")
+                Result.failure(e)
             }
         }
     }

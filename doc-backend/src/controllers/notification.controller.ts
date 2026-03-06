@@ -322,32 +322,17 @@ export const sendPushToUser = async (
   data?: Record<string, string>
 ) => {
   try {
-    // Obtener todos los dispositivos activos del usuario
-    const devices = await prisma.dispositivo.findMany({
-      where: {
-        usuarioId,
-        activo: true,
-        fcmToken: {
-          not: ""  // No vacío
-        }
-      },
-    });
+    // Enviar a tema específico del usuario (user_${usuarioId})
+    // El app está suscrito a este tema en HybridNotificationManager
+    const topic = `user_${usuarioId}`;
 
-    if (devices.length === 0) {
-      console.log(`No hay dispositivos activos para el usuario ${usuarioId}`);
-      return { success: false, message: 'No hay dispositivos registrados' };
-    }
-
-    const tokens = devices.map((d: any) => d.fcmToken).filter(Boolean) as string[];
-
-    // Mensaje de FCM
-    const message: admin.messaging.MulticastMessage = {
+    const message: admin.messaging.Message = {
       notification: {
         title,
         body,
       },
       data: data || {},
-      tokens,
+      topic,
       android: {
         priority: 'high',
         notification: {
@@ -357,81 +342,18 @@ export const sendPushToUser = async (
       },
     };
 
-    // Enviar notificación
-    const response = await admin.messaging().sendEachForMulticast(message);
+    // Enviar notificación al tema
+    const messageId = await admin.messaging().send(message);
 
-    console.log(`Notificaciones enviadas: ${response.successCount}/${tokens.length}`);
-
-    // Remover tokens inválidos
-    if (response.failureCount > 0) {
-      const failedTokens: string[] = [];
-      response.responses.forEach((resp, idx) => {
-        if (!resp.success) {
-          failedTokens.push(tokens[idx]);
-        }
-      });
-
-      await prisma.dispositivo.deleteMany({
-        where: { fcmToken: { in: failedTokens } },
-      });
-
-      console.log(`Tokens inválidos eliminados: ${failedTokens.length}`);
-    }
+    console.log(`✅ PUSH exitoso para usuario ${usuarioId} en tema ${topic}. MessageId: ${messageId}`);
 
     return {
       success: true,
-      successCount: response.successCount,
-      failureCount: response.failureCount,
+      message: `Notificación enviada a tema ${topic}`,
+      messageId,
     };
   } catch (error: any) {
-    console.error('Error al enviar push:', error);
+    console.error(`❌ Error al enviar push a usuario ${usuarioId}:`, error);
     return { success: false, error: error.message };
-  }
-};
-
-/**
- * Enviar notificación de cuenta activada
- */
-export const sendAccountActivatedPush = async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.params;
-    const usuarioId = parseInt(userId);
-
-    const usuario = await prisma.usuario.findUnique({
-      where: { id: usuarioId },
-    });
-
-    if (!usuario) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-
-    const result = await sendPushToUser(
-      usuarioId,
-      '¡Cuenta Activada!',
-      'Tu médico ha activado tu cuenta. Ya puedes usar todas las funciones de la app.',
-      {
-        type: 'account_activated',
-        navigate_to: 'main',
-      }
-    );
-
-    // También crear notificación en la base de datos
-    await prisma.notificacion.create({
-      data: {
-        usuarioId,
-        tipo: 'cuenta_activada',
-        titulo: '¡Cuenta Activada!',
-        mensaje: 'Tu médico ha activado tu cuenta. Ya puedes usar todas las funciones.',
-        leido: false,
-      },
-    });
-
-    res.json({
-      message: 'Notificación enviada',
-      result,
-    });
-  } catch (error: any) {
-    console.error('Error al enviar notificación de activación:', error);
-    res.status(500).json({ error: error.message });
   }
 };

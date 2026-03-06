@@ -29,4 +29,14 @@ class UsuarioRepository(private val usuarioDao: UsuarioDao) {
     suspend fun eliminarTodos() {
         usuarioDao.deleteAll()
     }
+
+    // 🔍 Buscar usuario por cédula (para verificar si ya existe localmente)
+    suspend fun obtenerPorCedula(cedula: String?): UsuarioEntity? {
+        return usuarioDao.getByCedula(cedula)
+    }
+
+    // ✅ Verificar si un usuario existe por cédula
+    suspend fun existePorCedula(cedula: String?): Boolean {
+        return usuarioDao.existsByCedula(cedula)
+    }
 }

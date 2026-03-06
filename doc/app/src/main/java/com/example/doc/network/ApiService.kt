@@ -17,13 +17,16 @@ data class SyncPushRequest(
 )
 
 data class PushRegistroSaludRequest(
-    val presionSistolica: Int?,
-    val presionDiastolica: Int?,
+    val presionSistolica: Float?,
+    val presionDiastolica: Float?,
     val glucosa: Float?,
     val colesterol: Float?,
+    val temperatura: Float?,
+    val peso: Float?,
     val calorias: Int?,
-    val ejercicio: Int?,
+    val ejercicio: String?,  // Nombre del ejercicio
     val estadoAnimo: String?,
+    val notas: String?,
     val fecha: String?,
     val hora: String?
 )
@@ -36,7 +39,8 @@ data class PushEjercicioRealizadoRequest(
 )
 
 data class FCMTokenRequest(
-    val token: String
+    val token: String,
+    val userId: Int? = null  // userId para usuarios nuevos sin sesión
 )
 
 /**
@@ -67,6 +71,17 @@ data class UsuarioBackendData(
     val nombre: String,
     val apellido: String,
     val estadoCuenta: String
+)
+
+/**
+ * DTO para actualizar perfil de usuario
+ */
+data class UpdateProfileRequest(
+    val usuarioId: Int,
+    val peso: Double? = null,
+    val notifEnabled: Boolean? = null,
+    val notifType: String? = null,
+    val notifDetails: String? = null
 )
 
 /**
@@ -135,4 +150,42 @@ interface ApiService {
      */
     @GET("sync/status")
     suspend fun getSyncStatus(): Response<SyncStatus>
+
+    // ============================================
+    // 👤 Perfil de Usuario
+    // ============================================
+
+    /**
+     * PUT /api/usuarios/profile
+     * Actualizar perfil del usuario (notificaciones, peso, etc)
+     * Sin autenticación JWT - usuarioId viene en el body
+     */
+    @PUT("usuarios/profile")
+    suspend fun updateProfile(
+        @Body data: UpdateProfileRequest
+    ): Response<String>
+
+    // ============================================
+    // 🔍 Búsqueda y Recuperación
+    // ============================================
+
+    /**
+     * GET /api/usuarios/by-cedula/:cedula
+     * Buscar usuario por cédula (offline-first recovery)
+     * Se usa cuando app reinstalada necesita recuperar cuenta
+     */
+    @GET("usuarios/by-cedula/{cedula}")
+    suspend fun searchUserByCedula(
+        @Path("cedula") cedula: String
+    ): Response<SearchUserResponse>
 }
+
+/**
+ * Response cuando se busca usuario por cédula
+ */
+data class SearchUserResponse(
+    val success: Boolean,
+    val found: Boolean,
+    val usuario: UsuarioBackendData? = null,
+    val error: String? = null
+)

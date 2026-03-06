@@ -13,6 +13,9 @@ interface RegistroSaludDao {
     @Update
     suspend fun update(registro: RegistroSaludEntity)
 
+    @Upsert
+    suspend fun upsert(registro: RegistroSaludEntity)
+
     @Query("SELECT * FROM registros_salud WHERE usuarioId = :usuarioId ORDER BY fecha DESC")
     suspend fun getRegistrosPorUsuario(usuarioId: Int): List<RegistroSaludEntity>
 

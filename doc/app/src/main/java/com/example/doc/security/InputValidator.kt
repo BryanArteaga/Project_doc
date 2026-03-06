@@ -53,7 +53,7 @@ object InputValidator {
         )
 
         if (codigoProvincia !in provinciasValidas.keys) {
-            Timber.w("❌ Cédula rechazada: no pertenece a ninguna provincia ($codigoProvincia)")
+            Timber.w("❌ Cédula rechazada: código de provincia inválido ($codigoProvincia)")
             return false
         }
 
@@ -90,13 +90,43 @@ object InputValidator {
         val digitoIngresado = cedula[9].digitToInt()
 
         if (digitoVerificador != digitoIngresado) {
-            Timber.w("❌ Cédula rechazada: dígito verificador no válido (esperado: $digitoVerificador, ingresado: $digitoIngresado)")
+            Timber.w("❌ Cédula rechazada: dígito verificador incorrecto (esperado: $digitoVerificador, ingresado: $digitoIngresado). Verifica los números")
             return false
         }
 
         val provincia = provinciasValidas[codigoProvincia]
         Timber.d("✅ La cédula pertenece a la provincia de $provincia")
         return true
+    }
+
+    /**
+     * Obtiene el motivo específico por el cual la cédula es inválida
+     * Útil para mostrar mensajes de error claros al usuario
+     */
+    fun getMensajeErrorCedula(cedula: String): String {
+        return when {
+            cedula.isEmpty() -> "La cédula no puede estar vacía"
+            cedula.length != 10 -> "La cédula debe tener 10 dígitos (ingresaste ${cedula.length})"
+            !cedula.all { it.isDigit() } -> "La cédula solo puede contener números"
+            else -> {
+                val codigoProvincia = cedula.substring(0, 2).toIntOrNull() ?: -1
+                val provinciasValidas = mapOf(
+                    1 to "Azuay", 2 to "Bolívar", 3 to "Cañar", 4 to "Carchi",
+                    5 to "Cotopaxi", 6 to "Chimborazo", 7 to "El Oro", 8 to "Esmeraldas",
+                    9 to "Guayas", 10 to "Imbabura", 11 to "Loja", 12 to "Los Ríos",
+                    13 to "Manabí", 14 to "Morona Santiago", 15 to "Napo", 16 to "Pastaza",
+                    17 to "Pichincha", 18 to "Tungurahua", 19 to "Zamora Chinchipe", 20 to "Galápagos",
+                    21 to "Sucumbíos", 22 to "Orellana", 23 to "Santo Domingo de los Tsáchilas",
+                    24 to "Santa Elena", 30 to "Ecuatorianos residentes en el exterior"
+                )
+                
+                when {
+                    codigoProvincia !in provinciasValidas.keys -> "Código de provincia inválido (primeros 2 dígitos)"
+                    cedula[2].digitToInt() >= 6 -> "El tercer dígito no es válido"
+                    else -> "El dígito verificador (último dígito) es incorrecto. Verifica la cédula"
+                }
+            }
+        }
     }
 
     /**
@@ -221,7 +251,8 @@ object InputValidator {
         altura: Double
     ): ValidationResult {
         if (!isValidCedula(cedula)) {
-            return ValidationResult.error("Cédula inválida")
+            // El log de isValidCedula ya explica por qué es inválida
+            return ValidationResult.error("Cédula inválida. Verifica que sea correcta (10 dígitos, código de provincia válido, dígito verificador correcto)")
         }
         if (!isValidName(nombre)) {
             return ValidationResult.error("Nombre inválido (solo letras y espacios)")

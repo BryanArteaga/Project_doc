@@ -347,8 +347,8 @@ fun RegistroSaludScreen(
                 glucosa = glucosa.trim().toIntOrNull(),
                 imc = imc,
                 colesterol = colesterol.trim().toIntOrNull(),
-                calorias = calorias.trim().toIntOrNull() ?: 0,
-                ejercicio = ejercicioTotal,
+                calorias = calorias.trim().toIntOrNull(),
+                ejercicioMinutos = ejercicioTotal,  // Pasar minutos al registro
                 estadoAnimo = animo.trim()
             )
             try {

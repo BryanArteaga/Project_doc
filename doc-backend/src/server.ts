@@ -13,6 +13,7 @@ import syncRoutes from './routes/sync.routes';
 import notificationRoutes from './routes/notification.routes';
 import { prisma } from './lib/prisma';
 import { initializeFirebase } from './config/firebase';
+import { NotificationScheduler } from './services/notification-scheduler';
 
 dotenv.config();
 
@@ -30,10 +31,14 @@ app.use(helmet({
 // Rate limiting general
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // límite de 100 requests por IP
+  max: 500, // límite de 500 requests por IP (fue 100, permitir más para sincronización)
   message: { error: 'Demasiadas peticiones, intente más tarde' },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    // Excluir endpoints de sync del rate limiting (son críticos para offline-first)
+    return req.path.startsWith('/api/sync/') || req.path.startsWith('/api/usuarios/by-cedula');
+  }
 });
 
 // Rate limiting estricto para rutas de autenticación
@@ -138,5 +143,8 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
+
+  // ✅ Inicializar scheduler de notificaciones
+  NotificationScheduler.start();
 });
 

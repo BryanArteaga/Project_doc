@@ -31,7 +31,7 @@ model Usuario {
   id                    Int                   @id @default(autoincrement())
   nombre                String
   apellido              String
-  cedula                String?
+  cedula                String?               @unique  // Cédula única - previene duplicados
   fechaNacimiento       DateTime?
   edad                  Int?
   peso                  Float?
@@ -39,7 +39,7 @@ model Usuario {
   sexo                  String?
   enfermedad            String?
   colorEnfermedad       String?
-  estadoCuenta          AccountStatus         @default(INACTIVE)
+  estadoCuenta          AccountStatus         @default(ACTIVE)
   idDoctorAsignado      Int?
   glucosaInicial        Float?
   colesterolInicial     Float?
@@ -71,9 +71,12 @@ model RegistroSalud {
   presionDiastolica Int?
   glucosa           Float?
   colesterol        Float?
+  temperatura       Float?
+  peso              Float?
   calorias          Int?
-  ejercicio         Int?
+  ejercicio         String?
   estadoAnimo       String?
+  notas             String?
   idSincronizacion  String?
   sincronizadoEn    DateTime?
   fecha             String?
@@ -145,12 +148,14 @@ model Notificacion {
   metadatos     Json?
   leido         Boolean          @default(false)
   leidoEn       DateTime?
+  enviada       DateTime?        // Para rastrear cuándo fue enviado el push
   creadoEn      DateTime         @default(now())
   actualizadoEn DateTime         @updatedAt
   usuario       Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@index([usuarioId, leido])
   @@index([tipo])
+  @@index([enviada])  // Índice para búsquedas rápidas de notificaciones enviadas
   @@map("notificaciones")
 }
 

@@ -45,15 +45,11 @@ const ViewPatients: React.FC = () => {
       (patient.cedula && patient.cedula.includes(searchTerm)) ||
       (patient.enfermedad && patient.enfermedad.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesStatus = 
-      filterStatus === 'all' || 
-      patient.estadoCuenta === filterStatus;
-
     const matchesDisease = 
       filterDisease === 'all' || 
       patient.enfermedad === filterDisease;
 
-    return matchesSearch && matchesStatus && matchesDisease;
+    return matchesSearch && matchesDisease;
   }).sort((a, b) => {
     let comparison = 0;
     
@@ -142,20 +138,6 @@ const ViewPatients: React.FC = () => {
             </div>
 
             <div className="filter-group">
-              <label className="filter-label">Estado:</label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="filter-select"
-              >
-                <option value="all">Todos</option>
-                <option value="ACTIVE">Activos</option>
-                <option value="INACTIVE">Inactivos</option>
-                <option value="SUSPENDED">Suspendidos</option>
-              </select>
-            </div>
-
-            <div className="filter-group">
               <label className="filter-label">Ordenar por:</label>
               <select
                 value={sortBy}
@@ -209,10 +191,6 @@ const ViewPatients: React.FC = () => {
                     </h3>
                     {patient.cedula && <p className="patient-card-email">{patient.cedula}</p>}
                   </div>
-                  <span className={`status-badge status-${patient.estadoCuenta.toLowerCase()}`}>
-                    {patient.estadoCuenta === 'ACTIVE' ? 'Activo' : 
-                     patient.estadoCuenta === 'INACTIVE' ? 'Inactivo' : 'Suspendido'}
-                  </span>
                 </div>
 
                 <div className="patient-card-body">

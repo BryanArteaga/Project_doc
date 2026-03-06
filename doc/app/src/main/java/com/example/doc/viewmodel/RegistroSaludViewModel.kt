@@ -96,17 +96,35 @@ class RegistroSaludViewModel @Inject constructor(
                 val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                 val fechaHoraActual = sdf.format(Date())
                 val registroFinal = nuevo.copy(fecha = fechaHoraActual)
+                
+                // Mapear presionArterial legacy ("sistolica/diastolica") si existe
+                val presionSys = if (registroFinal.presionArterial?.contains("/") == true) {
+                    registroFinal.presionArterial.split("/")[0].toIntOrNull()
+                } else {
+                    registroFinal.presionSistolica
+                }
+                val presionDia = if (registroFinal.presionArterial?.contains("/") == true) {
+                    registroFinal.presionArterial.split("/")[1].toIntOrNull()
+                } else {
+                    registroFinal.presionDiastolica
+                }
+                
                 val entity = RegistroSaludEntity(
                     id = registroFinal.id,
                     usuarioId = registroFinal.usuarioId,
                     fecha = registroFinal.fecha,
-                    presionArterial = registroFinal.presionArterial,
-                    glucosa = registroFinal.glucosa ?: 0, // Convertir Int? a Int
-                    imc = registroFinal.imc,
+                    hora = registroFinal.hora,
+                    presionSistolica = presionSys,
+                    presionDiastolica = presionDia,
+                    glucosa = registroFinal.glucosa,
                     colesterol = registroFinal.colesterol,
-                    calorias = registroFinal.calorias,
-                    ejercicio = registroFinal.ejercicio,
-                    estadoAnimo = registroFinal.estadoAnimo
+                    temperatura = registroFinal.temperatura,
+                    peso = registroFinal.peso,
+                    calorias = registroFinal.calorias,  // Ahora es Int?
+                    ejercicio = registroFinal.ejercicio,  // Ahora es String?
+                    estadoAnimo = registroFinal.estadoAnimo,
+                    notas = registroFinal.notas,
+                    registradoEn = registroFinal.registradoEn ?: System.currentTimeMillis()
                 )
                 repository.guardarRegistro(entity)
                 cargarRegistrosDesdeBD(usuario.id)
@@ -130,17 +148,30 @@ class RegistroSaludViewModel @Inject constructor(
             try {
                 val entidades = repository.obtenerRegistros(usuarioId)
                 _registros.value = entidades.map { entidad ->
+                    // Construir presionArterial legacy desde presionSistolica/presionDiastolica
+                    val presionArterial = if (entidad.presionSistolica != null && entidad.presionDiastolica != null) {
+                        "${entidad.presionSistolica}/${entidad.presionDiastolica}"
+                    } else {
+                        null
+                    }
+                    
                     RegistroSalud(
                         id = entidad.id,
                         usuarioId = entidad.usuarioId,
                         fecha = entidad.fecha,
-                        presionArterial = entidad.presionArterial,
-                        glucosa = entidad.glucosa?.takeIf { it > 0 }, // Convertir Int? a Int? con validación
-                        imc = entidad.imc,
+                        hora = entidad.hora,
+                        presionArterial = presionArterial,
+                        presionSistolica = entidad.presionSistolica,
+                        presionDiastolica = entidad.presionDiastolica,
+                        glucosa = entidad.glucosa?.takeIf { it > 0 },
                         colesterol = entidad.colesterol,
+                        temperatura = entidad.temperatura,
+                        peso = entidad.peso,
                         calorias = entidad.calorias,
                         ejercicio = entidad.ejercicio,
-                        estadoAnimo = entidad.estadoAnimo
+                        estadoAnimo = entidad.estadoAnimo,
+                        notas = entidad.notas,
+                        registradoEn = entidad.registradoEn
                     )
                 }
                     .sortedByDescending { it.fecha }
@@ -207,13 +238,15 @@ class RegistroSaludViewModel @Inject constructor(
                         id = 0,
                         usuarioId = usuarioId,
                         fecha = fecha,
-                        presionArterial = "${120 + index % 20}/${80 + index % 15}",
-                        glucosa = (90.0 + (index % 30)).toInt(), // Convertir a Int
-                        imc = 22.0 + (index % 8),
-                        colesterol = (180 + (index % 40)), // Mantener como Int
+                        presionSistolica = 120 + (index % 20),
+                        presionDiastolica = 80 + (index % 15),
+                        glucosa = 90 + (index % 30),
+                        colesterol = 180 + (index % 40),
+                        peso = 70.0 + (index % 20),
                         calorias = 2000 + (index % 500),
-                        ejercicio = if (index % 2 == 0) 1 else 0, // Convertir Boolean a Int
-                        estadoAnimo = listOf("Bien", "Normal", "Cansado")[index % 3]
+                        ejercicio = if (index % 2 == 0) "Caminata" else "Reposo",
+                        estadoAnimo = listOf("Bien", "Normal", "Cansado")[index % 3],
+                        registradoEn = System.currentTimeMillis() - (index * 86400000)  // Un día atrás
                     )
 
                     repository.guardarRegistro(registro)

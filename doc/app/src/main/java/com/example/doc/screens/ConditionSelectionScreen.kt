@@ -54,12 +54,43 @@ fun ConditionSelectionScreen(
     // Estados para manejar la navegación después del registro
     var selectedCondition by remember { mutableStateOf<String?>(null) }
     var selectedColor by remember { mutableStateOf<String?>(null) }
+    var usuarioExisteLocal by remember { mutableStateOf(false) }
+    var cargandoUsuarioLocal by remember { mutableStateOf(true) }
 
     val imc = if (altura > 0) peso / (altura * altura) else 0.0
     val sugerencia = when {
         imc >= 30 -> "Obesidad"
         imc >= 25 -> "Colesterol alto"
         else -> ""
+    }
+
+    // 🔍 Verificar si el usuario YA EXISTE LOCALMENTE por cédula
+    // Si existe, significa que ya fue registrado antes y NO debe cambiar enfermedad
+    LaunchedEffect(cedula) {
+        try {
+            val existe = usuarioViewModel.usuarioExisteLocalmente(cedula)
+            usuarioExisteLocal = existe
+            Timber.d("🔍 Verificación de usuario local por cédula '$cedula': existe=$existe")
+            
+            if (existe) {
+                // Usuario ya existe localmente, cargar sus datos y NO mostrar ConditionScreen
+                Timber.d("✅ Usuario ya existe localmente (cédula=$cedula), saltando ConditionScreen...")
+                val prefs = navController.context.getSharedPreferences("medicini_prefs", android.content.Context.MODE_PRIVATE)
+                val usuarioLocal = usuarioViewModel.obtenerUsuarioLocalmente(cedula)
+                if (usuarioLocal != null) {
+                    prefs.edit().putInt("user_id", usuarioLocal.id).apply()
+                    Timber.d("📝 SharedPreferences actualizado con user_id (usuario existente): ${usuarioLocal.id}")
+                    // Navegar directo al dashboard (no mostrar selección de enfermedad)
+                    navController.navigate("dashboard") {
+                        popUpTo("condition") { inclusive = true }
+                    }
+                }
+            }
+            cargandoUsuarioLocal = false
+        } catch (e: Exception) {
+            Timber.e(e, "❌ Error verificando usuario local")
+            cargandoUsuarioLocal = false
+        }
     }
 
     // Observar el estado de registro y navegar cuando esté listo
@@ -90,6 +121,25 @@ fun ConditionSelectionScreen(
             }
             else -> {}
         }
+    }
+
+    // Si el usuario existe localmente, mostrar loading hasta que se navegue
+    if (cargandoUsuarioLocal || usuarioExisteLocal) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.background_1),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+            CircularProgressIndicator(color = Color(0xFF2196F3))
+        }
+        return
     }
 
     val conditions = listOf(

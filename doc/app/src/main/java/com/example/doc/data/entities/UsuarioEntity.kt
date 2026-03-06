@@ -21,5 +21,5 @@ data class UsuarioEntity(
     val notifDetails: String = "{\"hour\":20}", // Nuevo, JSON para detalles
     val glucosaInicial: Int? = null, // Añadido
     val colesterolInicial: Int? = null, // Añadido
-    val estadoCuenta: String = "INACTIVE" // INACTIVE, ACTIVE, SUSPENDED
+    val estadoCuenta: String = "ACTIVE"
 )

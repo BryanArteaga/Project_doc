@@ -19,7 +19,7 @@ const RegistroSaludSchema = z.object({
   temperatura: z.number().optional(),
   peso: z.number().optional(),
   calorias: z.number().optional(),
-  ejercicio: z.number().optional(),
+  ejercicio: z.string().optional(), // Ahora es el nombre del ejercicio (String), no el ID
   estadoAnimo: z.string().optional(),
   notas: z.string().optional()
 });
@@ -75,12 +75,30 @@ export const push = async (req: Request, res: Response) => {
 
     for (const registro of syncData.registrosSalud) {
       try {
-        // Crear registro con el usuarioId del body
+        // 🔧 CORRECCIÓN: Usar la fecha del app, no la fecha de sincronización
+        // Permitir que registradoEn sea la fecha de creación original del app
+        let registradoEn: Date;
+        
+        if (registro.fecha) {
+          // Si viene fecha, parsearla (formato: YYYY-MM-DD o YYYY-MM-DD HH:mm:ss)
+          const horaCompleta = registro.hora ? `${registro.fecha} ${registro.hora}` : registro.fecha;
+          registradoEn = new Date(horaCompleta);
+          
+          // Validar que sea una fecha válida
+          if (isNaN(registradoEn.getTime())) {
+            registradoEn = new Date();  // Fallback a ahora si la fecha es inválida
+          }
+        } else {
+          registradoEn = new Date();  // Usar ahora si no viene fecha
+        }
+
+        // Crear registro con el usuarioId del body y la fecha correcta
         await prisma.registroSalud.create({
           data: {
             usuarioId: userId,  // Usar el usuarioId del body de la request
             fecha: registro.fecha,
             hora: registro.hora,
+            registradoEn,  // 🔧 Usar la fecha de creación original del app
             presionSistolica: registro.presionSistolica,
             presionDiastolica: registro.presionDiastolica,
             glucosa: registro.glucosa,
@@ -95,7 +113,7 @@ export const push = async (req: Request, res: Response) => {
         });
 
         registrosSincronizados++;
-        Timber.debug(`✅ Registro de salud guardado para usuario ${userId} en fecha ${registro.fecha}`);
+        Timber.debug(`✅ Registro de salud guardado para usuario ${userId} en fecha ${registro.fecha} (registradoEn: ${registradoEn.toISOString()})`);
       } catch (error: any) {
         const errorMsg = `Error guardando registro ${registro.fecha}: ${error.message}`;
         registrosErrores.push(errorMsg);
@@ -200,6 +218,46 @@ export const pull = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 
+    // Obtener registros de salud del usuario (históricos)
+    const registrosSalud = await prisma.registroSalud.findMany({
+      where: { usuarioId: userId },
+      select: {
+        id: true,
+        fecha: true,
+        hora: true,
+        presionSistolica: true,
+        presionDiastolica: true,
+        glucosa: true,
+        colesterol: true,
+        temperatura: true,
+        peso: true,
+        calorias: true,
+        ejercicio: true,
+        estadoAnimo: true,
+        notas: true,
+        registradoEn: true
+      },
+      orderBy: { fecha: 'desc' }
+    });
+
+    // 🔧 Mapear registros para convertir registradoEn a timestamp (Long)
+    const registrosSaludMapeados = registrosSalud.map((r: any) => ({
+      id: r.id,
+      fecha: r.fecha,
+      hora: r.hora,
+      presionSistolica: r.presionSistolica,
+      presionDiastolica: r.presionDiastolica,
+      glucosa: r.glucosa,
+      colesterol: r.colesterol,
+      temperatura: r.temperatura,
+      peso: r.peso,
+      calorias: r.calorias,
+      ejercicio: r.ejercicio,
+      estadoAnimo: r.estadoAnimo,
+      notas: r.notas,
+      registradoEn: r.registradoEn.getTime() // Convertir DateTime a timestamp (milliseconds)
+    }));
+
     // Obtener ejercicios activos para este usuario
     // (Se obtienen a través de su doctor)
     const ejercicios = await prisma.ejercicio.findMany({
@@ -239,8 +297,20 @@ export const pull = async (req: Request, res: Response) => {
         nombre: usuario.nombre,
         apellido: usuario.apellido,
         email: usuario.email,
-        telefono: usuario.telefonoPersonal
+        telefono: usuario.telefonoPersonal,
+        // 🔧 Agregar datos personales que faltaban en el PULL
+        edad: usuario.edad,
+        peso: usuario.peso,
+        altura: usuario.altura,
+        sexo: usuario.sexo,
+        enfermedad: usuario.enfermedad,
+        colorEnfermedad: usuario.colorEnfermedad,
+        // ✅ NUEVO: Configuración de notificaciones (no mostrar pop-up si ya existe)
+        notifEnabled: usuario.notifEnabled,
+        notifType: usuario.notifType,
+        notifDetails: usuario.notifDetails
       },
+      registrosSalud: registrosSaludMapeados,  // 🔧 Usar versión mapeada con timestamps
       ejercicios,
       notificaciones,
       estadoCuenta: {
@@ -264,14 +334,14 @@ export const pull = async (req: Request, res: Response) => {
 /**
  * POST /api/sync/register-fcm-token
  * Registra el token de FCM del dispositivo
+ * 
+ * IMPORTANTE: userId es REQUERIDO porque no se puede crear dispositivo sin usuario en Prisma.
+ * El token se registra cuando el usuario se crea (vía tokenDispositivo en POST /usuarios/create)
  */
 export const registerFCMToken = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
-    
-    if (!userId) {
-      return res.status(401).json({ error: 'No autenticado' });
-    }
+    // Obtener userId de middleware (autenticado) o del body
+    const userId = (req as any).userId || req.body.userId;
 
     const { token, deviceId } = req.body;
 
@@ -279,7 +349,13 @@ export const registerFCMToken = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Token de FCM requerido' });
     }
 
-    // Buscar si ya existe un dispositivo con este token
+    if (!userId) {
+      return res.status(400).json({ 
+        error: 'userId es requerido. Registra el token al crear usuario con tokenDispositivo.' 
+      });
+    }
+
+    // Buscar si ya existe un dispositivo con este token para este usuario
     const existingDevice = await prisma.dispositivo.findFirst({
       where: {
         usuarioId: userId,

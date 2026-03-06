@@ -142,12 +142,12 @@ object HealthCalculator {
         }
 
         // Evaluar actividad física
-        if (registro.ejercicio < 30) {
-            detalles.add("⚠️ Ejercicio insuficiente: ${registro.ejercicio} minutos (recomendado: 30+ min)")
+        if (registro.ejercicioMinutos < 30) {
+            detalles.add("⚠️ Ejercicio insuficiente: ${registro.ejercicioMinutos} minutos (recomendado: 30+ min)")
             recomendaciones.add("Aumentar actividad física a al menos 30 minutos diarios")
             factoresRiesgo++
         } else {
-            detalles.add("✅ Ejercicio adecuado: ${registro.ejercicio} minutos")
+            detalles.add("✅ Ejercicio adecuado: ${registro.ejercicioMinutos} minutos")
         }
 
         // Mensaje general según factores de riesgo

@@ -16,9 +16,9 @@ object SaludEvaluator {
         }
 
         val evaluacionCalorias: Pair<EvaluacionSalud.Estado, List<String>> = evaluarCalorias(
-            registro.calorias, usuario.edad, usuario.peso, usuario.altura, usuario.sexo, registro.ejercicio
+            registro.calorias ?: 0, usuario.edad, usuario.peso, usuario.altura, usuario.sexo, registro.ejercicioMinutos
         )
-        val evaluacionEjercicio: Pair<EvaluacionSalud.Estado, List<String>> = evaluarEjercicio(registro.ejercicio, usuario.edad)
+        val evaluacionEjercicio: Pair<EvaluacionSalud.Estado, List<String>> = evaluarEjercicio(registro.ejercicioMinutos, usuario.edad)
         val evaluacionAnimo: Pair<EvaluacionSalud.Estado, List<String>> = evaluarAnimo(registro.estadoAnimo)
 
         // Contar estados
@@ -102,7 +102,15 @@ object SaludEvaluator {
     }
 
     private fun evaluarHipertension(registro: RegistroSalud): EvaluacionSalud.Estado {
-        val (sistolica, diastolica) = registro.presionArterial?.split("/")?.map { it.toIntOrNull() ?: 0 } ?: return EvaluacionSalud.Estado.NORMAL
+        // Soportar tanto formato legacy (presionArterial: "sistolica/diastolica") como nuevo
+        val (sistolica, diastolica) = if (registro.presionArterial?.contains("/") == true) {
+            registro.presionArterial.split("/").map { it.toIntOrNull() ?: 0 }
+        } else if (registro.presionSistolica != null && registro.presionDiastolica != null) {
+            listOf(registro.presionSistolica, registro.presionDiastolica)
+        } else {
+            return EvaluacionSalud.Estado.NORMAL
+        }
+        
         return when {
             sistolica > 180 || diastolica > 120 -> EvaluacionSalud.Estado.EMERGENCIA
             sistolica in 140..180 || diastolica in 90..120 -> EvaluacionSalud.Estado.ADVERTENCIA
@@ -124,6 +132,8 @@ object SaludEvaluator {
     }
 
     private fun evaluarObesidad(registro: RegistroSalud): EvaluacionSalud.Estado {
+        // Calcular IMC desde peso y altura del usuario si no viene en el registro
+        // (Este será actualizado en la pantalla de registro)
         val imc: Double? = registro.imc
         return if (imc == null) {
             EvaluacionSalud.Estado.NORMAL
@@ -226,7 +236,11 @@ object SaludEvaluator {
         return Pair(estado, detalles)
     }
 
-    private fun evaluarAnimo(animo: String): Pair<EvaluacionSalud.Estado, List<String>> {
+    private fun evaluarAnimo(animo: String?): Pair<EvaluacionSalud.Estado, List<String>> {
+        if (animo.isNullOrBlank()) {
+            return Pair(EvaluacionSalud.Estado.NORMAL, emptyList())
+        }
+        
         val estado: EvaluacionSalud.Estado = when (animo) {
             "Malo" -> EvaluacionSalud.Estado.ADVERTENCIA
             "Regular" -> EvaluacionSalud.Estado.LEVE

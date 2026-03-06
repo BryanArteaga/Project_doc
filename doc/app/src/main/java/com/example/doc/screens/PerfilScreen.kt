@@ -65,9 +65,6 @@ fun PerfilScreen(
     }
 
     val isLandscape = isLandscape()
-    
-    // Verificar si la cuenta está activada
-    val cuentaActivada = usuario?.estadoCuenta == "ACTIVE"
 
     var notifEnabled by remember { mutableStateOf(usuario?.notifEnabled ?: true) }
     var notifType by remember { mutableStateOf(usuario?.notifType ?: "daily_fixed") }
@@ -187,16 +184,10 @@ fun PerfilScreen(
                     colors = CardDefaults.cardColors(
                         containerColor = if (isEditing)
                             Color(0xFF43A047).copy(alpha = 0.15f)
-                        else if (!cuentaActivada)
-                            Color.Gray.copy(alpha = 0.3f)
                         else
                             Color(0xFF2196F3).copy(alpha = 0.1f)
                     ),
-                    modifier = Modifier.clickable(enabled = cuentaActivada) { 
-                        if (cuentaActivada) {
-                            isEditing = !isEditing
-                        }
-                    }
+                    modifier = Modifier.clickable { isEditing = !isEditing }
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -205,17 +196,13 @@ fun PerfilScreen(
                         Icon(
                             if (isEditing) Icons.Filled.Check else Icons.Filled.Edit,
                             contentDescription = if (isEditing) "Guardar" else "Editar",
-                            tint = if (!cuentaActivada) Color.Gray 
-                                  else if (isEditing) Color(0xFF43A047) 
-                                  else Color(0xFF2196F3),
+                            tint = if (isEditing) Color(0xFF43A047) else Color(0xFF2196F3),
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = if (isEditing) "Listo" else "Editar",
-                            color = if (!cuentaActivada) Color.Gray 
-                                   else if (isEditing) Color(0xFF43A047) 
-                                   else Color(0xFF2196F3),
+                            color = if (isEditing) Color(0xFF43A047) else Color(0xFF2196F3),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold
                         )

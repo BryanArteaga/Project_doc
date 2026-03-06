@@ -53,6 +53,7 @@ import com.example.doc.domain.SaludEvaluator
 import com.example.doc.model.EvaluacionSalud
 import com.example.doc.navigation.Routes
 import com.example.doc.ui.components.SyncIconButton
+import com.example.doc.ui.components.SyncOverlay  // ✅ Importar overlay
 import com.example.doc.viewmodel.ConsejoViewModel
 import com.example.doc.viewmodel.PopupViewModel
 import com.example.doc.viewmodel.RegistroSaludViewModel
@@ -81,6 +82,10 @@ fun MainScreen(
     val isSynced by usuarioViewModel.isSynced.collectAsState()
     val lastSyncTime by usuarioViewModel.lastSyncTime.collectAsState()
     val syncState by usuarioViewModel.syncState.collectAsState()
+
+    // ✅ Estados del overlay de sincronización
+    val syncOverlayVisible by usuarioViewModel.syncOverlayVisible.collectAsState()
+    val syncOverlayMessage by usuarioViewModel.syncOverlayMessage.collectAsState()
 
     val showNotifDialog = remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -118,7 +123,8 @@ fun MainScreen(
     }
 
     // Una vez que el usuario esté disponible, cargar sus datos
-    LaunchedEffect(usuario) {
+    // 🔑 Observar solo el ID del usuario para evitar múltiples disparos durante la sincronización
+    LaunchedEffect(usuario?.id) {
         if (usuario != null) {
             try {
                 android.util.Log.d("MainScreen", "Usuario disponible: ${usuario!!.nombre} (ID: ${usuario!!.id})")
@@ -126,15 +132,31 @@ fun MainScreen(
                 // Ejecutar onUiReady
                 onUiReady()
 
+                // 🔄 Disparar sincronización automática CON OVERLAY para usuarios existentes
+                // (Los que ya estaban registrados y vuelven a entrar a la app)
+                android.util.Log.d("MainScreen", "Disparando sincronización automática con overlay...")
+                usuarioViewModel.performAutoSyncWithOverlay(usuario!!.id)
+
                 // Cargar registros y consejos
                 android.util.Log.d("MainScreen", "Cargando registros y consejos...")
                 registroSaludViewModel.cargarRegistrosDesdeBD(usuario!!.id)
                 consejoViewModel.cargarConsejos(usuario!!.enfermedad)
 
-                // Verificar notificaciones
-                if (!notifDialogShown && usuario!!.notifType == "daily_fixed" && usuario!!.notifDetails == "{\"hour\":20}") {
-                    android.util.Log.d("MainScreen", "Mostrando diálogo de notificaciones")
+                // Esperar un poco para que la sincronización se complete
+                delay(500)
+
+                // ✅ NUEVO: Mostrar diálogo de notificaciones SOLO si es usuario nuevo
+                // (después del PULL, si sigue teniendo configuración por defecto = usuario nuevo)
+                val usuarioActualizado = usuarioViewModel.usuario.value
+                if (!notifDialogShown && 
+                    usuarioActualizado?.notifType == "daily_fixed" && 
+                    usuarioActualizado?.notifDetails == "{\"hour\":20}") {
+                    android.util.Log.d("MainScreen", "Usuario nuevo detectado - mostrando diálogo de notificaciones")
                     showNotifDialog.value = true
+                    notifDialogShown = true
+                    sharedPrefs.edit().putBoolean("notifDialogShown_${usuario!!.id}", true).apply()
+                } else {
+                    android.util.Log.d("MainScreen", "Usuario con configuración personalizada - sin diálogo de notificaciones")
                     notifDialogShown = true
                     sharedPrefs.edit().putBoolean("notifDialogShown_${usuario!!.id}", true).apply()
                 }
@@ -452,78 +474,26 @@ fun MainScreen(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Verificar estado de cuenta
-                        val cuentaActivada = usuario?.estadoCuenta == "ACTIVE"
-                        
-                        // Mostrar mensaje de cuenta pendiente
-                        if (!cuentaActivada) {
-                            Card(
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = Color(0xFFFFA500).copy(alpha = 0.2f)
-                                ),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Info,
-                                        contentDescription = "Info",
-                                        tint = Color(0xFFFFA500),
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Text(
-                                        "Tu cuenta está pendiente de activación por tu médico",
-                                        fontSize = 13.sp,
-                                        color = Color(0xFF666666),
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                        }
-                        
                         Button(
-                            onClick = { 
-                                if (cuentaActivada) {
-                                    navController.navigate("registro_salud")
-                                }
-                            },
+                            onClick = { navController.navigate("registro_salud") },
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (cuentaActivada) Color(0xFF2196F3) else Color.Gray,
-                                disabledContainerColor = Color.Gray
-                            ),
-                            enabled = cuentaActivada
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
                         ) {
                             Text(
                                 "Registrar datos de salud",
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 17.sp,
-                                color = if (cuentaActivada) Color.White else Color.White.copy(alpha = 0.6f)
+                                fontSize = 17.sp
                             )
                         }
                         Button(
-                            onClick = { 
-                                if (cuentaActivada) {
-                                    navController.navigate("ejercicios")
-                                }
-                            },
+                            onClick = { navController.navigate("ejercicios") },
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (cuentaActivada) Color(0xFF2196F3) else Color.Gray,
-                                disabledContainerColor = Color.Gray
-                            ),
-                            enabled = cuentaActivada
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
                         ) {
                             Text(
                                 "Ejercicios recomendados",
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 17.sp,
-                                color = if (cuentaActivada) Color.White else Color.White.copy(alpha = 0.6f)
+                                fontSize = 17.sp
                             )
                         }
                     }
@@ -825,8 +795,14 @@ fun MainScreen(
                     }
                 )
             }
-        } // Fin del Box global
-    } // Fin de MainScreen
+        } // Fin del usuario?.let
+
+        // ✅ OVERLAY de sincronización profesional
+        SyncOverlay(
+            visible = syncOverlayVisible,
+            syncStep = syncOverlayMessage
+        )
+    } // Fin del Box global
 }
 fun obtenerImagen(enfermedad: String): Int {
     return try {

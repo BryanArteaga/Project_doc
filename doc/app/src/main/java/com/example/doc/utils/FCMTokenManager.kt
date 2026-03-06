@@ -42,7 +42,7 @@ class FCMTokenManager @Inject constructor(
 
                     // Enviar al servidor
                     CoroutineScope(Dispatchers.IO).launch {
-                        sendTokenToServer(token)
+                        sendTokenToServer(token, context)
                     }
                 }
             } catch (e: Exception) {
@@ -54,13 +54,24 @@ class FCMTokenManager @Inject constructor(
     /**
      * Enviar token al servidor backend
      */
-    private suspend fun sendTokenToServer(token: String) {
+    private suspend fun sendTokenToServer(token: String, context: Context) {
         try {
-            val response = apiService.registerFCMToken(FCMTokenRequest(token))
+            // Obtener userId de SharedPreferences (si existe sesión)
+            val prefs = context.getSharedPreferences("doc_prefs", Context.MODE_PRIVATE)
+            val userId = prefs.getInt("user_id", -1).let { if (it == -1) null else it }
+            
+            // Si no hay usuario, el token ya fue registrado al crear el usuario (tokenDispositivo)
+            if (userId == null) {
+                Timber.d("⚠️ Sin userId - Token ya registrado al crear usuario")
+                return
+            }
+            
+            // Si hay usuario, enviar para actualizar dispositivo
+            val response = apiService.registerFCMToken(FCMTokenRequest(token, userId))
             if (response.isSuccessful) {
-                Timber.d("✅ Token FCM registrado en el servidor")
+                Timber.d("✅ Token FCM actualizado en el servidor")
             } else {
-                Timber.w("Error al registrar token en servidor: ${response.code()}")
+                Timber.w("Error al actualizar token en servidor: ${response.code()}")
             }
         } catch (e: Exception) {
             Timber.e("Excepción al enviar token: ${e.message}")

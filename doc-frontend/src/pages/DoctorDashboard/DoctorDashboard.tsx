@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { doctorService } from '../../services/doctor.service';
-import type { DashboardStats, Patient } from '../../types';
-import { Users, Activity, UserCheck, Clock, TrendingUp, Dumbbell, Lightbulb } from 'lucide-react';
+import type { DashboardStats } from '../../types';
+import { Users, TrendingUp, Dumbbell, Lightbulb } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Layout from '../../components/common/Layout/Layout';
 import Loading from '../../components/common/Loading';
@@ -14,7 +14,6 @@ const DoctorDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { doctor, isAuthenticated } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [pendingPatients, setPendingPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,12 +26,8 @@ const DoctorDashboard: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [statsData, pendingData] = await Promise.all([
-        doctorService.getStats(),
-        doctorService.getPendingPatients(),
-      ]);
+      const statsData = await doctorService.getStats();
       setStats(statsData);
-      setPendingPatients(pendingData);
     } catch (error: any) {
       console.error('Error al cargar datos:', error);
       if (error.response?.status === 401) {
@@ -42,17 +37,6 @@ const DoctorDashboard: React.FC = () => {
       }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleActivatePatient = async (patientId: number) => {
-    try {
-      await doctorService.activatePatient(patientId, doctor!.id);
-      toast.success('Paciente activado exitosamente');
-      loadData();
-    } catch (error) {
-      console.error('Error al activar paciente:', error);
-      toast.error('Error al activar paciente');
     }
   };
 
@@ -83,18 +67,6 @@ const DoctorDashboard: React.FC = () => {
             value={stats?.totalPacientes || 0}
             icon={<Users className="w-6 h-6" />}
             color="bg-blue-700"
-          />
-          <StatCard
-            title="Pacientes Activos"
-            value={stats?.pacientesActivos || 0}
-            icon={<UserCheck className="w-6 h-6" />}
-            color="bg-green-700"
-          />
-          <StatCard
-            title="Pendientes"
-            value={stats?.pacientesPendientes || 0}
-            icon={<Clock className="w-6 h-6" />}
-            color="bg-yellow-700"
           />
           <StatCard
             title="Registros Hoy"
@@ -128,57 +100,7 @@ const DoctorDashboard: React.FC = () => {
             />
           </div>
         </div>
-
-        {/* Pacientes Pendientes */}
-        <div className="patients-section">
-          <div className="patients-header">
-            <h2 className="patients-title">
-              Pacientes Pendientes de Activación
-            </h2>
-            <p className="patients-count">
-              {pendingPatients.length} paciente(s) esperando activación
-            </p>
-          </div>
-
-          <div className="patients-list">
-            {pendingPatients.length === 0 ? (
-              <div className="empty-state">
-                <Activity className="empty-icon" />
-                <p>No hay pacientes pendientes</p>
-              </div>
-            ) : (
-              pendingPatients.map((patient) => (
-                <div key={patient.id} className="patient-item">
-                  <div className="patient-content">
-                    <div className="patient-info">
-                      <h3 className="patient-name">
-                        {patient.nombre} {patient.apellido}
-                      </h3>
-                      <p className="patient-email">{patient.email}</p>
-                      {patient.enfermedad && (
-                        <span className="patient-disease">
-                          Enfermedad: {patient.enfermedad}
-                        </span>
-                      )}
-                    </div>
-                    <div className="patient-actions">
-                      <span className="patient-date">
-                        {new Date(patient.registradoEn).toLocaleDateString()}
-                      </span>
-                      <button
-                        onClick={() => handleActivatePatient(patient.id)}
-                        className="activate-btn"
-                      >
-                        Activar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
         </div>
-      </div>
       </PageTransition>
     </Layout>
   );

@@ -16,5 +16,5 @@ data class Usuario(
     val notifDetails: String = "{\"hour\":20}", // Nuevo, JSON para detalles
     val glucosaInicial: Int? = null,
     val colesterolInicial: Int? = null,
-    val estadoCuenta: String = "INACTIVE" // INACTIVE, ACTIVE, SUSPENDED
+    val estadoCuenta: String = "ACTIVE"
 )

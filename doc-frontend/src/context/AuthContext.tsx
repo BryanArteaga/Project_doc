@@ -47,17 +47,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return;
         }
 
-        setToken(savedToken);
-        setDoctor(savedDoctor);
-        
-        // Verificar que el token siga siendo válido
         try {
+          // Intentar verificar el token con el servidor
+          // Si falla, limpiar la sesión
           const { doctor: currentDoctor } = await authService.getCurrentDoctor();
+          setToken(savedToken);
           setDoctor(currentDoctor);
           authService.saveDoctorData(currentDoctor);
         } catch (error) {
-          // Token inválido, limpiar
-          logError(error as Error, 'Error verificando token en initAuth');
+          // Token inválido, expirado o servidor no responde correctamente
+          // En todos los casos, limpiar la sesión
+          console.log('Sesión inválida detectada, limpiando...');
+          logError(error as Error, 'Token validation failed during app initialization');
           authService.removeToken();
           setToken(null);
           setDoctor(null);

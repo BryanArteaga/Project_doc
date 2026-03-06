@@ -20,7 +20,6 @@ interface PatientData {
     sexo?: string;
     enfermedad?: string;
     colorEnfermedad?: string;
-    estadoCuenta: string;
     registradoEn: string;
     ultimaSincronizacion?: string;
     registrosSalud: Array<{
@@ -56,8 +55,20 @@ const PatientProfile: React.FC = () => {
     const [sortColumn, setSortColumn] = useState<string>('');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
+    // Cargar datos inicialmente
     useEffect(() => {
         loadPatientData();
+    }, [id]);
+
+    // ⏱️ NUEVO: Real-time polling cada 5 segundos para ver cambios del paciente en tiempo real
+    useEffect(() => {
+        if (!id) return;
+
+        const pollInterval = setInterval(() => {
+            loadPatientDataSilent();
+        }, 5000); // Polling cada 5 segundos
+
+        return () => clearInterval(pollInterval);
     }, [id]);
 
     const loadPatientData = async () => {
@@ -71,6 +82,17 @@ const PatientProfile: React.FC = () => {
             toast.error('Error al cargar perfil del paciente');
         } finally {
             setLoading(false);
+        }
+    };
+
+    // 🔄 Versión silenciosa del loading para el polling (sin mostrar loader)
+    const loadPatientDataSilent = async () => {
+        try {
+            const response = await api.get(`/api/doctor/patients/${id}`);
+            setData(response.data);
+        } catch (error: any) {
+            // No mostrar error en polling automático, solo en console
+            console.warn('Error en polling automático:', error.message);
         }
     };
 
@@ -268,7 +290,7 @@ const PatientProfile: React.FC = () => {
                         {/* Columna Derecha: Stack de Último Registro + Estadísticas */}
                         <div className="right-column">
                             {/* Último Registro de Salud */}
-                            {latestHealth && (
+                            {latestHealth ? (
                                 <div className="health-card">
                                     <div className="card-header">
                                         <Activity />
@@ -328,10 +350,16 @@ const PatientProfile: React.FC = () => {
                                         )}
                                     </div>
                                 </div>
+                            ) : (
+                                <div className="health-card">
+                                    <div className="empty-state">
+                                        <p>No hay registros</p>
+                                    </div>
+                                </div>
                             )}
 
                             {/* Estadísticas Clínicas - Siempre visible */}
-                            {registrosSalud.length > 0 && (() => {
+                            {registrosSalud.length > 0 ? (() => {
                                 const presiones = registrosSalud.filter(r => r.presionSistolica && r.presionDiastolica);
                                 const glucosas = registrosSalud.filter(r => r.glucosa);
                                 const pesos = registrosSalud.filter(r => r.peso);
@@ -437,7 +465,17 @@ const PatientProfile: React.FC = () => {
                                 </div>
                             </div>
                         );
-                    })()}
+                    })() : (
+                        <div className="stats-section">
+                            <div className="section-header-static">
+                                <TrendingUp />
+                                <h3>Estadísticas Clínicas</h3>
+                            </div>
+                            <div className="empty-state">
+                                <p>No hay estadísticas en este momento</p>
+                            </div>
+                        </div>
+                    )}
                         </div>
                     </div>
 

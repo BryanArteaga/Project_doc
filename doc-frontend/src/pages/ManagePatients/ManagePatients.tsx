@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/common/Layout/Layout';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
-import { ArrowLeft, Search, UserCheck, UserX } from 'lucide-react';
+import { ArrowLeft, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { doctorService } from '../../services/doctor.service';
 import { auditService, AuditAction, AuditLevel } from '../../utils/audit';
@@ -40,31 +40,6 @@ const ManagePatients: React.FC = () => {
       }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleActivate = async (id: number) => {
-    try {
-      const doctorData = JSON.parse(localStorage.getItem('doctor_data') || '{}');
-      await doctorService.activatePatient(id, doctorData.id);
-      
-      auditService.log(
-        AuditAction.ACTIVATE_PATIENT,
-        AuditLevel.INFO,
-        `Paciente activado (ID: ${id})`,
-        { patientId: id, doctorId: doctorData.id }
-      );
-      
-      toast.success('Paciente activado correctamente');
-      loadPatients();
-    } catch (error) {
-      auditService.log(
-        AuditAction.ERROR,
-        AuditLevel.ERROR,
-        'Error al activar paciente',
-        { patientId: id, error }
-      );
-      toast.error('Error al activar paciente');
     }
   };
 
@@ -111,7 +86,7 @@ const ManagePatients: React.FC = () => {
           </button>
           <h1 className="manage-patients-title">Gestionar Pacientes</h1>
           <p className="manage-patients-subtitle">
-            Total: {patients.length} | Activos: {patients.filter(p => p.estadoCuenta === 'ACTIVE').length} | Pendientes: {patients.filter(p => p.estadoCuenta === 'INACTIVE').length}
+            Total de pacientes: {patients.length}
           </p>
         </div>
 
@@ -147,31 +122,6 @@ const ManagePatients: React.FC = () => {
                       <p className="patient-disease">🏥 {patient.enfermedad}</p>
                     )}
                   </div>
-                </div>
-                
-                <div className="patient-card-footer">
-                  <span className={`patient-status ${patient.estadoCuenta === 'ACTIVE' ? 'active' : 'inactive'}`}>
-                    {patient.estadoCuenta === 'ACTIVE' ? (
-                      <>
-                        <UserCheck className="w-4 h-4" />
-                        Activo
-                      </>
-                    ) : (
-                      <>
-                        <UserX className="w-4 h-4" />
-                        Pendiente
-                      </>
-                    )}
-                  </span>
-                  {patient.estadoCuenta === 'INACTIVE' && (
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => handleActivate(patient.id)}
-                    >
-                      Activar
-                    </Button>
-                  )}
                 </div>
               </div>
             ))

@@ -8,7 +8,6 @@ import {
   deleteNotification,
   registerFCMToken,
   removeFCMToken,
-  sendAccountActivatedPush,
 } from '../controllers/notification.controller';
 import { verifyToken } from '../middleware/auth.middleware';
 
@@ -28,8 +27,5 @@ router.delete('/:id', deleteNotification);
 // Rutas de FCM (Firebase Cloud Messaging)
 router.post('/fcm/register', registerFCMToken);
 router.post('/fcm/remove', removeFCMToken);
-
-// Ruta para enviar notificación de cuenta activada (solo para uso interno/testing)
-router.post('/push/account-activated/:userId', sendAccountActivatedPush);
 
 export default router;

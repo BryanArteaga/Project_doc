@@ -17,11 +17,11 @@ import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import com.example.doc.repository.UsuarioRepository
+import com.google.firebase.messaging.FirebaseMessaging
 import com.example.doc.ui.theme.DocTheme
 import com.example.doc.navigation.AppNavigation
 import com.example.doc.navigation.Routes
 import com.example.doc.utils.FCMTokenManager
-import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
@@ -53,11 +53,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-                Timber.d("Permiso de notificaciones: ${if (isGranted) "concedido" else "denegado"}")
+                Timber.d("📱 Permiso POST_NOTIFICATIONS: ${if (isGranted) "✅ concedido" else "❌ denegado"}")
                 if (isGranted) {
+                    Timber.d("✅ Proceediendo a obtener FCM token")
                     obtenerFCMToken()
                     fcmTokenManager.registerFCMToken(this@MainActivity)
                     requestSpecialPermissions()
+                } else {
+                    Timber.w("⚠️ POST_NOTIFICATIONS denegado - notificaciones no funcionarán")
                 }
             }.launch(Manifest.permission.POST_NOTIFICATIONS)
         } else {
@@ -72,6 +75,16 @@ class MainActivity : ComponentActivity() {
                     val user = usuarioRepository.obtenerUsuarioFlow().firstOrNull()
                     if (user != null) {
                         prefs.edit().putInt("user_id", user.id).apply()
+                        
+                        // Suscribirse al tema de notificaciones personales
+                        FirebaseMessaging.getInstance().subscribeToTopic("user_${user.id}")
+                            .addOnSuccessListener {
+                                Timber.d("✅ Suscrito al tema personal: user_${user.id}")
+                            }
+                            .addOnFailureListener { e ->
+                                Timber.e(e, "❌ Error al suscribirse a tema personal: user_${user.id}")
+                            }
+                        
                         startDestination = Routes.Main
                     }
                 }

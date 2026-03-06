@@ -8,6 +8,7 @@ import com.example.doc.data.daos.*
 import com.example.doc.data.entities.*
 import com.example.doc.data.migrations.MIGRATION_18_19
 import com.example.doc.data.migrations.MIGRATION_19_20
+import com.example.doc.data.migrations.MIGRATION_20_21
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 
@@ -41,7 +42,7 @@ abstract class AppDatabase : RoomDatabase() {
                     "medicini_db"
                 )
                     .addCallback(AppDatabaseCallback(context, scope))
-                    .addMigrations(MIGRATION_18_19, MIGRATION_19_20)
+                    .addMigrations(MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

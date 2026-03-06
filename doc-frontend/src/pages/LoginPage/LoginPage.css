@@ -193,7 +193,7 @@ html.dark .login-password-toggle:hover {
 
 .login-submit-btn {
   width: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #667eea;
   color: white;
   font-weight: 600;
   padding: 0.875rem;
@@ -205,8 +205,8 @@ html.dark .login-password-toggle:hover {
 }
 
 .login-submit-btn:hover {
+  background: #5568d3;
   transform: translateY(-1px);
-  box-shadow: 0 10px 20px -5px rgba(102, 126, 234, 0.4);
 }
 
 .login-submit-btn:active {
@@ -220,11 +220,11 @@ html.dark .login-password-toggle:hover {
 }
 
 html.dark .login-submit-btn {
-  background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+  background: #818cf8;
 }
 
 html.dark .login-submit-btn:hover {
-  box-shadow: 0 10px 20px -5px rgba(129, 140, 248, 0.4);
+  background: #6f7ce6;
 }
 
 .login-help-text {
