@@ -16,10 +16,12 @@ model Doctor {
   cedula         String    @unique
   telefono       String?
   especialidad   String?
+  rol            StaffRole @default(DOCTOR)
   activo         Boolean   @default(true)
   creadoEn       DateTime  @default(now())
   actualizadoEn  DateTime  @updatedAt
   pacientes      Usuario[] @relation("DoctorPacientes")
+  asignaciones   AsignacionEjercicio[]
 
   @@index([cedula], map: "idx_doctor_cedula")
   @@index([email], map: "idx_doctor_email")
@@ -30,8 +32,7 @@ model Usuario {
   id                    Int                   @id @default(autoincrement())
   nombre                String
   apellido              String
-  cedula                String?
-  telefonoPersonal      String?
+  cedula                String?               @unique  // Cédula única - previene duplicados
   fechaNacimiento       DateTime?
   edad                  Int?
   peso                  Float?
@@ -39,7 +40,7 @@ model Usuario {
   sexo                  String?
   enfermedad            String?
   colorEnfermedad       String?
-  estadoCuenta          AccountStatus         @default(INACTIVE)
+  estadoCuenta          AccountStatus         @default(ACTIVE)
   idDoctorAsignado      Int?
   glucosaInicial        Float?
   colesterolInicial     Float?
@@ -53,10 +54,11 @@ model Usuario {
   tokenDispositivo      String?
   creadoEn              DateTime              @default(now())
   actualizadoEn         DateTime              @updatedAt
-  asignacionesEjercicio AsignacionEjercicio[]
   ejerciciosRealizados  EjercicioRealizado[]
   notificaciones        Notificacion[]
+  dispositivos          Dispositivo[]         @relation("UsuarioDispositivos")
   registrosSalud        RegistroSalud[]
+  asignaciones          AsignacionEjercicio[] @relation("AsignacionesRecibidas")
   doctorAsignado        Doctor?               @relation("DoctorPacientes", fields: [idDoctorAsignado], references: [id])
 
   @@index([estadoCuenta])
@@ -71,9 +73,13 @@ model RegistroSalud {
   presionDiastolica Int?
   glucosa           Float?
   colesterol        Float?
+  temperatura       Float?
+  peso              Float?
   calorias          Int?
-  ejercicio         Int?
+  ejercicio         String?                 // Legacy: nombre del ejercicio (mantener para compatibilidad)
+  ejercicioMinutos  Int       @default(0)  // ✅ Minutos de ejercicio (calculado desde app)
   estadoAnimo       String?
+  notas             String?
   idSincronizacion  String?
   sincronizadoEn    DateTime?
   fecha             String?
@@ -102,7 +108,6 @@ model Ejercicio {
   urlVideo            String?
   creadoEn            DateTime              @default(now())
   actualizadoEn       DateTime              @updatedAt
-  asignaciones        AsignacionEjercicio[]
   realizados          EjercicioRealizado[]
 
   @@index([enfermedad])
@@ -110,41 +115,41 @@ model Ejercicio {
 }
 
 model AsignacionEjercicio {
-  id                     Int                      @id @default(autoincrement())
-  ejercicioId            Int
-  pacienteId             Int
-  estado                 ExerciseAssignmentStatus @default(PENDING)
-  progreso               Int                      @default(0)
-  frecuenciaRecordatorio Int?
-  asignadoEn             DateTime                 @default(now())
-  fechaInicio            DateTime?
-  fechaFin               DateTime?
-  idSincronizacion       String?
-  sincronizadoEn         DateTime?
-  creadoEn               DateTime                 @default(now())
-  actualizadoEn          DateTime                 @updatedAt
-  ejercicio              Ejercicio                @relation(fields: [ejercicioId], references: [id], onDelete: Cascade)
-  paciente               Usuario                  @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
-  completaciones         EjercicioRealizado[]
+  id               Int       @id @default(autoincrement())
+  ejercicioId      Int
+  doctorId         Int
+  usuarioId        Int?                    // null = asignación general a todos; set = asignación individual
+  enfermedad       String?                 // Filtro opcional: asignar solo a pacientes con esta enfermedad
+  descripcion      String?                 // Notas del doctor
+  activo           Boolean   @default(true)
+  fechaAsignacion  DateTime  @default(now())
+  fechaExpiracion  DateTime?               // null = nunca expira
+  creadoEn         DateTime  @default(now())
+  actualizadoEn    DateTime  @updatedAt
+  ejercicio        Ejercicio @relation(fields: [ejercicioId], references: [id], onDelete: Cascade)
+  doctor           Doctor    @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  usuario          Usuario?  @relation("AsignacionesRecibidas", fields: [usuarioId], references: [id], onDelete: Cascade)
 
-  @@index([pacienteId, estado])
-  @@index([idSincronizacion])
-  @@map("asignaciones_ejercicio")
+  @@unique([ejercicioId, doctorId, usuarioId])  // Prevenir duplicados
+  @@index([doctorId])
+  @@index([usuarioId])
+  @@index([enfermedad])
+  @@index([activo])
+  @@map("asignaciones_ejercicios")
 }
 
 model EjercicioRealizado {
-  id               Int                  @id @default(autoincrement())
+  id               Int       @id @default(autoincrement())
   usuarioId        Int
   ejercicioId      Int
   asignacionId     Int?
   idSincronizacion String?
   sincronizadoEn   DateTime?
   fecha            String?
-  completadoEn     DateTime             @default(now())
-  creadoEn         DateTime             @default(now())
-  asignacion       AsignacionEjercicio? @relation(fields: [asignacionId], references: [id])
-  ejercicio        Ejercicio            @relation(fields: [ejercicioId], references: [id], onDelete: Cascade)
-  usuario          Usuario              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  completadoEn     DateTime  @default(now())
+  creadoEn         DateTime  @default(now())
+  ejercicio        Ejercicio @relation(fields: [ejercicioId], references: [id], onDelete: Cascade)
+  usuario          Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@index([usuarioId, completadoEn])
   @@index([idSincronizacion])
@@ -170,13 +175,31 @@ model Notificacion {
   metadatos     Json?
   leido         Boolean          @default(false)
   leidoEn       DateTime?
+  enviada       DateTime?        // Para rastrear cuándo fue enviado el push
   creadoEn      DateTime         @default(now())
   actualizadoEn DateTime         @updatedAt
   usuario       Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@index([usuarioId, leido])
   @@index([tipo])
+  @@index([enviada])  // Índice para búsquedas rápidas de notificaciones enviadas
   @@map("notificaciones")
+}
+
+model Dispositivo {
+  id             Int      @id @default(autoincrement())
+  usuarioId      Int
+  fcmToken       String   @unique
+  deviceId       String?
+  activo         Boolean  @default(true)
+  ultimaVezVisto DateTime @default(now())
+  creadoEn       DateTime @default(now())
+  actualizadoEn  DateTime @updatedAt
+  usuario        Usuario  @relation("UsuarioDispositivos", fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@index([fcmToken])
+  @@map("dispositivos")
 }
 
 model ConfiguracionSistema {
@@ -202,17 +225,12 @@ enum AccountStatus {
   SUSPENDED
 }
 
-enum ExerciseAssignmentStatus {
-  PENDING
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-}
-
 enum NotificationType {
-  account_activated
+  cuenta_activada
   exercise_assigned
   exercise_reminder
   health_check
   message_from_doctor
+  account_activated
+  health_reminder
 }

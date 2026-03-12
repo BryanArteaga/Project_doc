@@ -13,6 +13,8 @@ import com.example.doc.network.PushRegistroSaludRequest
 import com.example.doc.network.PushEjercicioRealizadoRequest
 import com.example.doc.network.FCMTokenRequest
 import com.example.doc.network.CreateUsuarioRequest
+import com.example.doc.network.AsignacionEjercicioDTO
+import com.example.doc.data.daos.AsignacionEjercicioDao
 import timber.log.Timber
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -37,7 +39,8 @@ data class SyncPullResponse(
     val ejercicios: List<EjercicioDTO>,
     val notificaciones: List<NotificacionDTO>,
     val estadoCuenta: EstadoCuentaDTO,
-    val registrosSalud: List<RegistroSaludDTO> = emptyList()  // ✅ NUEVO: Registros históricos del backend
+    val registrosSalud: List<RegistroSaludDTO> = emptyList(),  // ✅ NUEVO: Registros históricos del backend
+    val asignaciones: List<AsignacionEjercicioDTO> = emptyList()  // ✅ NUEVO: Asignaciones de ejercicios
 )
 
 data class RegistroSaludDTO(
@@ -51,7 +54,7 @@ data class RegistroSaludDTO(
     val temperatura: Double? = null,
     val peso: Double? = null,
     val calorias: Int? = null,
-    val ejercicio: String? = null,
+    val ejercicioMinutos: Int? = null,  // ✅ Cambiar de ejercicio (String) a ejercicioMinutos (Int)
     val estadoAnimo: String? = null,
     val notas: String? = null,
     val registradoEn: Long
@@ -114,6 +117,7 @@ class SyncRepository(
     private val apiService: ApiService,
     private val registroSaludDao: RegistroSaludDao,
     private val ejercicioRealizadoDao: EjercicioRealizadoDao,
+    private val asignacionEjercicioDao: AsignacionEjercicioDao,
     private val usuarioDao: UsuarioDao,
     private val sharedPreferences: SharedPreferences
 ) {
@@ -191,7 +195,7 @@ class SyncRepository(
                             temperatura = rs.temperatura?.toFloat(),
                             peso = rs.peso?.toFloat(),
                             calorias = rs.calorias,
-                            ejercicio = rs.ejercicio?.toString(), // 🔧 Asegurar que sea String
+                            ejercicioMinutos = rs.ejercicioMinutos,  // ✅ Cambiar a ejercicioMinutos (Int)
                             estadoAnimo = rs.estadoAnimo,
                             notas = rs.notas,
                             fecha = rs.fecha,
@@ -278,7 +282,7 @@ class SyncRepository(
                                     temperatura = registroDto.temperatura,
                                     peso = registroDto.peso,
                                     calorias = registroDto.calorias,
-                                    ejercicio = registroDto.ejercicio,
+                                    ejercicioMinutos = registroDto.ejercicioMinutos ?: 0,  // ✅ Ya viene como Int
                                     estadoAnimo = registroDto.estadoAnimo,
                                     notas = registroDto.notas,
                                     registradoEn = registroDto.registradoEn,
@@ -289,6 +293,42 @@ class SyncRepository(
                             Timber.d("✅ ${body.registrosSalud.size} registros históricos guardados en Room")
                         } catch (e: Exception) {
                             Timber.e(e, "❌ Error guardando registros históricos en Room")
+                        }
+                    }
+
+                    // ✅ NUEVO: Guardar asignaciones de ejercicios
+                    if (body.asignaciones.isNotEmpty()) {
+                        try {
+                            // Obtener enfermedad del usuario para filtro
+                            val usuarioLocal = usuarioDao.getUsuarioSuspend()
+                            val enfermedad = usuarioLocal?.enfermedad
+                            
+                            // Borrar asignaciones anteriores para actualizar
+                            asignacionEjercicioDao.deleteForSyncDirectas(usuarioId)
+                            if (enfermedad != null) {
+                                asignacionEjercicioDao.deleteForSyncGenerales(enfermedad)
+                            }
+                            
+                            // Guardar nuevas asignaciones
+                            val ahora = System.currentTimeMillis()
+                            val asignacionesEntities = body.asignaciones.map { dto ->
+                                com.example.doc.data.entities.AsignacionEjercicioEntity(
+                                    id = dto.id,
+                                    ejercicioId = dto.ejercicioId,
+                                    doctorId = dto.doctorId,
+                                    usuarioId = dto.usuarioId,
+                                    enfermedad = dto.enfermedad,
+                                    descripcion = dto.descripcion,
+                                    activo = dto.activo,
+                                    fechaAsignacion = dto.fechaAsignacion.toLongOrNull() ?: ahora,
+                                    fechaExpiracion = dto.fechaExpiracion?.toLongOrNull(),
+                                    isSynced = true  // Ya están en el backend
+                                )
+                            }
+                            asignacionEjercicioDao.insertAll(asignacionesEntities)
+                            Timber.d("✅ ${body.asignaciones.size} asignaciones de ejercicios guardadas en Room")
+                        } catch (e: Exception) {
+                            Timber.e(e, "❌ Error guardando asignaciones en Room")
                         }
                     }
 

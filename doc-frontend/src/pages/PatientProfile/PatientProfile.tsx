@@ -28,7 +28,7 @@ interface PatientData {
         presionDiastolica?: number;
         glucosa?: number;
         peso?: number;
-        ejercicio?: number;
+        ejercicioMinutos?: number;  // ✅ Minutos de ejercicio
         calorias?: number;
         estadoAnimo?: string;
         notas?: string;
@@ -235,6 +235,23 @@ const PatientProfile: React.FC = () => {
         }
     });
 
+    // ✅ Función para formatear minutos de ejercicio
+    const formatearMinutos = (minutos: number | undefined | null): string => {
+        const totalMinutos = minutos ?? 0;
+        
+        if (totalMinutos <= 0) return '0 min';
+        if (totalMinutos < 60) return `${totalMinutos} min`;
+        
+        const horas = Math.floor(totalMinutos / 60);
+        const mins = totalMinutos % 60;
+        
+        if (mins > 0) {
+            return `${horas}h ${mins}min`;
+        } else {
+            return `${horas}h`;
+        }
+    };
+
     return (
         <Layout>
             <PageTransition>
@@ -363,10 +380,28 @@ const PatientProfile: React.FC = () => {
                                 const presiones = registrosSalud.filter(r => r.presionSistolica && r.presionDiastolica);
                                 const glucosas = registrosSalud.filter(r => r.glucosa);
                                 const pesos = registrosSalud.filter(r => r.peso);
-                                const ejercicios = registrosSalud.filter(r => r.ejercicio);
+                                const ejercicios = registrosSalud.filter(r => r.ejercicioMinutos && r.ejercicioMinutos > 0);  // ✅ Filtrar por ejercicioMinutos
                                 const calorias = registrosSalud.filter(r => r.calorias);
 
                                 const calcularPromedio = (arr: number[]) => arr.length > 0 ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
+                                
+                                // ✅ Calcular promedio diario de ejercicios (agrupando por fecha)
+                                const calcularPromedioDiario = (registros: typeof ejercicios) => {
+                                    if (registros.length === 0) return 0;
+                                    
+                                    // Agrupar por fecha
+                                    const porDia = new Map<string, number>();
+                                    registros.forEach(r => {
+                                        const fecha = r.registradoEn ? new Date(r.registradoEn).toISOString().split('T')[0] : '';
+                                        if (fecha) {
+                                            porDia.set(fecha, (porDia.get(fecha) || 0) + (r.ejercicioMinutos || 0));
+                                        }
+                                    });
+                                    
+                                    // Promedio = suma total / número de días
+                                    const totalMinutos = Array.from(porDia.values()).reduce((a, b) => a + b, 0);
+                                    return porDia.size > 0 ? Math.round(totalMinutos / porDia.size) : 0;
+                                };
 
                                 return (
                                     <div className="stats-section">
@@ -438,11 +473,11 @@ const PatientProfile: React.FC = () => {
                                             <div className="stat-compact-row">
                                                 <div className="stat-compact-item">
                                                     <div className="stat-compact-label">Total Minutos</div>
-                                                    <div className="stat-compact-value">{ejercicios.reduce((sum, r) => sum + r.ejercicio!, 0)}</div>
+                                                    <div className="stat-compact-value">{formatearMinutos(ejercicios.reduce((sum, r) => sum + (r.ejercicioMinutos || 0), 0))}</div>
                                                 </div>
                                                 <div className="stat-compact-item">
                                                     <div className="stat-compact-label">Promedio/día</div>
-                                                    <div className="stat-compact-value">{calcularPromedio(ejercicios.map(r => r.ejercicio!))}</div>
+                                                    <div className="stat-compact-value">{formatearMinutos(calcularPromedioDiario(ejercicios))}</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -457,7 +492,7 @@ const PatientProfile: React.FC = () => {
                                                 </div>
                                                 <div className="stat-compact-item">
                                                     <div className="stat-compact-label">Promedio/día</div>
-                                                    <div className="stat-compact-value">{calcularPromedio(calorias.map(r => r.calorias!))}</div>
+                                                    <div className="stat-compact-value">{calcularPromedioDiario(calorias as typeof ejercicios)}</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -640,7 +675,7 @@ const PatientProfile: React.FC = () => {
                                                             )}
                                                             {/* Columnas para todas las enfermedades */}
                                                             <td style={{ fontSize: '1.05rem', textAlign: 'center' }}>
-                                                                {registro.ejercicio !== undefined && registro.ejercicio !== null ? <><strong style={{ color: '#10b981' }}>{registro.ejercicio}</strong> min</> : <span style={{ color: '#9ca3af' }}>-</span>}
+                                                                <strong style={{ color: '#10b981' }}>{formatearMinutos(registro.ejercicioMinutos)}</strong>
                                                             </td>
                                                             <td style={{ fontSize: '1.05rem', textAlign: 'center' }}>
                                                                 {registro.calorias !== undefined && registro.calorias !== null ? <><strong style={{ color: '#f59e0b' }}>{registro.calorias}</strong> kcal</> : <span style={{ color: '#9ca3af' }}>-</span>}

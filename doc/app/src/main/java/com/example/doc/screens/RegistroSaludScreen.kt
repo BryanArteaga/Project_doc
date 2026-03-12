@@ -107,9 +107,14 @@ fun RegistroSaludScreen(
 
     val totalEjercicioApp by remember(ejercicios, realizadosHoy) {
         derivedStateOf {
-            realizadosHoy.sumOf { ejercicioId ->
-                ejercicios.find { it.id == ejercicioId }?.duracion?.toLong() ?: 0L
-            }.toInt()
+            val segundosTotales = realizadosHoy.sumOf { ejercicioId ->
+                val ej = ejercicios.find { it.id == ejercicioId }
+                // duracion está en SEGUNDOS, series es cantidad de repeticiones
+                // Ejemplo: 30seg × 3 series = 90 segundos = 1.5 minutos (redondear a 2)
+                (ej?.duracion?.toLong() ?: 0L) * (ej?.series?.toLong() ?: 1L)
+            }
+            // ✅ Convertir segundos a minutos y redondear correctamente
+            kotlin.math.round(segundosTotales / 60.0).toInt()
         }
     }
 

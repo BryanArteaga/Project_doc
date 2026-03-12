@@ -18,7 +18,7 @@ export interface PushRegistroSaludRequest {
   temperatura?: number;
   peso?: number;
   calorias?: number;
-  ejercicio?: string;               // nombre/tipo del ejercicio
+  ejercicioMinutos?: number;        // ✅ Minutos de ejercicio (calculado en app)
   estadoAnimo?: string;             // Happy, Neutral, Sad
   notas?: string;
 }
@@ -60,6 +60,35 @@ export interface EjercicioResponse {
   intensidad: string | null;
 }
 
+// ✅ DTO para AsignacionEjercicio en PULL
+export interface AsignacionEjercicioResponse {
+  id: number;
+  ejercicioId: number;
+  doctorId: number;
+  usuarioId: number | null;
+  enfermedad?: string | null;
+  descripcion?: string | null;
+  activo: boolean;
+  fechaAsignacion: string;           // timestamp string
+  fechaExpiracion?: string | null;    // timestamp string
+  ejercicio?: {
+    id: number;
+    nombre: string;
+    descripcion?: string;
+    duracion?: number;
+    series?: number;
+    intensidad?: string;
+    urlImagen?: string;
+    urlVideo?: string;
+  };
+  doctor?: {
+    id: number;
+    nombre: string;
+    apellido?: string;
+    especialidad?: string;
+  };
+}
+
 export interface RegistroSaludResponse {
   id: number;
   fecha: string;
@@ -71,7 +100,7 @@ export interface RegistroSaludResponse {
   temperatura?: number;
   peso?: number;
   calorias?: number;
-  ejercicio?: string;
+  ejercicioMinutos?: number;        // ✅ Minutos de ejercicio
   estadoAnimo?: string;
   notas?: string;
   registradoEn: number; // Timestamp en milisegundos
@@ -109,19 +138,12 @@ export interface UsuarioResponse {
   notifType: string;
   notifDetails: string;
 }
-  // 🔧 Agregar datos personales para sincronización completa
-  edad: number | null;
-  peso: number | null;
-  altura: number | null;
-  sexo: string | null;
-  enfermedad: string | null;
-  colorEnfermedad: string | null;
-}
 
 export interface SyncPullResponse {
   success: boolean;
   usuario: UsuarioResponse;
-  registrosSalud: RegistroSaludResponse[];  // ✅ NUEVO: Incluir registros de salud históricos
+  registrosSalud: RegistroSaludResponse[];         // ✅ Registros de salud históricos
+  asignaciones: AsignacionEjercicioResponse[];     // ✅ NUEVO: Asignaciones de ejercicios
   ejercicios: EjercicioResponse[];
   notificaciones: NotificacionResponse[];
   estadoCuenta: EstadoAccountResponse;

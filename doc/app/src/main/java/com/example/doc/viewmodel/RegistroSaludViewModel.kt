@@ -122,6 +122,7 @@ class RegistroSaludViewModel @Inject constructor(
                     peso = registroFinal.peso,
                     calorias = registroFinal.calorias,  // Ahora es Int?
                     ejercicio = registroFinal.ejercicio,  // Ahora es String?
+                    ejercicioMinutos = registroFinal.ejercicioMinutos,  // ✅ Guardar minutos calculados
                     estadoAnimo = registroFinal.estadoAnimo,
                     notas = registroFinal.notas,
                     registradoEn = registroFinal.registradoEn ?: System.currentTimeMillis()
@@ -169,6 +170,7 @@ class RegistroSaludViewModel @Inject constructor(
                         peso = entidad.peso,
                         calorias = entidad.calorias,
                         ejercicio = entidad.ejercicio,
+                        ejercicioMinutos = entidad.ejercicioMinutos,  // ✅ MAPEAR ejercicioMinutos
                         estadoAnimo = entidad.estadoAnimo,
                         notas = entidad.notas,
                         registradoEn = entidad.registradoEn

@@ -172,7 +172,8 @@ fun MainScreen(
         }
     }
 
-    // Obtener estado de navegación
+    // Obtener estado de navegación - guardar en previousBackStackEntry desde RegistroSaludScreen
+    // Entonces se busca en currentBackStackEntry aquí en MainScreen
     val navBackStackEntry = navController.currentBackStackEntry
     val justSavedRegistro = navBackStackEntry?.savedStateHandle?.get<Boolean>("registro_guardado") == true
     val registroError = navBackStackEntry?.savedStateHandle?.get<String>("registro_error")
@@ -553,7 +554,8 @@ fun MainScreen(
                                         reg.imc?.let { Text("IMC: ${String.format(java.util.Locale.US, "%.2f", it)}", fontSize = 14.sp) }
                                         reg.colesterol?.let { Text("Colesterol: $it mg/dL", fontSize = 14.sp) }
                                         Text("Calorías: ${reg.calorias}", fontSize = 14.sp)
-                                        Text("Ejercicio: ${reg.ejercicio} min", fontSize = 14.sp)
+                                        // ✅ Mostrar ejercicioMinutos (no el nombre del ejercicio que es null)
+                                        Text("Ejercicio: ${com.example.doc.utils.HealthFormatUtils.formatearMinutos(reg.ejercicioMinutos)}", fontSize = 14.sp)
                                         Text("Ánimo: ${reg.estadoAnimo}", fontSize = 14.sp)
                                     }
                                 }

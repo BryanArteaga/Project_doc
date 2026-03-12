@@ -4,6 +4,7 @@ import android.content.SharedPreferences
 import com.example.doc.data.daos.ConsejoDao
 import com.example.doc.data.daos.EjercicioDao
 import com.example.doc.data.daos.RegistroSaludDao
+import com.example.doc.data.daos.AsignacionEjercicioDao
 import com.example.doc.network.ApiService
 import com.example.doc.repository.ConsejoRepository
 import com.example.doc.repository.EjercicioRepository
@@ -60,6 +61,7 @@ object RepositoryModule {
         apiService: ApiService,
         registroSaludDao: RegistroSaludDao,
         ejercicioRealizadoDao: EjercicioRealizadoDao,
+        asignacionEjercicioDao: AsignacionEjercicioDao,
         usuarioDao: UsuarioDao,
         sharedPreferences: SharedPreferences
     ): SyncRepository {
@@ -67,6 +69,7 @@ object RepositoryModule {
             apiService = apiService,
             registroSaludDao = registroSaludDao,
             ejercicioRealizadoDao = ejercicioRealizadoDao,
+            asignacionEjercicioDao = asignacionEjercicioDao,
             usuarioDao = usuarioDao,
             sharedPreferences = sharedPreferences
         )

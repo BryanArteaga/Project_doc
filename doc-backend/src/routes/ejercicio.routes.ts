@@ -1,30 +1,29 @@
 import { Router } from 'express';
 import {
   getEjercicios,
-  // getEjercicio, // TODO: implementar
+  getEjercicio,
   createEjercicio,
-  // getAsignaciones, // TODO: implementar
-  // getAsignacion, // TODO: implementar
-  // asignarEjercicio, // TODO: implementar
-  // updateAsignacion, // TODO: implementar
-  // completarEjercicio, // TODO: implementar
+  updateEjercicio,
+  deleteEjercicio,
 } from '../controllers/ejercicio.controller';
-import { verifyToken } from '../middleware/auth.middleware';
+import { verifyAnyUser, requireDoctor } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// Todas las rutas requieren autenticación
-router.use(verifyToken);
+// GET - Catálogo de ejercicios (permite tanto doctor como paciente)
+router.get('/', verifyAnyUser, getEjercicios);
 
-// Catálogo de ejercicios (público para todos)
-router.get('/', getEjercicios);
-// router.get('/:id', getEjercicio); // TODO
-// router.post('/', createEjercicio); // TODO: solo doctores
-// router.get('/asignaciones', getAsignaciones); // TODO
-// router.get('/asignaciones/:id', getAsignacion); // TODO
-// router.post('/asignaciones', asignarEjercicio); // TODO: solo doctores
-// router.patch('/asignaciones/:id', updateAsignacion); // TODO: solo doctores
-// router.post('/completar', completarEjercicio); // TODO: solo pacientes
+// POST - Crear ejercicio en catálogo (solo doctores)
+router.post('/', requireDoctor, createEjercicio);
+
+// GET /:id - Obtener ejercicio específico (solo doctores)
+router.get('/:id', requireDoctor, getEjercicio);
+
+// PATCH /:id - Actualizar ejercicio (solo doctores)
+router.patch('/:id', requireDoctor, updateEjercicio);
+
+// DELETE /:id - Eliminar ejercicio (solo doctores)
+router.delete('/:id', requireDoctor, deleteEjercicio);
 
 export default router;
 

@@ -228,3 +228,79 @@ export const assignPatientToDoctor = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.mensaje || 'Error al asignar paciente' });
   }
 };
+
+/**
+ * ✅ Obtener mis asignaciones de ejercicios activas (para pacientes)
+ */
+export const getMisAsignacionesEjercicios = async (req: Request, res: Response) => {
+  try {
+    const usuarioId = req.userId;
+
+    if (!usuarioId) {
+      return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    // Obtener usuario para saber su enfermedad
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: usuarioId },
+      select: { enfermedad: true }
+    });
+
+    if (!usuario) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    const ahora = new Date();
+
+    // Obtener asignaciones activas y no expiradas
+    // Que sean directas (usuarioId = mi ID) o generales por mi enfermedad
+    const asignaciones = await prisma.asignacionEjercicio.findMany({
+      where: {
+        activo: true,
+        AND: [
+          {
+            OR: [
+              { usuarioId: usuarioId! },                        // Asignación directa
+              { usuarioId: null, enfermedad: usuario.enfermedad }  // Asignación general
+            ]
+          },
+          {
+            OR: [
+              { fechaExpiracion: null },                        // Sin expiración
+              { fechaExpiracion: { gt: ahora } }                // No expirada
+            ]
+          }
+        ]
+      },
+      include: {
+        ejercicio: {
+          select: {
+            id: true,
+            nombre: true,
+            descripcion: true,
+            duracion: true,
+            series: true,
+            intensidad: true,
+            urlImagen: true,
+            urlVideo: true
+          }
+        },
+        doctor: {
+          select: {
+            id: true,
+            nombre: true,
+            apellido: true,
+            especialidad: true
+          }
+        }
+      },
+      orderBy: { fechaAsignacion: 'desc' }
+    });
+
+    res.json(asignaciones);
+  } catch (error) {
+    console.error('Error al obtener asignaciones de ejercicios:', error);
+    res.status(500).json({ error: 'Error al obtener asignaciones de ejercicios' });
+  }
+};
+

@@ -30,6 +30,7 @@ data class RegistroSaludEntity(
     val peso: Double? = null,
     val calorias: Int? = null,
     val ejercicio: String? = null,
+    val ejercicioMinutos: Int = 0,  // ✅ Minutos de ejercicio (calculado desde app)
     val estadoAnimo: String? = null,
     val notas: String? = null,
     val registradoEn: Long,

@@ -24,7 +24,7 @@ data class PushRegistroSaludRequest(
     val temperatura: Float?,
     val peso: Float?,
     val calorias: Int?,
-    val ejercicio: String?,  // Nombre del ejercicio
+    val ejercicioMinutos: Int?,  // ✅ Cambiar de ejercicio (String) a ejercicioMinutos (Int)
     val estadoAnimo: String?,
     val notas: String?,
     val fecha: String?,
@@ -36,6 +36,39 @@ data class PushEjercicioRealizadoRequest(
     val asignacionId: Int?,
     val fecha: String?,
     val completadoEn: String
+)
+
+// ✅ DTO para AsignacionEjercicio
+data class AsignacionEjercicioDTO(
+    val id: Int,
+    val ejercicioId: Int,
+    val doctorId: Int,
+    val usuarioId: Int? = null,
+    val enfermedad: String? = null,
+    val descripcion: String? = null,
+    val activo: Boolean = true,
+    val fechaAsignacion: String,
+    val fechaExpiracion: String? = null,
+    val ejercicio: AsignacionEjercicioDetalleDTO? = null,
+    val doctor: DoctorDetalleDTO? = null
+)
+
+data class AsignacionEjercicioDetalleDTO(
+    val id: Int,
+    val nombre: String,
+    val descripcion: String? = null,
+    val duracion: Int? = null,
+    val series: Int? = null,
+    val intensidad: String? = null,
+    val urlImagen: String? = null,
+    val urlVideo: String? = null
+)
+
+data class DoctorDetalleDTO(
+    val id: Int,
+    val nombre: String,
+    val apellido: String? = null,
+    val especialidad: String? = null
 )
 
 data class FCMTokenRequest(

@@ -8,6 +8,7 @@ import authDoctorRoutes from './routes/auth.doctor.routes';
 import usuarioRoutes from './routes/usuario.routes';
 import registroSaludRoutes from './routes/registroSalud.routes';
 import ejercicioRoutes from './routes/ejercicio.routes';
+import asignacionEjercicioRoutes from './routes/asignacion-ejercicio.routes';
 import doctorRoutes from './routes/doctor.routes';
 import syncRoutes from './routes/sync.routes';
 import notificationRoutes from './routes/notification.routes';
@@ -123,6 +124,7 @@ app.use('/api/auth/doctor', authLimiter, authDoctorRoutes); // Doctores y Admins
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/registros-salud', registroSaludRoutes);
 app.use('/api/ejercicios', ejercicioRoutes);
+app.use('/api/asignaciones-ejercicios', asignacionEjercicioRoutes);
 app.use('/api/doctor', doctorRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/notifications', notificationRoutes);

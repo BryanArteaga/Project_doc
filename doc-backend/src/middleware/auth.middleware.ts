@@ -8,6 +8,7 @@ declare global {
   namespace Express {
     interface Request {
       userId?: number;
+      userCedula?: string;
       estadoCuenta?: string;
       user?: any;
       doctorId?: string;
@@ -78,6 +79,7 @@ export const authenticateToken = verifyToken;
 export const verifyDoctorToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
+    console.log('🔍 [verifyDoctorToken] Token recibido:', token ? 'SÍ' : 'NO');
 
     if (!token) {
       return res.status(401).json({ error: 'Token no proporcionado' });
@@ -85,6 +87,7 @@ export const verifyDoctorToken = async (req: Request, res: Response, next: NextF
 
     // Verificar token con Supabase
     const user = await verifySupabaseToken(token);
+    console.log('🔍 [verifyDoctorToken] Usuario Supabase:', user?.id);
 
     if (!user || !user.id) {
       return res.status(401).json({ error: 'Token inválido o expirado' });
@@ -94,6 +97,8 @@ export const verifyDoctorToken = async (req: Request, res: Response, next: NextF
     const doctor = await prisma.doctor.findUnique({
       where: { supabaseUserId: user.id }
     });
+
+    console.log('🔍 [verifyDoctorToken] Doctor encontrado en BD:', doctor?.id, 'activo:', doctor?.activo);
 
     if (!doctor) {
       return res.status(404).json({ error: 'Doctor no encontrado en el sistema' });
@@ -108,9 +113,10 @@ export const verifyDoctorToken = async (req: Request, res: Response, next: NextF
     req.doctorRole = doctor.rol;
     req.doctorDbId = doctor.id;
 
+    console.log('✅ [verifyDoctorToken] Middleware completado - doctorDbId:', req.doctorDbId);
     next();
   } catch (error: any) {
-    console.error('Error al verificar token de doctor:', error.message);
+    console.error('❌ Error al verificar token de doctor:', error.message);
     return res.status(401).json({ error: 'No autenticado' });
   }
 };
@@ -134,6 +140,64 @@ export const requireAdmin = async (req: Request, res: Response, next: NextFuncti
  * Middleware combinado: Autenticación de doctor
  */
 export const requireDoctor = verifyDoctorToken;
+
+/**
+ * Middleware para aceptar AMBOS: Doctor O Paciente
+ * Intenta verificar como doctor primero, luego como paciente
+ */
+export const verifyAnyUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ error: 'Token no proporcionado' });
+    }
+
+    try {
+      // Primero intentar verificar como DOCTOR
+      const user = await verifySupabaseToken(token);
+
+      if (user && user.id) {
+        // Buscar doctor en BD
+        const doctor = await prisma.doctor.findUnique({
+          where: { supabaseUserId: user.id }
+        });
+
+        if (doctor && doctor.activo) {
+          // Es doctor válido
+          req.doctorId = user.id;
+          req.doctorRole = doctor.rol;
+          req.doctorDbId = doctor.id;
+          console.log('✅ [verifyAnyUser] Autenticado como DOCTOR - doctorDbId:', doctor.id);
+          return next();
+        }
+      }
+    } catch (doctorError: any) {
+      // No es doctor válido, intentar como paciente
+      console.log('🔍 [verifyAnyUser] No es doctor, intentando como paciente...');
+    }
+
+    // Intentar verificar como PACIENTE (usando el token como JWT normal)
+    const secret = process.env.JWT_SECRET || 'tu-secreto-aqui';
+    try {
+      const decoded: any = jwt.verify(token, secret);
+      
+      if (decoded && decoded.userId) {
+        req.userId = decoded.userId;
+        req.userCedula = decoded.cedula;
+        console.log('✅ [verifyAnyUser] Autenticado como PACIENTE - userId:', decoded.userId);
+        return next();
+      }
+    } catch (patientError: any) {
+      console.log('❌ [verifyAnyUser] Token inválido para ambos tipos de usuario');
+    }
+
+    return res.status(401).json({ error: 'Token inválido - no se pudo autenticar como doctor ni paciente' });
+  } catch (error: any) {
+    console.error('❌ Error en verifyAnyUser:', error.message);
+    return res.status(401).json({ error: 'No autenticado' });
+  }
+};
 
 /**
  * Middleware combinado: Autenticación de doctor + rol ADMIN

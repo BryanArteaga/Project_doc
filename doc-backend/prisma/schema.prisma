@@ -21,6 +21,7 @@ model Doctor {
   creadoEn       DateTime  @default(now())
   actualizadoEn  DateTime  @updatedAt
   pacientes      Usuario[] @relation("DoctorPacientes")
+  asignaciones   AsignacionEjercicio[]
 
   @@index([cedula], map: "idx_doctor_cedula")
   @@index([email], map: "idx_doctor_email")
@@ -57,6 +58,7 @@ model Usuario {
   notificaciones        Notificacion[]
   dispositivos          Dispositivo[]         @relation("UsuarioDispositivos")
   registrosSalud        RegistroSalud[]
+  asignaciones          AsignacionEjercicio[] @relation("AsignacionesRecibidas")
   doctorAsignado        Doctor?               @relation("DoctorPacientes", fields: [idDoctorAsignado], references: [id])
 
   @@index([estadoCuenta])
@@ -74,7 +76,8 @@ model RegistroSalud {
   temperatura       Float?
   peso              Float?
   calorias          Int?
-  ejercicio         String?
+  ejercicio         String?                 // Legacy: nombre del ejercicio (mantener para compatibilidad)
+  ejercicioMinutos  Int       @default(0)  // ✅ Minutos de ejercicio (calculado desde app)
   estadoAnimo       String?
   notas             String?
   idSincronizacion  String?
@@ -106,9 +109,34 @@ model Ejercicio {
   creadoEn            DateTime              @default(now())
   actualizadoEn       DateTime              @updatedAt
   realizados          EjercicioRealizado[]
+  asignaciones        AsignacionEjercicio[]
 
   @@index([enfermedad])
   @@map("ejercicios")
+}
+
+model AsignacionEjercicio {
+  id               Int       @id @default(autoincrement())
+  ejercicioId      Int
+  doctorId         Int
+  usuarioId        Int?                    // null = asignación general a todos; set = asignación individual
+  enfermedad       String?                 // Filtro opcional: asignar solo a pacientes con esta enfermedad
+  descripcion      String?                 // Notas del doctor
+  activo           Boolean   @default(true)
+  fechaAsignacion  DateTime  @default(now())
+  fechaExpiracion  DateTime?               // null = nunca expira
+  creadoEn         DateTime  @default(now())
+  actualizadoEn    DateTime  @updatedAt
+  ejercicio        Ejercicio @relation(fields: [ejercicioId], references: [id], onDelete: Cascade)
+  doctor           Doctor    @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  usuario          Usuario?  @relation("AsignacionesRecibidas", fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([ejercicioId, doctorId, usuarioId])  // Prevenir duplicados
+  @@index([doctorId])
+  @@index([usuarioId])
+  @@index([enfermedad])
+  @@index([activo])
+  @@map("asignaciones_ejercicios")
 }
 
 model EjercicioRealizado {

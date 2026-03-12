@@ -1,0 +1,403 @@
+--------- beginning of system
+--------- beginning of main
+---------------------------- PROCESS STARTED (24179) for package com.example.doc ----------------------------
+2026-03-10 22:24:46.798 24179-24179 TranClassInfo           com.example.doc                      D  instance successfully. com.transsion.hubcore.graphics.TranGraphicImpl@87a3e65 from com.transsion.hubcore.graphics.ITranGraphic
+2026-03-10 22:24:46.798 24179-24179 os.SingleLiceFactory    com.example.doc                      D  instance successfully. com.transsion.typeface.v1.TypefaceLice@d55c573 from android.graphics.IGraphicLice
+2026-03-10 22:24:46.798 24179-24179 os.LiceInfo             com.example.doc                      D  instance successfully. com.transsion.graphics.GraphicLice@22d873a from android.graphics.IGraphicLice
+2026-03-10 22:24:46.802 24179-24179 CompatChangeReporter    com.example.doc                      D  Compat change id reported: 202956589; UID 10385; state: ENABLED
+2026-03-10 22:24:46.813 24179-24179 DebugTheme...emeUpdated com.example.doc                      D  reload start !TranResourcesUtils.isRunningOnSystemServer()=true currentForegroundUser=0
+2026-03-10 22:24:46.844 24179-24179 com.example.doc         com.example.doc                      W  ClassLoaderContext classpath size mismatch. expected=0, found=3 (PCL[] | PCL[/data/data/com.example.doc/code_cache/.overlay/base.apk/classes4.dex*1229700668:/data/data/com.example.doc/code_cache/.overlay/base.apk/classes5.dex*1821683218:/data/data/com.example.doc/code_cache/.overlay/base.apk/classes6.dex*380505798])
+2026-03-10 22:24:47.197 24179-24179 nativeloader            com.example.doc                      D  Configuring clns-7 for other apk /data/app/~~-Y8AraJnKxdb6ccUWRlUWg==/com.example.doc-J3qQBMTRjthXGQSFQ4ZBcg==/base.apk. target_sdk_version=35, uses_libraries=, library_path=/data/app/~~-Y8AraJnKxdb6ccUWRlUWg==/com.example.doc-J3qQBMTRjthXGQSFQ4ZBcg==/lib/arm64:/data/app/~~-Y8AraJnKxdb6ccUWRlUWg==/com.example.doc-J3qQBMTRjthXGQSFQ4ZBcg==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand:/data/user/0/com.example.doc
+2026-03-10 22:24:47.236 24179-24179 CompatChangeReporter    com.example.doc                      D  Compat change id reported: 279646685; UID 10385; state: ENABLED
+2026-03-10 22:24:47.238 24179-24179 GraphicsEnvironment     com.example.doc                      V  Currently set values for:
+2026-03-10 22:24:47.238 24179-24179 GraphicsEnvironment     com.example.doc                      V    angle_gl_driver_selection_pkgs=[]
+2026-03-10 22:24:47.238 24179-24179 GraphicsEnvironment     com.example.doc                      V    angle_gl_driver_selection_values=[]
+2026-03-10 22:24:47.238 24179-24179 GraphicsEnvironment     com.example.doc                      V  Global.Settings values are invalid: number of packages: 0, number of values: 0
+2026-03-10 22:24:47.238 24179-24179 GraphicsEnvironment     com.example.doc                      V  Neither updatable production driver nor prerelease driver is supported.
+2026-03-10 22:24:47.253 24179-24179 LoadedApk               com.example.doc                      I  No resource references to update in package com.transsion.theme.icon
+2026-03-10 22:24:47.346 24179-24179 os.SingleLiceFactory    com.example.doc                      D  using android.app.IActivityThreadLice$DefaultImpl@9a04c30 instead of com.transsion.activityembedding.ActivityEmbeddingLiceFactory  from android.app.IActivityThreadLice
+2026-03-10 22:24:47.384 24179-24179 FirebaseApp             com.example.doc                      I  Device unlocked: initializing all Firebase APIs for app [DEFAULT]
+2026-03-10 22:24:47.419 24179-24179 FirebaseInitProvider    com.example.doc                      I  FirebaseApp initialization successful
+2026-03-10 22:24:47.428 24179-24179 WM-WrkMgrInitializer    com.example.doc                      D  Initializing WorkManager with default configuration.
+2026-03-10 22:24:47.443 24179-24179 WM-PackageManagerHelper com.example.doc                      D  Skipping component enablement for androidx.work.impl.background.systemjob.SystemJobService
+2026-03-10 22:24:47.443 24179-24179 WM-Schedulers           com.example.doc                      D  Created SystemJobScheduler and enabled SystemJobService
+2026-03-10 22:24:47.446 24179-24179 MbrainDebugManagerImpl  com.example.doc                      D  getService failed
+2026-03-10 22:24:47.461 24179-24236 com.example.doc         com.example.doc                      W  ClassLoaderContext classpath size mismatch. expected=1, found=0 (DLC[];PCL[base.apk*2249926499]{PCL[/system/framework/org.apache.http.legacy.jar*437079508]#PCL[/system/framework/com.android.location.provider.jar*3414091812]#PCL[/system/framework/com.android.media.remotedisplay.jar*2042759013]#PCL[/system_ext/framework/com.android.extensions.appfunctions.jar*3353079774]#PCL[/system_ext/framework/androidx.window.extensions.jar*4272317285]#PCL[/system_ext/framework/androidx.window.sidecar.jar*894206342]} | DLC[];PCL[])
+2026-03-10 22:24:47.468 24179-24236 DynamiteModule          com.example.doc                      I  Considering local module com.google.android.gms.measurement.dynamite:155 and remote module com.google.android.gms.measurement.dynamite:181
+2026-03-10 22:24:47.468 24179-24236 DynamiteModule          com.example.doc                      I  Selected remote version of com.google.android.gms.measurement.dynamite, version >= 181
+2026-03-10 22:24:47.468 24179-24236 DynamiteModule          com.example.doc                      V  Dynamite loader version >= 2, using loadModule2NoCrashUtils
+2026-03-10 22:24:47.472 24179-24240 CompatChangeReporter    com.example.doc                      D  Compat change id reported: 312399441; UID 10385; state: ENABLED
+2026-03-10 22:24:47.478 24179-24241 NetworkObserver         com.example.doc                      I  ONLINE
+2026-03-10 22:24:47.483 24179-24179 NetworkMonitor          com.example.doc                      D  📡 Estado de internet actualizado: true
+2026-03-10 22:24:47.484 24179-24238 TranClassInfo           com.example.doc                      D  instance successfully. com.transsion.hubcore.database.sqlite.TranSQLiteDatabaseImpl@575b182 from com.transsion.hubcore.database.sqlite.ITranSQLiteDatabase
+2026-03-10 22:24:47.485 24179-24238 TranClassInfo           com.example.doc                      D  instance successfully. com.transsion.hubcore.spdopts.others.implement.TranSQLiteDatabaseComponentImpl@bbe6093 from com.transsion.hubcore.spdcomponent.ITranSQLiteDatabaseComponent
+2026-03-10 22:24:47.486 24179-24179 NetworkMonitor          com.example.doc                      D  ✅ NetworkMonitor inicializado con callback automático
+2026-03-10 22:24:47.488 24179-24179 HybridNoti...ionManager com.example.doc                      D  🔔 Inicializando HybridNotificationManager
+2026-03-10 22:24:47.496 24179-24179 HybridNoti...nager$init com.example.doc                      D  📡 Estado de internet cambió: CONECTADO
+2026-03-10 22:24:47.496 24179-24179 HybridNoti...ionManager com.example.doc                      D  ✅ Internet disponible - Activando Firebase, desactivando AlarmManager
+2026-03-10 22:24:47.496 24179-24241 NetworkMonitor$init     com.example.doc                      D  📡 Red disponible
+2026-03-10 22:24:47.502 24179-24179 Notificati...$Companion com.example.doc                      D  Todas las alarmas canceladas
+2026-03-10 22:24:47.502 24179-24179 HybridNoti...ionManager com.example.doc                      D  ⏰ AlarmManager desactivado
+2026-03-10 22:24:47.503 24179-24179 HybridNoti...ionManager com.example.doc                      D  📡 Suscribiendo a topics de Firebase...
+2026-03-10 22:24:47.517 24179-24179 HybridNoti...ionManager com.example.doc                      D  🔔 Sistema híbrido: MODO PUSH activo
+2026-03-10 22:24:47.517 24179-24179 HybridNoti...ionManager com.example.doc                      D  📋 Topics suscritos:
+2026-03-10 22:24:47.518 24179-24179 HybridNoti...ionManager com.example.doc                      D     - exercise_reminders (notificaciones de ejercicio)
+2026-03-10 22:24:47.518 24179-24179 HybridNoti...ionManager com.example.doc                      D     - health_reminders (notificaciones de salud)
+2026-03-10 22:24:47.518 24179-24179 HybridNoti...ionManager com.example.doc                      D     - user_* (notificaciones personales como activación de cuenta)
+2026-03-10 22:24:47.520 24179-24179 DocApplication          com.example.doc                      D  DocApplication iniciada con sistema hibrido de notificaciones
+2026-03-10 22:24:47.523 24179-24236 System                  com.example.doc                      W  ClassLoader referenced unknown path: 
+2026-03-10 22:24:47.524 24179-24236 nativeloader            com.example.doc                      D  Configuring clns-8 for other apk . target_sdk_version=36, uses_libraries=, library_path=/data/app/~~eENGSOw8hKodj-aylfFJ-w==/com.google.android.gms-DBmsccx-wqtiZoAEviz9QA==/lib/arm64:/data/app/~~eENGSOw8hKodj-aylfFJ-w==/com.google.android.gms-DBmsccx-wqtiZoAEviz9QA==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand:/data/user/0/com.google.android.gms
+2026-03-10 22:24:47.549 24179-24179 nativeloader            com.example.doc                      D  Load libpowerhalwrap_jni.so using system ns (caller=/system_ext/framework/mediatek-framework.jar): ok
+2026-03-10 22:24:47.550 24179-24179 PowerHalWrapper         com.example.doc                      I  PowerHalWrapper.getInstance 
+2026-03-10 22:24:47.550 24179-24179 M-ProMotion             com.example.doc                      I  M-ProMotion is disabled
+2026-03-10 22:24:47.558 24179-24179 TranVersion             com.example.doc                      I  TranVersion static initializer: default = 35.3.9.1
+                                                                                                     debug = false, debug_version = 35.3.9.1
+2026-03-10 22:24:47.559 24179-24179 libc                    com.example.doc                      W  Access denied finding property "ro.vendor.powerdata.support"
+2026-03-10 22:24:47.564 24179-24236 com.example.doc         com.example.doc                      W  ClassLoaderContext classpath size mismatch. expected=1, found=4 (DLC[];PCL[base.apk*2249926499]{PCL[/system/framework/org.apache.http.legacy.jar*437079508]#PCL[/system/framework/com.android.location.provider.jar*3414091812]#PCL[/system/framework/com.android.media.remotedisplay.jar*2042759013]#PCL[/system_ext/framework/com.android.extensions.appfunctions.jar*3353079774]#PCL[/system_ext/framework/androidx.window.extensions.jar*4272317285]#PCL[/system_ext/framework/androidx.window.sidecar.jar*894206342]} | DLC[];PCL[/data/data/com.example.doc/code_cache/.overlay/base.apk/classes4.dex*1229700668:/data/data/com.example.doc/code_cache/.overlay/base.apk/classes5.dex*1821683218:/data/data/com.example.doc/code_cache/.overlay/base.apk/classes6.dex*380505798:/data/app/~~-Y8AraJnKxdb6ccUWRlUWg==/com.example.doc-J3qQBMTRjthXGQSFQ4ZBcg==/base.apk*403107564])
+2026-03-10 22:24:47.588 24179-24247 vulkan                  com.example.doc                      D  searching for layers in '/data/app/~~-Y8AraJnKxdb6ccUWRlUWg==/com.example.doc-J3qQBMTRjthXGQSFQ4ZBcg==/lib/arm64'
+2026-03-10 22:24:47.588 24179-24247 vulkan                  com.example.doc                      D  searching for layers in '/data/app/~~-Y8AraJnKxdb6ccUWRlUWg==/com.example.doc-J3qQBMTRjthXGQSFQ4ZBcg==/base.apk!/lib/arm64-v8a'
+2026-03-10 22:24:47.590 24179-24247 vulkan                  com.example.doc                      D  searching for layers in '/data/app/~~-Y8AraJnKxdb6ccUWRlUWg==/com.example.doc-J3qQBMTRjthXGQSFQ4ZBcg==/lib/arm64'
+2026-03-10 22:24:47.591 24179-24247 vulkan                  com.example.doc                      D  searching for layers in '/data/app/~~-Y8AraJnKxdb6ccUWRlUWg==/com.example.doc-J3qQBMTRjthXGQSFQ4ZBcg==/base.apk!/lib/arm64-v8a'
+2026-03-10 22:24:47.603 24179-24247 MMUD                    com.example.doc                      D  mtk_memory_debug_init com.example.doc 0xb40000779d7fc5d0
+2026-03-10 22:24:47.607 24179-24261 com.example.doc         com.example.doc                      E  setpriority success to 100 : mali-cmar-backend
+2026-03-10 22:24:47.610 24179-24179 ActivityThread          com.example.doc                      D  ++ activityComponent:com.example.doc/com.example.doc.MainActivity counts:1 ALEAK_CLEAR_SUPPORT:true
+2026-03-10 22:24:47.646 24179-24179 CompatChangeReporter    com.example.doc                      D  Compat change id reported: 309578419; UID 10385; state: ENABLED
+2026-03-10 22:24:47.647 24179-24179 TranClassInfo           com.example.doc                      D  instance successfully. com.transsion.hubcore.internal.TranInternalViewImpl@4c199f from com.transsion.hubcore.internal.ITranInternalView
+2026-03-10 22:24:47.647 24179-24179 os.SingleLice           com.example.doc                      D  instance successfully. com.transsion.whitenavigation.v1.WhiteNavigationLice@2f8aec from com.transsion.whitenavigation.WhiteNavigationLiceFactory
+2026-03-10 22:24:47.647 24179-24179 os.SingleLiceFactory    com.example.doc                      D  instance successfully. com.transsion.whitenavigation.v1.WhiteNavigationLice@2f8aec from com.android.internal.IInternalViewLice
+2026-03-10 22:24:47.648 24179-24179 os.SingleLiceFactory    com.example.doc                      D  using com.android.internal.IInternalViewLice$DefaultImpl@f1a3eb5 instead of com.transsion.screenshothelper.ScreenShotHelperImplLiceFactory  from com.android.internal.IInternalViewLice
+2026-03-10 22:24:47.648 24179-24179 os.SingleLiceFactory    com.example.doc                      D  using com.android.internal.IInternalViewLice$DefaultImpl@f1a3eb5 instead of com.transsion.flamboyant.FlamboyantLiceFactory  from com.android.internal.IInternalViewLice
+2026-03-10 22:24:47.648 24179-24179 os.LiceInfo             com.example.doc                      D  instance successfully. com.transsion.internal.InternalViewLice@246094a from com.android.internal.IInternalViewLice
+2026-03-10 22:24:47.670 24179-24268 com.example.doc         com.example.doc                      I  hiddenapi: Accessing hidden method Ldalvik/system/VMStack;->getStackClass2()Ljava/lang/Class; (runtime_flags=0, domain=core-platform, api=unsupported) from Lm7/aoy; (domain=app, TargetSdkVersion=35) using reflection: allowed
+2026-03-10 22:24:47.700 24179-24265 com.example.doc         com.example.doc                      E  No package ID 6a found for resource ID 0x6a0b0013.
+2026-03-10 22:24:47.702 24179-24265 FA                      com.example.doc                      I  App measurement initialized, version: 157000
+2026-03-10 22:24:47.702 24179-24265 FA                      com.example.doc                      I  To enable debug logging run: adb shell setprop log.tag.FA VERBOSE
+2026-03-10 22:24:47.703 24179-24265 FA                      com.example.doc                      I  To enable faster debug mode event logging run:
+                                                                                                      adb shell setprop debug.firebase.analytics.app com.example.doc
+2026-03-10 22:24:47.705 24179-24252 MMUD                    com.example.doc                      D  get_leak_baseline 3246391296
+2026-03-10 22:24:47.724 24179-24179 com.example.doc         com.example.doc                      I  hiddenapi: Accessing hidden method Ljava/lang/invoke/MethodHandles$Lookup;-><init>(Ljava/lang/Class;I)V (runtime_flags=0, domain=core-platform, api=unsupported) from Lretrofit2/Platform; (domain=app, TargetSdkVersion=35) using reflection: allowed
+2026-03-10 22:24:47.747 24179-24223 ActivityThreadLice      com.example.doc                      D  received OSMessage 110001
+2026-03-10 22:24:47.753 24179-24223 ActivityThreadLice      com.example.doc                      D  send OSMessage 110001 to [-1]
+2026-03-10 22:24:47.761 24179-24245 PowerHalWrapper         com.example.doc                      I  PowerHalWrapper.getInstance 
+2026-03-10 22:24:47.762 24179-24223 OSServiceManager        com.example.doc                      D  update local os service os.activity from null to android.os.BinderProxy@2bec80c
+2026-03-10 22:24:47.765 24179-24179 TranClassInfo           com.example.doc                      D  instance successfully. com.transsion.connectivity.linkbooming.TranMultilinkComponentImpl@1770555 from com.transsion.hubcore.linkbooming.ITranMultilinkComponent
+2026-03-10 22:24:47.777 24179-24179 ActivityThread          com.example.doc                      D  handleResumeActivity#3 r.window=nulla.mFinished = falsewillBeVisible = true
+2026-03-10 22:24:47.777 24179-24179 ActivityThread          com.example.doc                      D  handleResumeActivity#4 addView a.mVisibleFromClient=truea.mWindowAdded=falsedecor=DecorView@e540ca4[]
+2026-03-10 22:24:47.777 24179-24179 ActivityThread          com.example.doc                      D  handleResumeActivity#5 addView decor=DecorView@e540ca4[]
+2026-03-10 22:24:47.784 24179-24179 libc                    com.example.doc                      W  Access denied finding property "ro.vendor.tgpa_resolution_tuner"
+2026-03-10 22:24:47.793 24179-24179 libc                    com.example.doc                      W  Access denied finding property "ro.vendor.scaler_version"
+2026-03-10 22:24:47.794 24179-24179 libc                    com.example.doc                      W  Access denied finding property "ro.vendor.scaler_version"
+2026-03-10 22:24:47.809 24179-24179 HWUI                    com.example.doc                      W  Unknown dataspace 0
+2026-03-10 22:24:47.810 24179-24265 FA                      com.example.doc                      I  Tag Manager is not found and thus will not be used
+2026-03-10 22:24:47.818 24179-24179 VRI[MainActivity]       com.example.doc                      D  hardware acceleration = true, forceHwAccelerated = false
+2026-03-10 22:24:47.819 24179-24179 ViewRootImpl            com.example.doc                      D  setView appearance:24 com.example.doc/com.example.doc.MainActivity
+2026-03-10 22:24:47.826 24179-24179 os.SingleLiceFactory    com.example.doc                      D  instance successfully. com.transsion.widget.v3.FloatingToolbarLice@655e6ad from com.android.internal.IInternalViewLice
+2026-03-10 22:24:47.827 24179-24179 InputEventReceiver      com.example.doc                      D  Input log is disabled in InputEventReceiver.
+2026-03-10 22:24:47.957 24179-24179 com.example.doc         com.example.doc                      I  hiddenapi: Accessing hidden method Landroid/os/SystemProperties;->addChangeCallback(Ljava/lang/Runnable;)V (runtime_flags=0, domain=platform, api=unsupported) from Landroidx/compose/ui/platform/AndroidComposeView$Companion; (domain=app, TargetSdkVersion=35) using reflection: allowed
+2026-03-10 22:24:48.354 24179-24179 os.FrameworkDoorMan     com.example.doc                      D  add field mTypefaceNative to class android.graphics.Paint by source-modified.
+2026-03-10 22:24:48.354 24179-24179 os.FrameworkDoorMan     com.example.doc                      D  add field mOSTypefaceFlag to class android.graphics.Paint by source-modified.
+2026-03-10 22:24:48.374 24179-24179 BufferQueueConsumer     com.example.doc                      D  [](id:5e7300000000,api:0,p:-1,c:24179) connect: controlledByApp=false
+2026-03-10 22:24:48.376 24179-24179 BLASTBufferQueue        com.example.doc                      D  [VRI[MainActivity]#0](f:0,a:0) constructor()
+2026-03-10 22:24:48.376 24179-24179 BLASTBufferQueue        com.example.doc                      D  [VRI[MainActivity]#0](f:0,a:0) update width=720 height=1600 format=-1 mTransformHint=0
+2026-03-10 22:24:48.429 24179-24179 DisplayEventDispatcher  com.example.doc                      W  Vsync time out! vsyncScheduleDelay=578ms
+2026-03-10 22:24:48.429 24179-24179 Choreographer           com.example.doc                      W  Already have a pending vsync event.  There should only be one at a time.
+2026-03-10 22:24:48.429 24179-24179 Choreographer           com.example.doc                      W  Already have a pending vsync event.  There should only be one at a time.
+2026-03-10 22:24:48.431 24179-24179 MainActivity            com.example.doc                      D  📱 Permiso POST_NOTIFICATIONS: ✅ concedido
+2026-03-10 22:24:48.431 24179-24179 MainActivity            com.example.doc                      D  ✅ Proceediendo a obtener FCM token
+2026-03-10 22:24:48.434 24179-24179 Choreographer           com.example.doc                      I  Skipped 52 frames!  The application may be doing too much work on its main thread.
+2026-03-10 22:24:48.461 24179-24179 MainScreen              com.example.doc                      D  MainScreen iniciando...
+2026-03-10 22:24:48.462 24179-24179 MainScreen              com.example.doc                      D  Iniciando carga de usuario...
+2026-03-10 22:24:48.462 24179-24179 MainScreen              com.example.doc                      W  Usuario es null, esperando...
+2026-03-10 22:24:48.487 24179-24179 UsuarioViewModel        com.example.doc                      D  Configurando notificaciones para usuario: Bryan
+2026-03-10 22:24:48.491 24179-24179 NotificationHelper      com.example.doc                      D  Canal de notificaciones creado con IMPORTANCE_HIGH y sonido habilitado
+2026-03-10 22:24:48.492 24179-24179 UsuarioViewModel        com.example.doc                      D  Configuración de notificaciones guardada - HybridNotificationManager manejará programación
+2026-03-10 22:24:48.492 24179-24179 UsuarioViewModel        com.example.doc                      D  Usuario cargado: Bryan
+2026-03-10 22:24:48.494 24179-24179 UsuarioVie...rmAutoSync com.example.doc                      D  🔄 Iniciando sincronización automática para usuario: 23
+2026-03-10 22:24:48.496 24179-24242 SyncRepository$fullSync com.example.doc                      D  🔄 Iniciando sincronización completa para usuario: 23
+2026-03-10 22:24:48.499 24179-24242 SyncReposi...aToBackend com.example.doc                      D  📤 Iniciando PUSH de datos al backend para usuario: 23
+2026-03-10 22:24:48.502 24179-24242 SyncReposi...aToBackend com.example.doc                      D  📋 Usuario en Room antes de crear en backend: ID=23, nombre=Bryan
+2026-03-10 22:24:48.504 24179-24242 SyncReposi...SiNoExiste com.example.doc                      D  🔍 Verificando si usuario Bryan existe en backend...
+2026-03-10 22:24:48.525 24179-24179 FCMTokenMa...erFCMToken com.example.doc                      D  Token FCM obtenido: dYWJpH7qRyeXWwzFtJmse8:APA91bFaHXefmNwdgwrC5S1CGMVBYPz_oXZB31xObqllTQVuaGNR-UctsKrXJrRQk8x70B80y3px3Uk3rGjfJz5neEfRAtJCw0Vzr_LTf1JLjXzhK3ufWBo
+2026-03-10 22:24:48.529 24179-24179 MainScreen              com.example.doc                      D  Usuario disponible: Bryan (ID: 23)
+2026-03-10 22:24:48.529 24179-24179 MainScreen              com.example.doc                      D  Disparando sincronización automática con overlay...
+2026-03-10 22:24:48.531 24179-24179 UsuarioVie...ithOverlay com.example.doc                      D  ↩️ Auto-sync con overlay ya ejecutado para usuario 23, saltando...
+2026-03-10 22:24:48.531 24179-24179 MainScreen              com.example.doc                      D  Cargando registros y consejos...
+2026-03-10 22:24:48.542 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  --> GET http://192.168.0.196:3000/api/sync/pull?usuarioId=23
+2026-03-10 22:24:48.543 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Content-Type: application/json
+2026-03-10 22:24:48.543 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  --> END GET
+2026-03-10 22:24:48.555 24179-24247 MAGT_SYNC_FRAME         com.example.doc                      D  MAGT Sync: MAGT is not supported. Disabling Sync.
+2026-03-10 22:24:48.555 24179-24247 libc                    com.example.doc                      W  Access denied finding property "vendor.mbrain.enabled"
+2026-03-10 22:24:48.555 24179-24247 com.example.doc         com.example.doc                      D  MBrain is disabled
+2026-03-10 22:24:48.555 24179-24247 com.example.doc         com.example.doc                      D  initMbrain failed
+2026-03-10 22:24:48.558 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  --> POST http://192.168.0.196:3000/api/sync/register-fcm-token
+2026-03-10 22:24:48.559 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Content-Length: 166
+2026-03-10 22:24:48.559 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Content-Type: application/json
+2026-03-10 22:24:48.559 24179-24247 GrallocExtra            com.example.doc                      I  gralloc_extra_query:is_SW3D 0
+2026-03-10 22:24:48.560 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  {"token":"dYWJpH7qRyeXWwzFtJmse8:APA91bFaHXefmNwdgwrC5S1CGMVBYPz_oXZB31xObqllTQVuaGNR-UctsKrXJrRQk8x70B80y3px3Uk3rGjfJz5neEfRAtJCw0Vzr_LTf1JLjXzhK3ufWBo","userId":23}
+2026-03-10 22:24:48.560 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  --> END POST (166-byte body)
+2026-03-10 22:24:48.645 24179-24247 GrallocExtra            com.example.doc                      I  gralloc_extra_query:is_SW3D 0
+2026-03-10 22:24:48.646 24179-24247 BLASTBufferQueue        com.example.doc                      D  [VRI[MainActivity]#0](f:0,a:1) acquireNextBufferLocked size=720x1600 mFrameNumber=1 applyTransaction=true mTimestamp=763192998950874(auto) mPendingTransactions.size=0 graphicBufferId=103848014249989 transform=0
+2026-03-10 22:24:48.646 24179-24247 BLASTBufferQueue        com.example.doc                      D  MS: debug.sf.msleep=0, bufferCount=2, ratio=0.900000
+2026-03-10 22:24:48.647 24179-24247 libc                    com.example.doc                      W  Access denied finding property "vendor.mbrain.enabled"
+2026-03-10 22:24:48.647 24179-24247 com.example.doc         com.example.doc                      D  MBrain is disabled
+2026-03-10 22:24:48.647 24179-24247 com.example.doc         com.example.doc                      D  initMbrain failed
+2026-03-10 22:24:48.657 24179-24179 MainScreen              com.example.doc                      D  Usuario inicial: Bryan
+2026-03-10 22:24:48.683 24179-24179 RegistroSa...rosDesdeBD com.example.doc                      D  Registros cargados: 8
+2026-03-10 22:24:48.685 24179-24179 ConsejoVie...arConsejos com.example.doc                      D  Consejos cargados para Hipertensión: 40
+2026-03-10 22:24:48.868 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  <-- 500 Internal Server Error http://192.168.0.196:3000/api/sync/pull?usuarioId=23 (324ms)
+2026-03-10 22:24:48.870 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Cross-Origin-Opener-Policy: same-origin
+2026-03-10 22:24:48.870 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Cross-Origin-Resource-Policy: same-origin
+2026-03-10 22:24:48.871 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Origin-Agent-Cluster: ?1
+2026-03-10 22:24:48.873 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Referrer-Policy: no-referrer
+2026-03-10 22:24:48.874 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Strict-Transport-Security: max-age=31536000; includeSubDomains
+2026-03-10 22:24:48.874 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  X-Content-Type-Options: nosniff
+2026-03-10 22:24:48.874 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  X-DNS-Prefetch-Control: off
+2026-03-10 22:24:48.874 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  X-Download-Options: noopen
+2026-03-10 22:24:48.875 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  X-Frame-Options: SAMEORIGIN
+2026-03-10 22:24:48.875 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  X-Permitted-Cross-Domain-Policies: none
+2026-03-10 22:24:48.876 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  X-XSS-Protection: 0
+2026-03-10 22:24:48.877 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Vary: Origin, Accept-Encoding
+2026-03-10 22:24:48.879 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Access-Control-Allow-Credentials: true
+2026-03-10 22:24:48.879 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Policy: 500;w=900
+2026-03-10 22:24:48.880 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Limit: 500
+2026-03-10 22:24:48.881 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Remaining: 488
+2026-03-10 22:24:48.882 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Reset: 708
+2026-03-10 22:24:48.882 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Content-Type: application/json; charset=utf-8
+2026-03-10 22:24:48.883 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  ETag: W/"509-ehr01Uf3X9Pw/amJxSeGSQ46cec"
+2026-03-10 22:24:48.883 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Date: Wed, 11 Mar 2026 03:24:50 GMT
+2026-03-10 22:24:48.883 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Connection: keep-alive
+2026-03-10 22:24:48.883 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Keep-Alive: timeout=5
+2026-03-10 22:24:48.884 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Transfer-Encoding: chunked
+2026-03-10 22:24:48.888 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  {"success":false,"error":"Error obteniendo datos de sincronización","details":"\nInvalid `prisma.registroSalud.findMany()` invocation in\n/home/brste/Project/Project_doc/doc-backend/src/controllers/sync.controller.ts:222:55\n\n  219 }\n  220 \n  221 // Obtener registros de salud del usuario (históricos)\n→ 222 const registrosSalud = await prisma.registroSalud.findMany({\n        where: {\n          usuarioId: 23\n        },\n        select: {\n          id: true,\n          fecha: true,\n          hora: true,\n          presionSistolica: true,\n          presionDiastolica: true,\n          glucosa: true,\n          colesterol: true,\n          temperatura: true,\n          peso: true,\n          calorias: true,\n          ejercicioMinutos: true,\n          ~~~~~~~~~~~~~~~~\n          estadoAnimo: true,\n          notas: true,\n          registradoEn: true,\n      ?   usuarioId?: true,\n      ?   ejercicio?: true,\n      ?   idSincronizacion?: true,\n      ?   sincronizadoEn?: true,\n      ?   creadoEn?: true,\n      ?   actualizadoEn?: true,\n      ?   usuario?: true\n        },\n        orderBy: {\n          fecha: \"desc\"\n        }\n      })\n\nUnknown field `ejercicioMinutos` for select statement on model `RegistroSalud`. Available options are marked with ?."}
+2026-03-10 22:24:48.889 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  <-- END HTTP (1289-byte body)
+2026-03-10 22:24:48.899 24179-24243 SyncReposi...SiNoExiste com.example.doc                      W  ⚠️ Error verificando usuario en backend: 500
+2026-03-10 22:24:49.007 24179-24242 SyncReposi...aToBackend com.example.doc                      D  📋 Usuario en Room después de crear en backend: ID=23, nombre=Bryan
+2026-03-10 22:24:49.013 24179-24242 SyncReposi...aToBackend com.example.doc                      D  📋 Registros de salud sin sincronizar: 0
+2026-03-10 22:24:49.018 24179-24242 SyncReposi...aToBackend com.example.doc                      D  📋 Ejercicios realizados sin sincronizar: 0
+2026-03-10 22:24:49.019 24179-24242 SyncReposi...aToBackend com.example.doc                      W  ⚠️ No hay ejercicios sin sincronizar (comprobando si existen ejercicios en BD...)
+2026-03-10 22:24:49.030 24179-24242 SyncReposi...aToBackend com.example.doc                      D  DEBUG: Total de ejercicios hoy: 1
+2026-03-10 22:24:49.032 24179-24242 SyncReposi...aToBackend com.example.doc                      D    - ID: 1, ejercicioId: 14, isSynced: true, syncId: 2026-03-11T03:00:27.936Z
+2026-03-10 22:24:49.048 24179-24179 MainScreen              com.example.doc                      D  Usuario con configuración personalizada - sin diálogo de notificaciones
+2026-03-10 22:24:49.049 24179-24179 MainScreen              com.example.doc                      D  MainScreen completamente cargado
+2026-03-10 22:24:49.071 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  --> POST http://192.168.0.196:3000/api/sync/push
+2026-03-10 22:24:49.072 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Content-Length: 112
+2026-03-10 22:24:49.072 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Content-Type: application/json
+2026-03-10 22:24:49.074 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  {"ejerciciosRealizados":[],"registrosSalud":[],"ultimaSincronizacion":"2026-03-11T03:22:28.452Z","usuarioId":23}
+2026-03-10 22:24:49.074 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  --> END POST (112-byte body)
+2026-03-10 22:24:49.138 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  <-- 200 OK http://192.168.0.196:3000/api/sync/push (63ms)
+2026-03-10 22:24:49.139 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Cross-Origin-Opener-Policy: same-origin
+2026-03-10 22:24:49.139 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Cross-Origin-Resource-Policy: same-origin
+2026-03-10 22:24:49.139 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Origin-Agent-Cluster: ?1
+2026-03-10 22:24:49.140 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Referrer-Policy: no-referrer
+2026-03-10 22:24:49.140 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Strict-Transport-Security: max-age=31536000; includeSubDomains
+2026-03-10 22:24:49.140 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  X-Content-Type-Options: nosniff
+2026-03-10 22:24:49.144 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  X-DNS-Prefetch-Control: off
+2026-03-10 22:24:49.144 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  X-Download-Options: noopen
+2026-03-10 22:24:49.145 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  X-Frame-Options: SAMEORIGIN
+2026-03-10 22:24:49.145 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  X-Permitted-Cross-Domain-Policies: none
+2026-03-10 22:24:49.146 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  X-XSS-Protection: 0
+2026-03-10 22:24:49.146 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Vary: Origin, Accept-Encoding
+2026-03-10 22:24:49.146 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Access-Control-Allow-Credentials: true
+2026-03-10 22:24:49.146 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Policy: 500;w=900
+2026-03-10 22:24:49.147 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Limit: 500
+2026-03-10 22:24:49.147 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Remaining: 486
+2026-03-10 22:24:49.147 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Reset: 708
+2026-03-10 22:24:49.147 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Content-Type: application/json; charset=utf-8
+2026-03-10 22:24:49.152 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Content-Length: 177
+2026-03-10 22:24:49.153 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  ETag: W/"b1-1+Rkioy8+CXgc0ev4sGRAKGMcSc"
+2026-03-10 22:24:49.156 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Date: Wed, 11 Mar 2026 03:24:50 GMT
+2026-03-10 22:24:49.156 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Connection: keep-alive
+2026-03-10 22:24:49.157 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Keep-Alive: timeout=5
+2026-03-10 22:24:49.159 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  {"success":false,"message":"Sincronización completada: 0 registros, 0 ejercicios","registrosSincronizados":0,"ejerciciosSincronizados":0,"timestamp":"2026-03-11T03:24:50.586Z"}
+2026-03-10 22:24:49.159 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  <-- END HTTP (177-byte body)
+2026-03-10 22:24:49.164 24179-24242 SyncReposi...aToBackend com.example.doc                      D  ✅ PUSH exitoso: 0 registros, 0 ejercicios
+2026-03-10 22:24:49.168 24179-24242 SyncReposi...romBackend com.example.doc                      D  📥 Iniciando PULL de datos del backend para usuario: 23
+2026-03-10 22:24:49.179 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  --> GET http://192.168.0.196:3000/api/sync/pull?usuarioId=23
+2026-03-10 22:24:49.180 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Content-Type: application/json
+2026-03-10 22:24:49.180 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  --> END GET
+2026-03-10 22:24:49.895 24179-24228 HWUI                    com.example.doc                      I  Davey! duration=846ms; Flags=0, FrameTimelineVsyncId=190923863, IntendedVsync=763193400227378, Vsync=763193400227378, InputEventId=0, HandleInputStart=763193407914951, AnimationStart=763193407917951, PerformTraversalsStart=763193728433335, DrawStart=763194176189643, FrameDeadline=763193420227378, FrameInterval=763193407897720, FrameStartTime=10998910, SyncQueued=763194220670259, SyncStart=763194220785643, IssueDrawCommandsStart=763194220925951, SwapBuffers=763194239896797, FrameCompleted=763194247178643, DequeueBufferDuration=87693, QueueBufferDuration=415615, GpuCompleted=763194247178643, SwapBuffersCompleted=763194240537951, DisplayPresentTime=0, CommandSubmissionCompleted=763194239896797, 
+2026-03-10 22:24:49.960 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  <-- 500 Internal Server Error http://192.168.0.196:3000/api/sync/pull?usuarioId=23 (779ms)
+2026-03-10 22:24:49.960 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Cross-Origin-Opener-Policy: same-origin
+2026-03-10 22:24:49.961 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Cross-Origin-Resource-Policy: same-origin
+2026-03-10 22:24:49.961 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Origin-Agent-Cluster: ?1
+2026-03-10 22:24:49.961 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Referrer-Policy: no-referrer
+2026-03-10 22:24:49.961 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Strict-Transport-Security: max-age=31536000; includeSubDomains
+2026-03-10 22:24:49.961 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  X-Content-Type-Options: nosniff
+2026-03-10 22:24:49.961 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  X-DNS-Prefetch-Control: off
+2026-03-10 22:24:49.962 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  X-Download-Options: noopen
+2026-03-10 22:24:49.962 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  X-Frame-Options: SAMEORIGIN
+2026-03-10 22:24:49.962 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  X-Permitted-Cross-Domain-Policies: none
+2026-03-10 22:24:49.963 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  X-XSS-Protection: 0
+2026-03-10 22:24:49.963 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Vary: Origin, Accept-Encoding
+2026-03-10 22:24:49.963 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Access-Control-Allow-Credentials: true
+2026-03-10 22:24:49.964 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Policy: 500;w=900
+2026-03-10 22:24:49.964 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Limit: 500
+2026-03-10 22:24:49.964 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Remaining: 485
+2026-03-10 22:24:49.964 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Reset: 708
+2026-03-10 22:24:49.965 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Content-Type: application/json; charset=utf-8
+2026-03-10 22:24:49.965 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  ETag: W/"509-ehr01Uf3X9Pw/amJxSeGSQ46cec"
+2026-03-10 22:24:49.966 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Date: Wed, 11 Mar 2026 03:24:51 GMT
+2026-03-10 22:24:49.966 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Connection: keep-alive
+2026-03-10 22:24:49.966 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Keep-Alive: timeout=5
+2026-03-10 22:24:49.967 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  Transfer-Encoding: chunked
+2026-03-10 22:24:49.973 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  {"success":false,"error":"Error obteniendo datos de sincronización","details":"\nInvalid `prisma.registroSalud.findMany()` invocation in\n/home/brste/Project/Project_doc/doc-backend/src/controllers/sync.controller.ts:222:55\n\n  219 }\n  220 \n  221 // Obtener registros de salud del usuario (históricos)\n→ 222 const registrosSalud = await prisma.registroSalud.findMany({\n        where: {\n          usuarioId: 23\n        },\n        select: {\n          id: true,\n          fecha: true,\n          hora: true,\n          presionSistolica: true,\n          presionDiastolica: true,\n          glucosa: true,\n          colesterol: true,\n          temperatura: true,\n          peso: true,\n          calorias: true,\n          ejercicioMinutos: true,\n          ~~~~~~~~~~~~~~~~\n          estadoAnimo: true,\n          notas: true,\n          registradoEn: true,\n      ?   usuarioId?: true,\n      ?   ejercicio?: true,\n      ?   idSincronizacion?: true,\n      ?   sincronizadoEn?: true,\n      ?   creadoEn?: true,\n      ?   actualizadoEn?: true,\n      ?   usuario?: true\n        },\n        orderBy: {\n          fecha: \"desc\"\n        }\n      })\n\nUnknown field `ejercicioMinutos` for select statement on model `RegistroSalud`. Available options are marked with ?."}
+2026-03-10 22:24:49.974 24179-24304 okhttp.OkHttpClient     com.example.doc                      I  <-- END HTTP (1289-byte body)
+2026-03-10 22:24:49.979 24179-24242 SyncReposi...romBackend com.example.doc                      E  ❌ Error en PULL: 500 - Internal Server Error
+2026-03-10 22:24:49.980 24179-24242 SyncRepository$fullSync com.example.doc                      E  ❌ PULL falló, pero PUSH fue exitoso
+2026-03-10 22:24:50.018 24179-24179 Choreographer           com.example.doc                      I  Skipped 87 frames!  The application may be doing too much work on its main thread.
+2026-03-10 22:24:50.096 24179-24220 HWUI                    com.example.doc                      I  Davey! duration=1021ms; Flags=0, FrameTimelineVsyncId=190923878, IntendedVsync=763193411222946, Vsync=763194368092011, InputEventId=0, HandleInputStart=763194373720105, AnimationStart=763194373723797, PerformTraversalsStart=763194406552720, DrawStart=763194406866951, FrameDeadline=763194278142358, FrameInterval=763194373266335, FrameStartTime=10998495, SyncQueued=763194423661643, SyncStart=763194423734874, IssueDrawCommandsStart=763194423826259, SwapBuffers=763194427158643, FrameCompleted=763194432587566, DequeueBufferDuration=41539, QueueBufferDuration=322230, GpuCompleted=763194432587566, SwapBuffersCompleted=763194427698566, DisplayPresentTime=72904372627440388, CommandSubmissionCompleted=763194427158643, 
+2026-03-10 22:24:50.168 24179-24179 UsuarioVie...rmAutoSync com.example.doc                      E  ❌ Error en sincronización automática
+                                                                                                    java.lang.Exception: Error en PULL: Internal Server Error
+                                                                                                    	at com.example.doc.repository.SyncRepository$pullDataFromBackend$2.invokeSuspend(SyncRepository.kt:311)
+                                                                                                    	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+                                                                                                    	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:101)
+                                                                                                    	at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:113)
+                                                                                                    	at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:89)
+                                                                                                    	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:589)
+                                                                                                    	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:823)
+                                                                                                    	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:720)
+                                                                                                    	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:707)
+2026-03-10 22:24:50.286 24179-24179 HybridNoti...ionManager com.example.doc                      D  ✅ Suscrito a: exercise_reminders
+2026-03-10 22:24:50.403 24179-24214 com.example.doc         com.example.doc                      I  Compiler allocated 6774KB to compile void android.view.ViewRootImpl.performTraversals()
+2026-03-10 22:24:50.530 24179-24179 HybridNoti...ionManager com.example.doc                      D  ✅ Suscrito a: health_reminders
+2026-03-10 22:24:50.723 24179-24179 HybridNoti...ionManager com.example.doc                      D  ✅ Suscrito a: user_23 (notificaciones personales)
+2026-03-10 22:24:50.945 24179-24179 MainActivity$onCreate   com.example.doc                      D  ✅ Suscrito al tema personal: user_23
+2026-03-10 22:24:51.463 24179-24223 FdLeakLice              com.example.doc                      D  FdLeakCheck app is not systemapp!!!
+2026-03-10 22:24:51.597 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  <-- 200 OK http://192.168.0.196:3000/api/sync/register-fcm-token (3037ms)
+2026-03-10 22:24:51.598 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Cross-Origin-Opener-Policy: same-origin
+2026-03-10 22:24:51.598 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Cross-Origin-Resource-Policy: same-origin
+2026-03-10 22:24:51.598 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Origin-Agent-Cluster: ?1
+2026-03-10 22:24:51.598 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Referrer-Policy: no-referrer
+2026-03-10 22:24:51.598 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Strict-Transport-Security: max-age=31536000; includeSubDomains
+2026-03-10 22:24:51.598 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-Content-Type-Options: nosniff
+2026-03-10 22:24:51.598 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-DNS-Prefetch-Control: off
+2026-03-10 22:24:51.598 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-Download-Options: noopen
+2026-03-10 22:24:51.598 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-Frame-Options: SAMEORIGIN
+2026-03-10 22:24:51.598 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-Permitted-Cross-Domain-Policies: none
+2026-03-10 22:24:51.598 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-XSS-Protection: 0
+2026-03-10 22:24:51.598 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Vary: Origin, Accept-Encoding
+2026-03-10 22:24:51.598 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Access-Control-Allow-Credentials: true
+2026-03-10 22:24:51.599 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Policy: 500;w=900
+2026-03-10 22:24:51.599 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Limit: 500
+2026-03-10 22:24:51.599 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Remaining: 487
+2026-03-10 22:24:51.599 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Reset: 708
+2026-03-10 22:24:51.599 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Content-Type: application/json; charset=utf-8
+2026-03-10 22:24:51.599 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Content-Length: 64
+2026-03-10 22:24:51.599 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  ETag: W/"40-dhb9mX30hExRi1xQASzBY3QHYJo"
+2026-03-10 22:24:51.599 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Date: Wed, 11 Mar 2026 03:24:52 GMT
+2026-03-10 22:24:51.599 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Connection: keep-alive
+2026-03-10 22:24:51.599 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Keep-Alive: timeout=5
+2026-03-10 22:24:51.600 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  {"success":true,"message":"Token FCM actualizado","deviceId":20}
+2026-03-10 22:24:51.600 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  <-- END HTTP (64-byte body)
+2026-03-10 22:24:51.602 24179-24242 FCMTokenManager         com.example.doc                      D  ✅ Token FCM actualizado en el servidor
+2026-03-10 22:24:52.918 24179-24179 InsetsSourceConsumer    com.example.doc                      W  setControl isNavigationBarPositonChanged
+2026-03-10 22:24:52.983 24179-24325 ProfileInstaller        com.example.doc                      D  Installing profile for com.example.doc
+2026-03-10 22:25:01.098 24179-24179 os.LiceInfo             com.example.doc                      D  instance successfully. com.transsion.message.bank.v1.MessageBankLice@8320a6b from com.transsion.message.bank.IMessageBankLice
+2026-03-10 22:25:01.098 24179-24179 TextSelection           com.example.doc                      D  call hasMessage cause invalidateCache
+2026-03-10 22:25:01.132 24179-24215 com.example.doc         com.example.doc                      W  userfaultfd: MOVE ioctl seems unsupported: Try again
+2026-03-10 22:25:01.185 24179-24179 UsuarioVie...anualmente com.example.doc                      D  📲 Sincronización MANUAL iniciada para usuario: Bryan
+2026-03-10 22:25:01.187 24179-24240 SyncRepository$fullSync com.example.doc                      D  🔄 Iniciando sincronización completa para usuario: 23
+2026-03-10 22:25:01.188 24179-24240 SyncReposi...aToBackend com.example.doc                      D  📤 Iniciando PUSH de datos al backend para usuario: 23
+2026-03-10 22:25:01.191 24179-24240 SyncReposi...aToBackend com.example.doc                      D  📋 Usuario en Room antes de crear en backend: ID=23, nombre=Bryan
+2026-03-10 22:25:01.192 24179-24240 SyncReposi...SiNoExiste com.example.doc                      D  🔍 Verificando si usuario Bryan existe en backend...
+2026-03-10 22:25:01.196 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  --> GET http://192.168.0.196:3000/api/sync/pull?usuarioId=23
+2026-03-10 22:25:01.196 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Content-Type: application/json
+2026-03-10 22:25:01.196 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  --> END GET
+2026-03-10 22:25:01.939 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  <-- 500 Internal Server Error http://192.168.0.196:3000/api/sync/pull?usuarioId=23 (742ms)
+2026-03-10 22:25:01.939 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Cross-Origin-Opener-Policy: same-origin
+2026-03-10 22:25:01.939 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Cross-Origin-Resource-Policy: same-origin
+2026-03-10 22:25:01.939 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Origin-Agent-Cluster: ?1
+2026-03-10 22:25:01.939 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Referrer-Policy: no-referrer
+2026-03-10 22:25:01.940 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Strict-Transport-Security: max-age=31536000; includeSubDomains
+2026-03-10 22:25:01.940 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-Content-Type-Options: nosniff
+2026-03-10 22:25:01.940 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-DNS-Prefetch-Control: off
+2026-03-10 22:25:01.940 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-Download-Options: noopen
+2026-03-10 22:25:01.940 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-Frame-Options: SAMEORIGIN
+2026-03-10 22:25:01.940 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-Permitted-Cross-Domain-Policies: none
+2026-03-10 22:25:01.940 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-XSS-Protection: 0
+2026-03-10 22:25:01.940 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Vary: Origin, Accept-Encoding
+2026-03-10 22:25:01.940 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Access-Control-Allow-Credentials: true
+2026-03-10 22:25:01.941 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Policy: 500;w=900
+2026-03-10 22:25:01.941 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Limit: 500
+2026-03-10 22:25:01.941 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Remaining: 484
+2026-03-10 22:25:01.941 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Reset: 695
+2026-03-10 22:25:01.941 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Content-Type: application/json; charset=utf-8
+2026-03-10 22:25:01.941 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  ETag: W/"509-ehr01Uf3X9Pw/amJxSeGSQ46cec"
+2026-03-10 22:25:01.941 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Date: Wed, 11 Mar 2026 03:25:03 GMT
+2026-03-10 22:25:01.941 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Connection: keep-alive
+2026-03-10 22:25:01.941 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Keep-Alive: timeout=5
+2026-03-10 22:25:01.941 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Transfer-Encoding: chunked
+2026-03-10 22:25:01.944 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  {"success":false,"error":"Error obteniendo datos de sincronización","details":"\nInvalid `prisma.registroSalud.findMany()` invocation in\n/home/brste/Project/Project_doc/doc-backend/src/controllers/sync.controller.ts:222:55\n\n  219 }\n  220 \n  221 // Obtener registros de salud del usuario (históricos)\n→ 222 const registrosSalud = await prisma.registroSalud.findMany({\n        where: {\n          usuarioId: 23\n        },\n        select: {\n          id: true,\n          fecha: true,\n          hora: true,\n          presionSistolica: true,\n          presionDiastolica: true,\n          glucosa: true,\n          colesterol: true,\n          temperatura: true,\n          peso: true,\n          calorias: true,\n          ejercicioMinutos: true,\n          ~~~~~~~~~~~~~~~~\n          estadoAnimo: true,\n          notas: true,\n          registradoEn: true,\n      ?   usuarioId?: true,\n      ?   ejercicio?: true,\n      ?   idSincronizacion?: true,\n      ?   sincronizadoEn?: true,\n      ?   creadoEn?: true,\n      ?   actualizadoEn?: true,\n      ?   usuario?: true\n        },\n        orderBy: {\n          fecha: \"desc\"\n        }\n      })\n\nUnknown field `ejercicioMinutos` for select statement on model `RegistroSalud`. Available options are marked with ?."}
+2026-03-10 22:25:01.944 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  <-- END HTTP (1289-byte body)
+2026-03-10 22:25:01.946 24179-24240 SyncReposi...SiNoExiste com.example.doc                      W  ⚠️ Error verificando usuario en backend: 500
+2026-03-10 22:25:02.050 24179-24240 SyncReposi...aToBackend com.example.doc                      D  📋 Usuario en Room después de crear en backend: ID=23, nombre=Bryan
+2026-03-10 22:25:02.052 24179-24240 SyncReposi...aToBackend com.example.doc                      D  📋 Registros de salud sin sincronizar: 0
+2026-03-10 22:25:02.054 24179-24240 SyncReposi...aToBackend com.example.doc                      D  📋 Ejercicios realizados sin sincronizar: 0
+2026-03-10 22:25:02.055 24179-24240 SyncReposi...aToBackend com.example.doc                      W  ⚠️ No hay ejercicios sin sincronizar (comprobando si existen ejercicios en BD...)
+2026-03-10 22:25:02.058 24179-24240 SyncReposi...aToBackend com.example.doc                      D  DEBUG: Total de ejercicios hoy: 1
+2026-03-10 22:25:02.059 24179-24240 SyncReposi...aToBackend com.example.doc                      D    - ID: 1, ejercicioId: 14, isSynced: true, syncId: 2026-03-11T03:00:27.936Z
+2026-03-10 22:25:02.063 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  --> POST http://192.168.0.196:3000/api/sync/push
+2026-03-10 22:25:02.063 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Content-Length: 112
+2026-03-10 22:25:02.063 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Content-Type: application/json
+2026-03-10 22:25:02.063 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  {"ejerciciosRealizados":[],"registrosSalud":[],"ultimaSincronizacion":"2026-03-11T03:24:50.586Z","usuarioId":23}
+2026-03-10 22:25:02.063 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  --> END POST (112-byte body)
+2026-03-10 22:25:02.159 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  <-- 200 OK http://192.168.0.196:3000/api/sync/push (95ms)
+2026-03-10 22:25:02.159 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Cross-Origin-Opener-Policy: same-origin
+2026-03-10 22:25:02.159 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Cross-Origin-Resource-Policy: same-origin
+2026-03-10 22:25:02.159 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Origin-Agent-Cluster: ?1
+2026-03-10 22:25:02.159 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Referrer-Policy: no-referrer
+2026-03-10 22:25:02.159 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Strict-Transport-Security: max-age=31536000; includeSubDomains
+2026-03-10 22:25:02.159 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-Content-Type-Options: nosniff
+2026-03-10 22:25:02.159 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-DNS-Prefetch-Control: off
+2026-03-10 22:25:02.159 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-Download-Options: noopen
+2026-03-10 22:25:02.159 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-Frame-Options: SAMEORIGIN
+2026-03-10 22:25:02.159 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-Permitted-Cross-Domain-Policies: none
+2026-03-10 22:25:02.160 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-XSS-Protection: 0
+2026-03-10 22:25:02.160 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Vary: Origin, Accept-Encoding
+2026-03-10 22:25:02.160 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Access-Control-Allow-Credentials: true
+2026-03-10 22:25:02.160 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Policy: 500;w=900
+2026-03-10 22:25:02.160 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Limit: 500
+2026-03-10 22:25:02.160 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Remaining: 483
+2026-03-10 22:25:02.160 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Reset: 695
+2026-03-10 22:25:02.160 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Content-Type: application/json; charset=utf-8
+2026-03-10 22:25:02.160 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Content-Length: 177
+2026-03-10 22:25:02.160 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  ETag: W/"b1-4cJ5/JngEa7OgqC1pvTv51l5ZhA"
+2026-03-10 22:25:02.160 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Date: Wed, 11 Mar 2026 03:25:03 GMT
+2026-03-10 22:25:02.160 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Connection: keep-alive
+2026-03-10 22:25:02.160 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Keep-Alive: timeout=5
+2026-03-10 22:25:02.162 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  {"success":false,"message":"Sincronización completada: 0 registros, 0 ejercicios","registrosSincronizados":0,"ejerciciosSincronizados":0,"timestamp":"2026-03-11T03:25:03.623Z"}
+2026-03-10 22:25:02.162 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  <-- END HTTP (177-byte body)
+2026-03-10 22:25:02.165 24179-24240 SyncReposi...aToBackend com.example.doc                      D  ✅ PUSH exitoso: 0 registros, 0 ejercicios
+2026-03-10 22:25:02.166 24179-24240 SyncReposi...romBackend com.example.doc                      D  📥 Iniciando PULL de datos del backend para usuario: 23
+2026-03-10 22:25:02.169 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  --> GET http://192.168.0.196:3000/api/sync/pull?usuarioId=23
+2026-03-10 22:25:02.169 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Content-Type: application/json
+2026-03-10 22:25:02.170 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  --> END GET
+2026-03-10 22:25:02.657 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  <-- 500 Internal Server Error http://192.168.0.196:3000/api/sync/pull?usuarioId=23 (486ms)
+2026-03-10 22:25:02.657 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Cross-Origin-Opener-Policy: same-origin
+2026-03-10 22:25:02.657 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Cross-Origin-Resource-Policy: same-origin
+2026-03-10 22:25:02.657 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Origin-Agent-Cluster: ?1
+2026-03-10 22:25:02.657 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Referrer-Policy: no-referrer
+2026-03-10 22:25:02.657 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Strict-Transport-Security: max-age=31536000; includeSubDomains
+2026-03-10 22:25:02.657 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-Content-Type-Options: nosniff
+2026-03-10 22:25:02.658 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-DNS-Prefetch-Control: off
+2026-03-10 22:25:02.658 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-Download-Options: noopen
+2026-03-10 22:25:02.658 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-Frame-Options: SAMEORIGIN
+2026-03-10 22:25:02.658 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-Permitted-Cross-Domain-Policies: none
+2026-03-10 22:25:02.658 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  X-XSS-Protection: 0
+2026-03-10 22:25:02.658 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Vary: Origin, Accept-Encoding
+2026-03-10 22:25:02.658 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Access-Control-Allow-Credentials: true
+2026-03-10 22:25:02.658 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Policy: 500;w=900
+2026-03-10 22:25:02.658 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Limit: 500
+2026-03-10 22:25:02.658 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Remaining: 482
+2026-03-10 22:25:02.658 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  RateLimit-Reset: 695
+2026-03-10 22:25:02.659 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Content-Type: application/json; charset=utf-8
+2026-03-10 22:25:02.659 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  ETag: W/"509-ehr01Uf3X9Pw/amJxSeGSQ46cec"
+2026-03-10 22:25:02.659 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Date: Wed, 11 Mar 2026 03:25:04 GMT
+2026-03-10 22:25:02.659 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Connection: keep-alive
+2026-03-10 22:25:02.659 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Keep-Alive: timeout=5
+2026-03-10 22:25:02.659 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  Transfer-Encoding: chunked
+2026-03-10 22:25:02.661 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  {"success":false,"error":"Error obteniendo datos de sincronización","details":"\nInvalid `prisma.registroSalud.findMany()` invocation in\n/home/brste/Project/Project_doc/doc-backend/src/controllers/sync.controller.ts:222:55\n\n  219 }\n  220 \n  221 // Obtener registros de salud del usuario (históricos)\n→ 222 const registrosSalud = await prisma.registroSalud.findMany({\n        where: {\n          usuarioId: 23\n        },\n        select: {\n          id: true,\n          fecha: true,\n          hora: true,\n          presionSistolica: true,\n          presionDiastolica: true,\n          glucosa: true,\n          colesterol: true,\n          temperatura: true,\n          peso: true,\n          calorias: true,\n          ejercicioMinutos: true,\n          ~~~~~~~~~~~~~~~~\n          estadoAnimo: true,\n          notas: true,\n          registradoEn: true,\n      ?   usuarioId?: true,\n      ?   ejercicio?: true,\n      ?   idSincronizacion?: true,\n      ?   sincronizadoEn?: true,\n      ?   creadoEn?: true,\n      ?   actualizadoEn?: true,\n      ?   usuario?: true\n        },\n        orderBy: {\n          fecha: \"desc\"\n        }\n      })\n\nUnknown field `ejercicioMinutos` for select statement on model `RegistroSalud`. Available options are marked with ?."}
+2026-03-10 22:25:02.661 24179-24309 okhttp.OkHttpClient     com.example.doc                      I  <-- END HTTP (1289-byte body)
+2026-03-10 22:25:02.663 24179-24240 SyncReposi...romBackend com.example.doc                      E  ❌ Error en PULL: 500 - Internal Server Error
+2026-03-10 22:25:02.664 24179-24240 SyncRepository$fullSync com.example.doc                      E  ❌ PULL falló, pero PUSH fue exitoso
+2026-03-10 22:25:02.665 24179-24179 UsuarioVie...anualmente com.example.doc                      E  ⚠️ Sincronización manual falló: Error en PULL: Internal Server Error

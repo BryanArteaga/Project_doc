@@ -19,7 +19,7 @@ const RegistroSaludSchema = z.object({
   temperatura: z.number().optional(),
   peso: z.number().optional(),
   calorias: z.number().optional(),
-  ejercicio: z.string().optional(), // Ahora es el nombre del ejercicio (String), no el ID
+  ejercicioMinutos: z.number().optional(),  // ✅ Minutos de ejercicio (Int), no nombre (String)
   estadoAnimo: z.string().optional(),
   notas: z.string().optional()
 });
@@ -106,7 +106,7 @@ export const push = async (req: Request, res: Response) => {
             temperatura: registro.temperatura,
             peso: registro.peso,
             calorias: registro.calorias,
-            ejercicio: registro.ejercicio,
+            ejercicioMinutos: registro.ejercicioMinutos || 0,  // ✅ Usar ejercicioMinutos (Int)
             estadoAnimo: registro.estadoAnimo,
             notas: registro.notas
           }
@@ -232,7 +232,7 @@ export const pull = async (req: Request, res: Response) => {
         temperatura: true,
         peso: true,
         calorias: true,
-        ejercicio: true,
+        ejercicioMinutos: true,  // ✅ Cambiar de ejercicio a ejercicioMinutos
         estadoAnimo: true,
         notas: true,
         registradoEn: true
@@ -252,7 +252,7 @@ export const pull = async (req: Request, res: Response) => {
       temperatura: r.temperatura,
       peso: r.peso,
       calorias: r.calorias,
-      ejercicio: r.ejercicio,
+      ejercicioMinutos: r.ejercicioMinutos,  // ✅ Cambiar de ejercicio a ejercicioMinutos
       estadoAnimo: r.estadoAnimo,
       notas: r.notas,
       registradoEn: r.registradoEn.getTime() // Convertir DateTime a timestamp (milliseconds)
@@ -269,6 +269,69 @@ export const pull = async (req: Request, res: Response) => {
         duracion: true
       }
     });
+
+    // ✅ NUEVO: Obtener asignaciones de ejercicios del usuario
+    // - Directas (usuarioId = usuario.id)
+    // - Generales (usuarioId = null AND enfermedad = usuario.enfermedad)
+    // - Activas y no expiradas
+    const ahora = new Date();
+    const asignaciones = await prisma.asignacionEjercicio.findMany({
+      where: {
+        activo: true,
+        AND: [
+          {
+            OR: [
+              { usuarioId: userId },                                  // Asignación directa
+              { usuarioId: null, enfermedad: usuario.enfermedad }     // Asignación general por enfermedad
+            ]
+          },
+          {
+            OR: [
+              { fechaExpiracion: null },                              // Sin expiración
+              { fechaExpiracion: { gt: ahora } }                      // No expirada
+            ]
+          }
+        ]
+      },
+      include: {
+        ejercicio: {
+          select: {
+            id: true,
+            nombre: true,
+            descripcion: true,
+            duracion: true,
+            series: true,
+            intensidad: true,
+            urlImagen: true,
+            urlVideo: true
+          }
+        },
+        doctor: {
+          select: {
+            id: true,
+            nombre: true,
+            apellido: true,
+            especialidad: true
+          }
+        }
+      },
+      orderBy: { fechaAsignacion: 'desc' }
+    });
+
+    // 🔧 Mapear asignaciones para convertir timestamp
+    const asignacionesMapeadas = asignaciones.map((a: any) => ({
+      id: a.id,
+      ejercicioId: a.ejercicioId,
+      doctorId: a.doctorId,
+      usuarioId: a.usuarioId,
+      enfermedad: a.enfermedad,
+      descripcion: a.descripcion,
+      activo: a.activo,
+      fechaAsignacion: a.fechaAsignacion.getTime().toString(),     // Convertir a timestamp string
+      fechaExpiracion: a.fechaExpiracion?.getTime().toString(),     // Convertir a timestamp string
+      ejercicio: a.ejercicio,
+      doctor: a.doctor
+    }));
 
     // Obtener notificaciones pendientes/recientes
     const notificaciones = await prisma.notificacion.findMany({
@@ -311,6 +374,7 @@ export const pull = async (req: Request, res: Response) => {
         notifDetails: usuario.notifDetails
       },
       registrosSalud: registrosSaludMapeados,  // 🔧 Usar versión mapeada con timestamps
+      asignaciones: asignacionesMapeadas,      // ✅ NUEVO: Asignaciones de ejercicios
       ejercicios,
       notificaciones,
       estadoCuenta: {
