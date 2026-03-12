@@ -19,8 +19,7 @@ const Settings = lazy(() => import('./pages/Settings'));
 const ViewPatients = lazy(() => import('./pages/ViewPatients'));
 const PatientProfile = lazy(() => import('./pages/PatientProfile'));
 const AuditLogs = lazy(() => import('./pages/AuditLogs/AuditLogs'));
-const AsignacionesEjercicios = lazy(() => import('./pages/AsignacionesEjercicios'));
-const GestionEjercicios = lazy(() => import('./pages/GestionEjercicios'));
+const GestionEjercicios = lazy(() => import('./pages/ManageExercise'));
 
 // Componente para proteger rutas que requieren autenticación
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -114,15 +113,6 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <PatientProfile />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/dashboard/asignaciones-ejercicios"
-        element={
-          <ProtectedRoute>
-            <AsignacionesEjercicios />
           </ProtectedRoute>
         }
       />

@@ -110,5 +110,16 @@ export const asignacionService = {
   async listarPacientes(): Promise<any[]> {
     const response = await api.get('/api/doctor/patients');
     return response.data.patients || [];
+  },
+
+  // Obtener asignaciones por ejercicio específico (pacientes asignados)
+  async obtenerAsignacionesPorEjercicio(ejercicioId: number): Promise<any[]> {
+    const response = await api.get(`/api/asignaciones-ejercicios/ejercicio/${ejercicioId}`);
+    return response.data.pacientes || [];
+  },
+
+  // Eliminar asignación específica por ejercicio y paciente
+  async eliminarAsignacionPaciente(ejercicioId: number, pacienteId: number): Promise<void> {
+    await api.delete(`/api/asignaciones-ejercicios/ejercicio/${ejercicioId}/paciente/${pacienteId}`);
   }
 };

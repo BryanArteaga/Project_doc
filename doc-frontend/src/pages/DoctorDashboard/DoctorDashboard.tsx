@@ -87,14 +87,8 @@ const DoctorDashboard: React.FC = () => {
               onClick={() => navigate('/dashboard/patients')}
             />
             <ActionCard
-              title="Asignar Ejercicios"
-              description="Crear y gestionar asignaciones de ejercicios"
-              icon={<Dumbbell className="w-6 h-6" />}
-              onClick={() => navigate('/dashboard/asignaciones-ejercicios')}
-            />
-            <ActionCard
               title="Gestión de Ejercicios"
-              description="Crear, editar y eliminar ejercicios del catálogo"
+              description="Crear ejercicios y gestionar asignaciones de pacientes"
               icon={<Dumbbell className="w-6 h-6" />}
               onClick={() => navigate('/dashboard/gestion-ejercicios')}
             />
