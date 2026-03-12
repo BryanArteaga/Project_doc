@@ -506,7 +506,7 @@ fun RegistroSaludScreen(
                                             presionSistolica = it.filter { c -> c.isDigit() }
                                         },
                                         label = { Text("Sistólica") },
-                                        placeholder = { Text("120") },
+                                        placeholder = { Text("120", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
                                         modifier = Modifier.weight(1f),
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         visualTransformation = SafeIntegerVisualTransformation("000")
@@ -520,7 +520,7 @@ fun RegistroSaludScreen(
                                             presionDiastolica = it.filter { c -> c.isDigit() }
                                         },
                                         label = { Text("Diastólica") },
-                                        placeholder = { Text("80") },
+                                        placeholder = { Text("80", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
                                         modifier = Modifier.weight(1f),
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         visualTransformation = SafeIntegerVisualTransformation("00")
@@ -532,7 +532,7 @@ fun RegistroSaludScreen(
                                 value = glucosa,
                                 onValueChange = { glucosa = it.filter { it.isDigit() } },
                                 label = { Text("Glucosa (mg/dL)") },
-                                placeholder = { Text("000") },
+                                placeholder = { Text("000", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
                                 textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
                                 modifier = Modifier.fillMaxWidth(),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -546,7 +546,7 @@ fun RegistroSaludScreen(
                                         pesoNuevo = it.filter { it.isDigit() || it == '.' }
                                     },
                                     label = { Text("Peso actual (kg, opcional)") },
-                                    placeholder = { Text("00.0") },
+                                    placeholder = { Text("00.0", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
                                     textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
                                     modifier = Modifier.fillMaxWidth(),
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -574,7 +574,7 @@ fun RegistroSaludScreen(
                                 value = colesterol,
                                 onValueChange = { colesterol = it.filter { it.isDigit() } },
                                 label = { Text("Colesterol (mg/dL)") },
-                                placeholder = { Text("000") },
+                                placeholder = { Text("000", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
                                 textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
                                 modifier = Modifier.fillMaxWidth(),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -586,7 +586,7 @@ fun RegistroSaludScreen(
                             value = calorias,
                             onValueChange = { calorias = it.filter { it.isDigit() } },
                             label = { Text("Calorías consumidas (ej: 2200)") },
-                            placeholder = { Text("0000") },
+                            placeholder = { Text("0000", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
                             textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
                             modifier = Modifier.fillMaxWidth(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -690,7 +690,7 @@ fun RegistroSaludScreen(
                                             ejercicioHorasExtra = it.filter { c -> c.isDigit() }
                                         },
                                         label = { Text("Horas") },
-                                        placeholder = { Text("0") },
+                                        placeholder = { Text("0", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
                                         modifier = Modifier.weight(1f),
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         visualTransformation = SafeIntegerVisualTransformation("0")
@@ -703,7 +703,7 @@ fun RegistroSaludScreen(
                                                 it.filter { c -> c.isDigit() }
                                         },
                                         label = { Text("Minutos") },
-                                        placeholder = { Text("00") },
+                                        placeholder = { Text("00", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
                                         modifier = Modifier.weight(1f),
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         visualTransformation = SafeIntegerVisualTransformation("00")
@@ -782,7 +782,7 @@ fun RegistroSaludScreen(
                                             ejercicioHoras = it.filter { c -> c.isDigit() }
                                         },
                                         label = { Text("Horas") },
-                                        placeholder = { Text("0") },
+                                        placeholder = { Text("0", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
                                         modifier = Modifier.weight(1f),
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         visualTransformation = SafeIntegerVisualTransformation("0")
@@ -794,7 +794,7 @@ fun RegistroSaludScreen(
                                             ejercicioMinutos = it.filter { c -> c.isDigit() }
                                         },
                                         label = { Text("Minutos") },
-                                        placeholder = { Text("00") },
+                                        placeholder = { Text("00", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
                                         modifier = Modifier.weight(1f),
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         visualTransformation = SafeIntegerVisualTransformation("00")

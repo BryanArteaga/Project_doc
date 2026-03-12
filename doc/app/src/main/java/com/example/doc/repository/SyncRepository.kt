@@ -6,6 +6,7 @@ import androidx.annotation.RequiresApi
 import com.example.doc.data.daos.EjercicioRealizadoDao
 import com.example.doc.data.daos.RegistroSaludDao
 import com.example.doc.data.daos.UsuarioDao
+import com.example.doc.data.daos.EjercicioDao
 import com.example.doc.data.entities.UsuarioEntity
 import com.example.doc.network.ApiService
 import com.example.doc.network.SyncPushRequest
@@ -85,7 +86,12 @@ data class EjercicioDTO(
     val nombre: String,
     val descripcion: String?,
     val duracion: Int?,
-    val intensidad: String?
+    val intensidad: String?,
+    val enfermedad: String?,  // ✅ Campo agregado para sincronización
+    val series: Int?,
+    val descansoEntreSeries: Int?,
+    val urlImagen: String? = null,
+    val urlVideo: String? = null
 )
 
 data class NotificacionDTO(
@@ -119,6 +125,7 @@ class SyncRepository(
     private val ejercicioRealizadoDao: EjercicioRealizadoDao,
     private val asignacionEjercicioDao: AsignacionEjercicioDao,
     private val usuarioDao: UsuarioDao,
+    private val ejercicioDao: EjercicioDao,
     private val sharedPreferences: SharedPreferences
 ) {
 
@@ -329,6 +336,58 @@ class SyncRepository(
                             Timber.d("✅ ${body.asignaciones.size} asignaciones de ejercicios guardadas en Room")
                         } catch (e: Exception) {
                             Timber.e(e, "❌ Error guardando asignaciones en Room")
+                        }
+                    }
+
+                    // ✅ NUEVO: Guardar ejercicios en la base de datos local
+                    if (body.ejercicios.isNotEmpty()) {
+                        try {
+                            // 🔧 Obtener ejercicios existentes para preservar imagenResId
+                            val idsToSync = body.ejercicios.map { it.id }
+                            val ejerciciosExistentes = try {
+                                ejercicioDao.getAll()
+                                    .filter { it.id in idsToSync }
+                                    .associateBy { it.id }
+                            } catch (e: Exception) {
+                                emptyMap()
+                            }
+
+                            val ejerciciosEntities = body.ejercicios.map { dto ->
+                                val existente = ejerciciosExistentes[dto.id]
+                                
+                                // 🎨 Para ejercicios sin URL del backend, usar drawable local correcto
+                                val imagenResIdFinal = when {
+                                    // Si tiene URL del backend, no necesita drawable local
+                                    !dto.urlImagen.isNullOrEmpty() -> 0
+                                    // Preservar existente si ya está en DB
+                                    existente != null -> existente.imagenResId
+                                    // Fallback: intentar inferir del nombre+enfermedad (temporal hasta corrección)
+                                    else -> getImagenResIdPorDefecto(dto.nombre, dto.enfermedad ?: "")
+                                }
+                                
+                                // 🔍 DEBUG: Log detallado para cada ejercicio
+                                val urlLength = dto.urlImagen?.length ?: 0
+                                val urlPreview = dto.urlImagen?.take(100) ?: "null"
+                                Timber.d("🏃 EJERCICIO #${dto.id}: '${dto.nombre}' | enfermedad='${dto.enfermedad}' | urlImagen_length=$urlLength | urlImagen_start=$urlPreview | imagenResId_local=${existente?.imagenResId ?: "NUEVO ($imagenResIdFinal)"}")
+                                
+                                com.example.doc.data.entities.EjercicioEntity(
+                                    id = dto.id,
+                                    nombre = dto.nombre,
+                                    descripcion = dto.descripcion ?: "",
+                                    duracion = dto.duracion ?: 0,
+                                    intensidad = dto.intensidad ?: "Media",
+                                    enfermedad = dto.enfermedad ?: "General",
+                                    imagenResId = imagenResIdFinal,
+                                    series = dto.series ?: existente?.series ?: 3,  // Backend o local o default
+                                    descansoEntreSeries = dto.descansoEntreSeries ?: existente?.descansoEntreSeries ?: 30,
+                                    urlImagen = dto.urlImagen ?: existente?.urlImagen,  // Preservar si backend no envía
+                                    urlVideo = dto.urlVideo ?: existente?.urlVideo
+                                )
+                            }
+                            ejercicioDao.upsertAll(ejerciciosEntities)
+                            Timber.d("✅ ${body.ejercicios.size} ejercicios guardados en Room")
+                        } catch (e: Exception) {
+                            Timber.e(e, "❌ Error guardando ejercicios en Room")
                         }
                     }
 
@@ -780,5 +839,37 @@ class SyncRepository(
                 Result.failure(e)
             }
         }
+    }
+    
+    /**
+     * Obtiene el imagenResId por defecto basado en nombre y enfermedad del ejercicio
+     * Usa el mismo mapeo que AppDatabaseCallback.corregirImagenesLocales()
+     */
+    private fun getImagenResIdPorDefecto(nombre: String, enfermedad: String): Int {
+        val mapeo: Map<Pair<String, String>, Int> = mapOf(
+            // Hipertensión
+            Pair("Caminata rápida", "Hipertensión") to com.example.doc.R.drawable.ejercicio_caminar,
+            Pair("Sentadillas", "Hipertensión") to com.example.doc.R.drawable.ejercicio_sentadilla,
+            Pair("Subir escaleras", "Hipertensión") to com.example.doc.R.drawable.ejercicio_escalera,
+            Pair("Marcha en el lugar", "Hipertensión") to com.example.doc.R.drawable.ejercicio_marcha,
+            Pair("Estiramientos suaves", "Hipertensión") to com.example.doc.R.drawable.ejercicio_estiramiento,
+            Pair("Elevaciones de piernas", "Hipertensión") to com.example.doc.R.drawable.ejercicio_piernas,
+            Pair("Flexiones de pared", "Hipertensión") to com.example.doc.R.drawable.ejercicio_flexiones,
+            Pair("Respiración diafragmática", "Hipertensión") to com.example.doc.R.drawable.ejercicio_respiracion,
+            Pair("Puentes de glúteo", "Hipertensión") to com.example.doc.R.drawable.ejercicio_gluteos,
+            Pair("Plancha con apoyo de rodilla", "Hipertensión") to com.example.doc.R.drawable.ejercicio_plancha,
+            Pair("Estocadas estáticas", "Hipertensión") to com.example.doc.R.drawable.ejercicio_estocadas,
+            Pair("Rotación de brazos", "Hipertensión") to com.example.doc.R.drawable.ejercicio_brazos,
+            Pair("Elevación de talones", "Hipertensión") to com.example.doc.R.drawable.ejercicio_talones,
+            Pair("Caminata lenta", "Hipertensión") to com.example.doc.R.drawable.ejercicio_caminar,
+            Pair("Estiramiento de espalda", "Hipertensión") to com.example.doc.R.drawable.ejercicio_espalda,
+            Pair("Rotaciones de cuello", "Hipertensión") to com.example.doc.R.drawable.ejercicio_cuello,
+            Pair("Elevaciones laterales", "Hipertensión") to com.example.doc.R.drawable.ejercicio_brazoslat,
+            Pair("Puntas de pies", "Hipertensión") to com.example.doc.R.drawable.ejercicio_puntas,
+            Pair("Estiramiento de hombros", "Hipertensión") to com.example.doc.R.drawable.ejercicio_hombros,
+            Pair("Movilidad de muñecas", "Hipertensión") to com.example.doc.R.drawable.ejercicio_munecas
+            // Nota: Solo incluimos algunos ejemplos. AppDatabaseCallback.corregirImagenesLocales tiene el mapeo completo
+        )
+        return mapeo[Pair(nombre, enfermedad)] ?: 0
     }
 }

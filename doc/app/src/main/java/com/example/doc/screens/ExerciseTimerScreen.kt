@@ -32,6 +32,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -314,15 +315,50 @@ fun ExerciseTimerScreen(
                                 textAlign = TextAlign.Center
                             )
                             Spacer(modifier = Modifier.height(16.dp))
-                            AsyncImage(
-                                model = ejercicio.imagenResId,
-                                contentDescription = "Imagen ejercicio",
-                                modifier = Modifier
-                                    .size(imageSize)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .alpha(if (isResting) 0.5f else 1f),
-                                contentScale = ContentScale.Fit
-                            )
+
+                            // Imagen del ejercicio con prioridad URL
+                            when {
+                                ejercicio.urlImagen != null && ejercicio.urlImagen.isNotEmpty() -> {
+                                    AsyncImage(
+                                        model = ejercicio.urlImagen,
+                                        contentDescription = "Imagen ejercicio",
+                                        modifier = Modifier
+                                            .size(imageSize)
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .alpha(if (isResting) 0.5f else 1f),
+                                        contentScale = ContentScale.Fit
+                                    )
+                                }
+                                ejercicio.imagenResId > 0 -> {
+                                    Image(
+                                        painter = painterResource(id = ejercicio.imagenResId),
+                                        contentDescription = "Imagen ejercicio",
+                                        modifier = Modifier
+                                            .size(imageSize)
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .alpha(if (isResting) 0.5f else 1f),
+                                        contentScale = ContentScale.Fit
+                                    )
+                                }
+                                else -> {
+                                    Surface(
+                                        modifier = Modifier
+                                            .size(imageSize)
+                                            .clip(RoundedCornerShape(16.dp)),
+                                        color = Color.LightGray
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                imageVector = Icons.Filled.CheckCircle,
+                                                contentDescription = "Sin imagen",
+                                                tint = Color.Gray,
+                                                modifier = Modifier.size(60.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
                             Spacer(modifier = Modifier.height(20.dp))
 
                             // Temporizador

@@ -8,6 +8,8 @@ import com.example.doc.repository.EjercicioRepository
 import com.example.doc.repository.EjercicioRealizadoRepository
 import com.example.doc.utils.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -26,6 +28,7 @@ class EjercicioViewModel @Inject constructor(
     val ejercicios: StateFlow<List<Ejercicio>> = _ejercicios
 
     private val _realizadosHoy = MutableStateFlow<Set<Int>>(emptySet())
+    private var dbObserverJob: Job? = null
     val realizadosHoy: StateFlow<Set<Int>> = _realizadosHoy
 
     @Suppress("unused")
@@ -36,6 +39,10 @@ class EjercicioViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _uiState.value = UiState.Loading
+                
+                // Pequeño delay para que corregirImagenesLocales() complete en onOpen
+                delay(150)
+                
                 val lastUpdateDate = prefs.getString("last_update_date", null)
                 val storedIdsJson = prefs.getString("current_exercise_ids", null)
 
@@ -52,7 +59,9 @@ class EjercicioViewModel @Inject constructor(
                             intensidad = entity.intensidad,
                             imagenResId = entity.imagenResId,
                             series = entity.series,
-                            descansoEntreSeries = entity.descansoEntreSeries
+                            descansoEntreSeries = entity.descansoEntreSeries,
+                            urlImagen = entity.urlImagen,
+                            urlVideo = entity.urlVideo
                         )
                     }
                     val idsJson = JSONArray(_ejercicios.value.map { it.id }).toString()
@@ -66,7 +75,16 @@ class EjercicioViewModel @Inject constructor(
                     val entidades = ejercicioRepo.obtenerEjerciciosPorEnfermedad(enfermedad)
                         .filter { it.id in ids }
                         .sortedBy { ids.indexOf(it.id) }
-                    _ejercicios.value = entidades.map { entity ->
+                    val entidadesFinales = if (entidades.size == ids.size) {
+                        entidades
+                    } else {
+                        val refrescados = ejercicioRepo.obtenerEjerciciosPorEnfermedad(enfermedad).shuffled().take(6)
+                        val idsJson = JSONArray(refrescados.map { it.id }).toString()
+                        prefs.edit().putString("current_exercise_ids", idsJson).apply()
+                        Timber.d("♻️ Caché de ejercicios regenerada porque apuntaba a IDs duplicados/obsoletos")
+                        refrescados
+                    }
+                    _ejercicios.value = entidadesFinales.map { entity ->
                         Ejercicio(
                             id = entity.id,
                             enfermedad = entity.enfermedad,
@@ -76,10 +94,34 @@ class EjercicioViewModel @Inject constructor(
                             intensidad = entity.intensidad,
                             imagenResId = entity.imagenResId,
                             series = entity.series,
-                            descansoEntreSeries = entity.descansoEntreSeries
+                            descansoEntreSeries = entity.descansoEntreSeries,
+                            urlImagen = entity.urlImagen,
+                            urlVideo = entity.urlVideo
                         )
                     }
                     Timber.d("Ejercicios cargados desde caché: ${_ejercicios.value.size}")
+                }
+
+                // Observer reactivo: actualiza imagenResId y urlImagen si la DB cambia
+                // (necesario porque corregirImagenesLocales corre async en onOpen)
+                dbObserverJob?.cancel()
+                dbObserverJob = viewModelScope.launch {
+                    ejercicioRepo.obtenerEjerciciosPorEnfermedadFlow(enfermedad)
+                        .collect { entities ->
+                            val entityMap = entities.associateBy { it.id }
+                            val current = _ejercicios.value
+                            if (current.isNotEmpty()) {
+                                val updated = current.map { ej ->
+                                    val e = entityMap[ej.id]
+                                    if (e != null) ej.copy(imagenResId = e.imagenResId, urlImagen = e.urlImagen)
+                                    else ej
+                                }
+                                if (updated != current) {
+                                    _ejercicios.value = updated
+                                    Timber.d("♻️ Ejercicios actualizados reactivamente (imagenResId/urlImagen)")
+                                }
+                            }
+                        }
                 }
                 _uiState.value = UiState.Success(_ejercicios.value)
             } catch (e: Exception) {
@@ -154,7 +196,9 @@ class EjercicioViewModel @Inject constructor(
                                 intensidad = newEjercicio.intensidad,
                                 imagenResId = newEjercicio.imagenResId,
                                 series = newEjercicio.series,
-                                descansoEntreSeries = newEjercicio.descansoEntreSeries
+                                descansoEntreSeries = newEjercicio.descansoEntreSeries,
+                                urlImagen = newEjercicio.urlImagen,
+                                urlVideo = newEjercicio.urlVideo
                             )
                         } else {
                             ejercicio

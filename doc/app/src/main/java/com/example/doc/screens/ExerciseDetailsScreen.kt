@@ -156,16 +156,49 @@ fun ExerciseDetailsScreen(
 
                         Spacer(modifier = Modifier.height(20.dp))
 
-                        // Imagen del ejercicio
-                        AsyncImage(
-                            model = ejercicio.imagenResId,
-                            contentDescription = "Imagen ejercicio",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(300.dp)
-                                .clip(RoundedCornerShape(20.dp)),
-                            contentScale = ContentScale.Fit
-                        )
+                        // Imagen del ejercicio con prioridad URL
+                        when {
+                            ejercicio.urlImagen != null && ejercicio.urlImagen.isNotEmpty() -> {
+                                AsyncImage(
+                                    model = ejercicio.urlImagen,
+                                    contentDescription = "Imagen ejercicio",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(300.dp)
+                                        .clip(RoundedCornerShape(20.dp)),
+                                    contentScale = ContentScale.Fit
+                                )
+                            }
+                            ejercicio.imagenResId > 0 -> {
+                                Image(
+                                    painter = painterResource(id = ejercicio.imagenResId),
+                                    contentDescription = "Imagen ejercicio",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(300.dp)
+                                        .clip(RoundedCornerShape(20.dp)),
+                                    contentScale = ContentScale.Fit
+                                )
+                            }
+                            else -> {
+                                Surface(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(300.dp)
+                                        .clip(RoundedCornerShape(20.dp)),
+                                    color = Color.LightGray
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Filled.CheckCircle,
+                                            contentDescription = "Sin imagen",
+                                            tint = Color.Gray,
+                                            modifier = Modifier.size(80.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
 
                         Spacer(modifier = Modifier.height(20.dp))
 

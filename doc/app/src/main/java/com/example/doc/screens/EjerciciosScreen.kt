@@ -3,6 +3,7 @@ package com.example.doc.screens
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,6 +28,8 @@ import com.example.doc.R
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import timber.log.Timber
+import coil.compose.AsyncImage
 import coil.compose.AsyncImage
 import com.example.doc.navigation.Routes
 import java.text.SimpleDateFormat
@@ -55,11 +58,13 @@ fun EjerciciosScreen(
     val adaptiveTopPadding = com.example.doc.utils.getAdaptiveTopPadding()
 
     Box(modifier = Modifier.fillMaxSize()) {
+        // Background con imagen drawable
         Image(
             painter = painterResource(id = R.drawable.background_2),
-            contentDescription = null,
+            contentDescription = "Fondo",
             modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
+            contentScale = ContentScale.Crop,
+            alpha = 0.50f
         )
 
         LazyColumn(
@@ -242,16 +247,57 @@ fun EjerciciosScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(16.dp)
                         ) {
+                            // 🔍 DEBUG: Log del ejercicio
+                            LaunchedEffect(ejercicio.id) {
+                                Timber.d("🎨 DIBUJAR #${ejercicio.id}: ${ejercicio.nombre} | imagenResId=${ejercicio.imagenResId} | urlImagen_length=${ejercicio.urlImagen?.length ?: 0} | urlImagen_start=${ejercicio.urlImagen?.take(80) ?: "null"}")
+                            }
+                            
                             // Imagen del ejercicio con badge si está realizado
                             Box {
-                                AsyncImage(
-                                    model = ejercicio.imagenResId,
-                                    contentDescription = "Imagen ejercicio",
-                                    modifier = Modifier
-                                        .size(80.dp)
-                                        .clip(RoundedCornerShape(16.dp)),
-                                    contentScale = ContentScale.Crop
-                                )
+                                when {
+                                    // URL del backend/Storage tiene prioridad
+                                    ejercicio.urlImagen != null && ejercicio.urlImagen.isNotEmpty() -> {
+                                        AsyncImage(
+                                            model = ejercicio.urlImagen,
+                                            contentDescription = "Imagen ejercicio",
+                                            modifier = Modifier
+                                                .size(80.dp)
+                                                .clip(RoundedCornerShape(16.dp)),
+                                            contentScale = ContentScale.Crop,
+                                            onLoading = { Timber.d("⏳ Cargando imagen #${ejercicio.id}: ${ejercicio.urlImagen?.take(50)}") },
+                                            onError = { Timber.e("❌ Error cargando imagen #${ejercicio.id}") }
+                                        )
+                                    }
+                                    // Fallback: imagen local (R.drawable.*)
+                                    ejercicio.imagenResId > 0 -> {
+                                        Image(
+                                            painter = painterResource(id = ejercicio.imagenResId),
+                                            contentDescription = "Imagen ejercicio",
+                                            modifier = Modifier
+                                                .size(80.dp)
+                                                .clip(RoundedCornerShape(16.dp)),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
+                                    // Mostrar placeholder si no hay imagen
+                                    else -> {
+                                        Surface(
+                                            modifier = Modifier
+                                                .size(80.dp)
+                                                .clip(RoundedCornerShape(16.dp)),
+                                            color = Color.LightGray
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.CheckCircle,
+                                                contentDescription = "Sin imagen",
+                                                tint = Color.Gray,
+                                                modifier = Modifier
+                                                    .size(40.dp)
+                                                    .align(Alignment.Center)
+                                            )
+                                        }
+                                    }
+                                }
                                 if (realizado) {
                                     Surface(
                                         shape = RoundedCornerShape(8.dp),

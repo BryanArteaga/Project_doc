@@ -11,5 +11,7 @@ data class Ejercicio(
     val intensidad: String,
     @DrawableRes val imagenResId: Int,
     val series: Int = 3, // Número de series
-    val descansoEntreSeries: Int = 30 // Descanso entre series en segundos
+    val descansoEntreSeries: Int = 30, // Descanso entre series en segundos
+    val urlImagen: String? = null, // URL de imagen desde backend
+    val urlVideo: String? = null // URL de video desde backend
 )

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.example.doc.data.AppDatabase
 import com.example.doc.data.AppDatabaseCallback
+import com.example.doc.data.daos.AsignacionEjercicioDao
 import com.example.doc.data.daos.ConsejoDao
 import com.example.doc.data.daos.EjercicioDao
 import com.example.doc.data.daos.EjercicioRealizadoDao
@@ -74,6 +75,12 @@ object DatabaseModule {
     @Singleton
     fun provideEjercicioRealizadoDao(database: AppDatabase): EjercicioRealizadoDao {
         return database.ejercicioRealizadoDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideAsignacionEjercicioDao(database: AppDatabase): AsignacionEjercicioDao {
+        return database.asignacionEjercicioDao()
     }
 }
 

@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import com.example.doc.R
 import com.example.doc.data.daos.ConsejoDao
 import com.example.doc.data.entities.ConsejoEntity
+import timber.log.Timber
 
 class AppDatabaseCallback(
     private val context: Context,
@@ -22,13 +23,16 @@ class AppDatabaseCallback(
         if (ejercicios.isEmpty() || consejos.isEmpty()) {
             populateInitialData(ejercicioDao, consejoDao)
         }
+        
+        // Corregir imagenResId incorrectos (se ejecuta siempre pero solo actualiza si es necesario)
+        corregirImagenesLocales(ejercicioDao)
     }
 
     override fun onOpen(db: SupportSQLiteDatabase) {
         super.onOpen(db)
         scope.launch {
             val database = AppDatabase.getDatabase(context, scope)
-            repoblarSiVacio(database.ejercicioDao(), database.consejoDao())
+            corregirImagenesLocales(database.ejercicioDao())
         }
     }
 
@@ -225,5 +229,107 @@ class AppDatabaseCallback(
             ConsejoEntity(enfermedad = "Colesterol alto", consejo = "Sigue la dieta Mediterránea, reconocida por sus beneficios cardiovasculares.")
         )
         consejosColesterolalto.forEach { consejoDao.insert(it) }
+    }
+
+    private suspend fun corregirImagenesLocales(ejercicioDao: EjercicioDao) {
+        // Mapa (nombre, enfermedad) → drawable correcto según el seed actual
+        val mapeo: Map<Pair<String, String>, Int> = mapOf(
+            // Hipertensión
+            Pair("Caminata rápida",             "Hipertensión") to R.drawable.ejercicio_caminar,
+            Pair("Sentadillas",                  "Hipertensión") to R.drawable.ejercicio_sentadilla,
+            Pair("Subir escaleras",              "Hipertensión") to R.drawable.ejercicio_escalera,
+            Pair("Marcha en el lugar",           "Hipertensión") to R.drawable.ejercicio_marcha,
+            Pair("Estiramientos suaves",         "Hipertensión") to R.drawable.ejercicio_estiramiento,
+            Pair("Elevaciones de piernas",       "Hipertensión") to R.drawable.ejercicio_piernas,
+            Pair("Flexiones de pared",           "Hipertensión") to R.drawable.ejercicio_flexiones,
+            Pair("Respiración diafragmática",    "Hipertensión") to R.drawable.ejercicio_respiracion,
+            Pair("Puentes de glúteo",            "Hipertensión") to R.drawable.ejercicio_gluteos,
+            Pair("Plancha con apoyo de rodilla", "Hipertensión") to R.drawable.ejercicio_plancha,
+            Pair("Estocadas estáticas",          "Hipertensión") to R.drawable.ejercicio_estocadas,
+            Pair("Rotación de brazos",           "Hipertensión") to R.drawable.ejercicio_brazos,
+            Pair("Elevación de talones",         "Hipertensión") to R.drawable.ejercicio_talones,
+            Pair("Caminata lenta",               "Hipertensión") to R.drawable.ejercicio_caminar,
+            Pair("Estiramiento de espalda",      "Hipertensión") to R.drawable.ejercicio_espalda,
+            Pair("Rotaciones de cuello",         "Hipertensión") to R.drawable.ejercicio_cuello,
+            Pair("Elevaciones laterales",        "Hipertensión") to R.drawable.ejercicio_brazoslat,
+            Pair("Puntas de pies",               "Hipertensión") to R.drawable.ejercicio_puntas,
+            Pair("Estiramiento de hombros",      "Hipertensión") to R.drawable.ejercicio_hombros,
+            Pair("Movilidad de muñecas",         "Hipertensión") to R.drawable.ejercicio_munecas,
+            // Diabetes
+            Pair("Sentadillas con silla",              "Diabetes") to R.drawable.ejercicio_sentadilla,
+            Pair("Caminata en el parque",              "Diabetes") to R.drawable.ejercicio_caminar,
+            Pair("Flexiones de rodillas",              "Diabetes") to R.drawable.ejercicio_flexionesrodillas,
+            Pair("Ejercicios con pesas ligeras",       "Diabetes") to R.drawable.ejercicio_pesas,
+            Pair("Puente de glúteo",                   "Diabetes") to R.drawable.ejercicio_gluteos,
+            Pair("Plancha con apoyo de rodilla",       "Diabetes") to R.drawable.ejercicio_plancha,
+            Pair("Elevaciones de talones",             "Diabetes") to R.drawable.ejercicio_talones,
+            Pair("Marcha con rodillas altas",          "Diabetes") to R.drawable.ejercicio_marcha,
+            Pair("Respiración diafragmática",          "Diabetes") to R.drawable.ejercicio_respiracion,
+            Pair("Rotación de cadera",                 "Diabetes") to R.drawable.ejercicio_cadera,
+            Pair("Elevaciones de piernas laterales",   "Diabetes") to R.drawable.ejercicio_piernas_laterales,
+            Pair("Flexiones de tríceps",               "Diabetes") to R.drawable.ejercicio_triceps,
+            Pair("Caminata con pesas o botellas",      "Diabetes") to R.drawable.ejercicio_caminar_pesas,
+            Pair("Rotaciones de tobillos",             "Diabetes") to R.drawable.ejercicio_tobillos,
+            Pair("Ejercicios de equilibrio",           "Diabetes") to R.drawable.ejercicio_equilibrio,
+            Pair("Estiramiento de isquiotibiales",     "Diabetes") to R.drawable.ejercicio_isquiotibiales,
+            Pair("Marcha con talones",                 "Diabetes") to R.drawable.ejercicio_marcha_talones,
+            // Obesidad
+            Pair("Caminata en el lugar",           "Obesidad") to R.drawable.ejercicio_caminar,
+            Pair("Sentadillas con apoyo",           "Obesidad") to R.drawable.ejercicio_sentadillapoyo,
+            Pair("Elevaciones de piernas",          "Obesidad") to R.drawable.ejercicio_piernas,
+            Pair("Marcha suave",                    "Obesidad") to R.drawable.ejercicio_marcha,
+            Pair("Puente de glúteo",                "Obesidad") to R.drawable.ejercicio_gluteos,
+            Pair("Respiración diafragmática",       "Obesidad") to R.drawable.ejercicio_respiracion,
+            Pair("Rotación de brazos",              "Obesidad") to R.drawable.ejercicio_brazoshombro,
+            Pair("Step básico",                     "Obesidad") to R.drawable.ejercicio_escalera,
+            Pair("Flexiones de pared",              "Obesidad") to R.drawable.ejercicio_flexiones,
+            Pair("Elevación de talones",            "Obesidad") to R.drawable.ejercicio_talones,
+            Pair("Estiramiento de espalda",         "Obesidad") to R.drawable.ejercicio_espalda,
+            Pair("Marcha con rodillas bajas",       "Obesidad") to R.drawable.ejercicio_marcha,
+            Pair("Movimientos de brazos",           "Obesidad") to R.drawable.ejercicio_brazos,
+            Pair("Estiramiento de gemelos",         "Obesidad") to R.drawable.ejercicio_gemelos,
+            Pair("Rotación de cadera sentado",      "Obesidad") to R.drawable.ejercicio_cadera_sentado,
+            Pair("Estiramiento de cuello",          "Obesidad") to R.drawable.ejercicio_cuello,
+            Pair("Respiración abdominal",           "Obesidad") to R.drawable.ejercicio_respiracion_abdominal,
+            Pair("Movilidad de tobillos",           "Obesidad") to R.drawable.ejercicio_tobillos,
+            Pair("Elevaciones de talones sentado",  "Obesidad") to R.drawable.ejercicio_talones_sentado,
+            // Colesterol alto
+            Pair("Saltos sin impacto",               "Colesterol alto") to R.drawable.ejercicio_saltos_suaves,
+            Pair("Flexiones inclinadas",             "Colesterol alto") to R.drawable.ejercicio_flexiones_inclinadas,
+            Pair("Step con elevación de rodillas",   "Colesterol alto") to R.drawable.ejercicio_step_rodillas,
+            Pair("Patadas de glúteo",                "Colesterol alto") to R.drawable.ejercicio_patadas_gluteo,
+            Pair("Elevaciones frontales",            "Colesterol alto") to R.drawable.ejercicio_elevaciones_frontales,
+            Pair("Abdominales bicicleta",            "Colesterol alto") to R.drawable.ejercicio_abdominales_bicicleta,
+            Pair("Jumping jacks",                    "Colesterol alto") to R.drawable.ejercicio_jumping_modificado,
+            Pair("Caminata rápida en casa",          "Colesterol alto") to R.drawable.ejercicio_caminar,
+            Pair("Sentadillas",                      "Colesterol alto") to R.drawable.ejercicio_sentadilla,
+            Pair("Step casero",                      "Colesterol alto") to R.drawable.ejercicio_escalera,
+            Pair("Estocadas",                        "Colesterol alto") to R.drawable.ejercicio_estocadas,
+            Pair("Flexiones modificadas",            "Colesterol alto") to R.drawable.ejercicio_flexionesapoyo,
+            Pair("Jumping jacks suave",              "Colesterol alto") to R.drawable.ejercicio_jumping_modificado,
+            Pair("Burpees",                          "Colesterol alto") to R.drawable.ejercicio_burpees,
+            Pair("Plancha",                          "Colesterol alto") to R.drawable.ejercicio_planchanormal,
+            Pair("Mountain climbers",                "Colesterol alto") to R.drawable.ejercicio_escaladora
+        )
+
+        val todos = ejercicioDao.getAll()
+        Timber.d("🔍 Verificando ${todos.size} ejercicios para corrección...")
+        val aActualizar = mutableListOf<EjercicioEntity>()
+        todos.forEach { ejercicio ->
+            // Solo corregir ejercicios locales (sin imagen de backend/Storage)
+            if (ejercicio.urlImagen.isNullOrEmpty()) {
+                val correctId = mapeo[Pair(ejercicio.nombre, ejercicio.enfermedad)]
+                if (correctId != null && ejercicio.imagenResId != correctId) {
+                    aActualizar.add(ejercicio.copy(imagenResId = correctId))
+                    Timber.d("🔧 Corrigiendo imagen: '${ejercicio.nombre}' (${ejercicio.enfermedad}) ${ejercicio.imagenResId} → $correctId")
+                }
+            }
+        }
+        if (aActualizar.isNotEmpty()) {
+            aActualizar.forEach { ejercicioDao.update(it) }
+            Timber.d("✅ Corregidas ${aActualizar.size} imágenes de ejercicios locales")
+        } else {
+            Timber.d("⏭️ No hay imágenes que corregir")
+        }
     }
 }

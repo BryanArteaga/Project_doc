@@ -58,6 +58,11 @@ export interface EjercicioResponse {
   duracion: number | null;
   descripcion: string | null;
   intensidad: string | null;
+  enfermedad: string | null;
+  series: number | null;
+  descansoEntreSeries: number | null;
+  urlImagen: string | null;
+  urlVideo: string | null;
 }
 
 // ✅ DTO para AsignacionEjercicio en PULL

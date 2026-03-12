@@ -33,7 +33,6 @@ import androidx.navigation.NavController
 import com.example.doc.R
 import com.example.doc.navigation.Routes
 import com.example.doc.security.InputValidator
-import com.example.doc.utils.SafeDecimalVisualTransformation
 import com.example.doc.utils.rememberDebouncer
 import com.example.doc.viewmodel.UsuarioViewModel
 import kotlinx.coroutines.delay
@@ -284,7 +283,7 @@ fun RegisterScreen(navController: NavController, usuarioViewModel: UsuarioViewMo
                             nombre = it
                         },
                         label = { Text("Nombre*") },
-                        placeholder = { Text("Juan") },
+                        placeholder = { Text("Juan", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
                     )
@@ -295,7 +294,7 @@ fun RegisterScreen(navController: NavController, usuarioViewModel: UsuarioViewMo
                             apellido = it
                         },
                         label = { Text("Apellido") },
-                        placeholder = { Text("Pérez") },
+                        placeholder = { Text("Pérez", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
                     )
@@ -318,7 +317,7 @@ fun RegisterScreen(navController: NavController, usuarioViewModel: UsuarioViewMo
                             }
                         },
                         label = { Text("Cédula*") },
-                        placeholder = { Text("1363846284") },
+                        placeholder = { Text("1363846284", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         isError = cedulaError != null,
@@ -331,7 +330,7 @@ fun RegisterScreen(navController: NavController, usuarioViewModel: UsuarioViewMo
                             fechaNacimiento = validateDateFormat(newValue)
                         },
                         label = { Text("Fecha de nacimiento (dd/MM/yyyy)*") },
-                        placeholder = { Text("dd/MM/yyyy") },
+                        placeholder = { Text("dd/MM/yyyy", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         trailingIcon = {
@@ -356,7 +355,7 @@ fun RegisterScreen(navController: NavController, usuarioViewModel: UsuarioViewMo
                             }
                         },
                         label = { Text("Peso (kg)*") },
-                        placeholder = { Text("00.0") },
+                        placeholder = { Text("70.5", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         isError = pesoError != null,
@@ -378,7 +377,7 @@ fun RegisterScreen(navController: NavController, usuarioViewModel: UsuarioViewMo
                             }
                         },
                         label = { Text("Altura (cm)*") },
-                        placeholder = { Text("1.65") },
+                        placeholder = { Text("1.75", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         isError = alturaError != null,

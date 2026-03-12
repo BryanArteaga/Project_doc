@@ -266,7 +266,12 @@ export const pull = async (req: Request, res: Response) => {
         nombre: true,
         descripcion: true,
         intensidad: true,
-        duracion: true
+        duracion: true,
+        enfermedad: true,
+        series: true,
+        descansoEntreSeries: true,
+        urlImagen: true,
+        urlVideo: true
       }
     });
 

@@ -63,6 +63,7 @@ object RepositoryModule {
         ejercicioRealizadoDao: EjercicioRealizadoDao,
         asignacionEjercicioDao: AsignacionEjercicioDao,
         usuarioDao: UsuarioDao,
+        ejercicioDao: EjercicioDao,
         sharedPreferences: SharedPreferences
     ): SyncRepository {
         return SyncRepository(
@@ -71,6 +72,7 @@ object RepositoryModule {
             ejercicioRealizadoDao = ejercicioRealizadoDao,
             asignacionEjercicioDao = asignacionEjercicioDao,
             usuarioDao = usuarioDao,
+            ejercicioDao = ejercicioDao,
             sharedPreferences = sharedPreferences
         )
     }
