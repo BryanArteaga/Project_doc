@@ -1,13 +1,13 @@
 .layout-container {
   min-height: 100vh;
   width: 100%;
-  max-width: 100vw;
-  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   background-color: #FAFAFD !important;
   color: #122056;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  scrollbar-gutter: stable;
+  box-sizing: border-box;
 }
 
 html.dark .layout-container {
@@ -17,13 +17,12 @@ html.dark .layout-container {
 
 .layout-header {
   width: 100%;
-  max-width: 100vw;
-  overflow-x: hidden;
   height: 4rem;
   background-color: #FFFFFF !important;
   box-shadow: 0 1px 3px rgba(18, 32, 86, 0.1);
   border-bottom: 1px solid #EEEFFD;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
 }
 
 html.dark .layout-header {
@@ -33,23 +32,28 @@ html.dark .layout-header {
 }
 
 .layout-header-content {
-  max-width: 80rem;
-  margin: 0 auto;
-  padding: 0 1rem;
+  width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
+  margin: 0 auto;
 }
 
-@media (min-width: 640px) {
+@media (max-width: 768px) {
   .layout-header-content {
-    padding: 0 1.5rem;
+    padding: 0 0.75rem;
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 769px) and (max-width: 1024px) {
   .layout-header-content {
-    padding: 0 2rem;
+    padding: 0 1rem;
+  }
+}
+
+@media (min-width: 1025px) {
+  .layout-header-content {
+    padding: 0 1.5rem;
   }
 }
 
@@ -188,19 +192,17 @@ html.dark .layout-action-btn-logout:hover {
 .layout-main {
   flex: 1;
   width: 100%;
-  max-width: 100vw;
-  overflow-x: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
 }
 
 .layout-footer {
   width: 100%;
-  max-width: 100vw;
-  overflow-x: hidden;
   background-color: #FFFFFF;
   border-top: 1px solid #EEEFFD;
   margin-top: auto;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
 }
 
 html.dark .layout-footer {
@@ -209,20 +211,25 @@ html.dark .layout-footer {
 }
 
 .layout-footer-content {
-  max-width: 80rem;
+  width: 100%;
   margin: 0 auto;
-  padding: 1rem;
 }
 
-@media (min-width: 640px) {
+@media (max-width: 768px) {
   .layout-footer-content {
-    padding: 1rem 1.5rem;
+    padding: 1rem 0.75rem;
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 769px) and (max-width: 1024px) {
   .layout-footer-content {
-    padding: 1rem 2rem;
+    padding: 1rem 1rem;
+  }
+}
+
+@media (min-width: 1025px) {
+  .layout-footer-content {
+    padding: 1rem 1.5rem;
   }
 }
 

@@ -1,9 +1,8 @@
 .manage-patients-container {
   width: 100%;
-  max-width: 80rem;
-  margin: 0 auto;
+  margin: 0;
   padding: 1.5rem 1rem;
-  min-height: calc(100vh - 8rem);
+  box-sizing: border-box;
 }
 
 @media (min-width: 640px) {
