@@ -15,7 +15,10 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index(value = ["usuarioId"])]
+    indices = [
+        Index(value = ["usuarioId"]),
+        Index(value = ["fecha", "hora", "usuarioId"], unique = true)  // ✅ Previene duplicados la misma hora
+    ]
 )
 data class RegistroSaludEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
@@ -28,6 +31,8 @@ data class RegistroSaludEntity(
     val colesterol: Int? = null,
     val temperatura: Double? = null,
     val peso: Double? = null,
+    val imc: Double? = null,  // ✅ IMC (calculado para Obesidad)
+    val pulso: Int? = null,  // ✅ Pulso (opcional, solo para Obesidad)
     val calorias: Int? = null,
     val ejercicio: String? = null,
     val ejercicioMinutos: Int = 0,  // ✅ Minutos de ejercicio (calculado desde app)

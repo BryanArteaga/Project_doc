@@ -15,6 +15,7 @@ data class RegistroSalud(
     val colesterol: Int? = null,
     val temperatura: Double? = null,
     val peso: Double? = null,
+    val pulso: Int? = null,  // ✅ Pulso (opcional, solo para Obesidad)
     // Actividad y estado
     val calorias: Int? = null,
     val ejercicio: String? = null,  // Ahora es string (nombre del ejercicio)

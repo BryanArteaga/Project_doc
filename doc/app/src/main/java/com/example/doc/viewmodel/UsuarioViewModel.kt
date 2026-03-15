@@ -264,6 +264,10 @@ class UsuarioViewModel @Inject constructor(
 
                 // Guardar ID en SharedPreferences para sincronización
                 prefs.edit().putInt("user_id", usuarioFinal.id).apply()
+                
+                // ✅ LIMPIAR flag de PULL para que se sincronice en el próximo arranque
+                prefs.edit().remove("first_pull_done_${usuarioFinal.id}").apply()
+                Timber.d("🔄 Flag de PULL limpiado para usuario ${usuarioFinal.id}")
 
                 // Suscribirse al tema de notificaciones personales inmediatamente
                 FirebaseMessaging.getInstance().subscribeToTopic("user_${usuarioFinal.id}")

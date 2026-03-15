@@ -3,6 +3,7 @@ package com.example.doc.domain
 import com.example.doc.model.EvaluacionSalud
 import com.example.doc.model.RegistroSalud
 import com.example.doc.model.Usuario
+import timber.log.Timber
 
 object SaludEvaluator {
 
@@ -73,23 +74,71 @@ object SaludEvaluator {
                 }
                 detalles.add("$icono Glucosa: $it mg/dL - $mensaje")
             }
-            "Obesidad" -> registro.imc?.let {
+            "Obesidad" -> {
                 val icono = when (estadoPrincipal) {
                     EvaluacionSalud.Estado.NORMAL -> "✅"
                     EvaluacionSalud.Estado.LEVE -> "⚠️"
                     EvaluacionSalud.Estado.ADVERTENCIA -> "⚠️"
                     EvaluacionSalud.Estado.EMERGENCIA -> "🚨"
                 }
-                detalles.add("$icono IMC: ${String.format(java.util.Locale.US, "%.2f", it)} (${estadoPrincipal.name})")
+                
+                Timber.d("🔍 DEBUG Obesidad: IMC=${registro.imc}, Peso=${registro.peso}, Pulso=${registro.pulso}")
+                
+                // Mostrar IMC si está disponible con explicación clara
+                if (registro.imc != null) {
+                    val imcValor = registro.imc
+                    val imcMensaje = when {
+                        imcValor > 40 -> "Obesidad severa (Riesgo muy alto)"
+                        imcValor in 30.0..40.0 -> "Obesidad (Riesgo alto)"
+                        imcValor in 25.0..29.9 -> "Sobrepeso (Riesgo moderado)"
+                        else -> "Peso normal (Saludable)"
+                    }
+                    detalles.add("$icono IMC: ${String.format(java.util.Locale.US, "%.2f", imcValor)} - $imcMensaje (${estadoPrincipal.name})")
+                }
+                
+                // Mostrar peso actual si está disponible
+                registro.peso?.let { peso ->
+                    if (peso > 0.0) {
+                        detalles.add("Peso actual: ${String.format(java.util.Locale.US, "%.1f", peso)} kg")
+                    }
+                }
+                
+                // Mostrar pulso si está disponible con explicación clara
+                registro.pulso?.let { pulso ->
+                    if (pulso > 0) {
+                        val pulsoMensaje = when {
+                            pulso > 100 -> "Elevado (Posible estrés o actividad)"
+                            pulso in 60..100 -> "Normal"
+                            pulso in 50..59 -> "Bajo"
+                            else -> "Muy bajo (Consulta a médico)"
+                        }
+                        detalles.add("Pulso: $pulso lat/min - $pulsoMensaje")
+                    }
+                }
             }
-            "Colesterol alto" -> registro.colesterol?.let {
-                val icono = when (estadoPrincipal) {
-                    EvaluacionSalud.Estado.NORMAL -> "✅"
-                    EvaluacionSalud.Estado.LEVE -> "⚠️"
-                    EvaluacionSalud.Estado.ADVERTENCIA -> "⚠️"
-                    EvaluacionSalud.Estado.EMERGENCIA -> "🚨"
+            "Colesterol alto" -> {
+                registro.colesterol?.let {
+                    val icono = when (estadoPrincipal) {
+                        EvaluacionSalud.Estado.NORMAL -> "✅"
+                        EvaluacionSalud.Estado.LEVE -> "⚠️"
+                        EvaluacionSalud.Estado.ADVERTENCIA -> "⚠️"
+                        EvaluacionSalud.Estado.EMERGENCIA -> "🚨"
+                    }
+                    detalles.add("$icono Colesterol: $it mg/dL (${estadoPrincipal.name})")
+                    
+                    // Agregar presión arterial si está disponible (comorbilidad importante)
+                    val sistolica = registro.presionSistolica
+                    val diastolica = registro.presionDiastolica
+                    if (sistolica != null && diastolica != null && sistolica > 0) {
+                        val presionMensaje = when {
+                            sistolica > 180 || diastolica > 120 -> "PELIGROSAMENTE ALTA"
+                            sistolica in 140..180 || diastolica in 90..120 -> "Elevada"
+                            sistolica in 130..139 || diastolica in 85..89 -> "Prehipertensión"
+                            else -> "Normal"
+                        }
+                        detalles.add("🩸 Presión arterial: $sistolica/$diastolica mmHg - $presionMensaje")
+                    }
                 }
-                detalles.add("$icono Colesterol: $it mg/dL (${estadoPrincipal.name})")
             }
         }
 
@@ -135,24 +184,81 @@ object SaludEvaluator {
         // Calcular IMC desde peso y altura del usuario si no viene en el registro
         // (Este será actualizado en la pantalla de registro)
         val imc: Double? = registro.imc
+        
+        // Evaluar precisamente considerando IMC y pulso
         return if (imc == null) {
             EvaluacionSalud.Estado.NORMAL
-        } else when {
-            imc > 40 -> EvaluacionSalud.Estado.EMERGENCIA
-            imc in 30.0..40.0 -> EvaluacionSalud.Estado.ADVERTENCIA
-            imc in 25.0..29.9 -> EvaluacionSalud.Estado.LEVE
-            else -> EvaluacionSalud.Estado.NORMAL
+        } else {
+            val imcEstado = when {
+                imc > 40 -> EvaluacionSalud.Estado.EMERGENCIA
+                imc in 30.0..40.0 -> EvaluacionSalud.Estado.ADVERTENCIA
+                imc in 25.0..29.9 -> EvaluacionSalud.Estado.LEVE
+                else -> EvaluacionSalud.Estado.NORMAL
+            }
+            
+            // Si hay pulso, considerar frecuencia cardíaca
+            val pulsoEstado = if (registro.pulso != null && registro.pulso!! > 0) {
+                when {
+                    registro.pulso!! > 100 -> EvaluacionSalud.Estado.ADVERTENCIA  // Taquicardia
+                    registro.pulso!! in 60..100 -> EvaluacionSalud.Estado.NORMAL
+                    registro.pulso!! in 50..59 -> EvaluacionSalud.Estado.LEVE  // Bradicardia
+                    else -> EvaluacionSalud.Estado.ADVERTENCIA
+                }
+            } else {
+                EvaluacionSalud.Estado.NORMAL
+            }
+            
+            // Combinar evaluaciones: si hay un EMERGENCIA, es EMERGENCIA
+            // Si hay ADVERTENCIA en ambos o ADVERTENCIA + LEVE, es ADVERTENCIA
+            when {
+                imcEstado == EvaluacionSalud.Estado.EMERGENCIA -> EvaluacionSalud.Estado.EMERGENCIA
+                pulsoEstado == EvaluacionSalud.Estado.EMERGENCIA -> EvaluacionSalud.Estado.EMERGENCIA
+                imcEstado == EvaluacionSalud.Estado.ADVERTENCIA && pulsoEstado == EvaluacionSalud.Estado.ADVERTENCIA -> EvaluacionSalud.Estado.ADVERTENCIA
+                imcEstado == EvaluacionSalud.Estado.ADVERTENCIA || pulsoEstado == EvaluacionSalud.Estado.ADVERTENCIA -> EvaluacionSalud.Estado.ADVERTENCIA
+                imcEstado == EvaluacionSalud.Estado.LEVE || pulsoEstado == EvaluacionSalud.Estado.LEVE -> EvaluacionSalud.Estado.LEVE
+                else -> EvaluacionSalud.Estado.NORMAL
+            }
         }
     }
 
     private fun evaluarColesterol(registro: RegistroSalud): EvaluacionSalud.Estado {
         val colesterol: Int? = registro.colesterol
-        return if (colesterol == null) {
-            EvaluacionSalud.Estado.NORMAL
-        } else when {
+        
+        if (colesterol == null) {
+            return EvaluacionSalud.Estado.NORMAL
+        }
+        
+        val colesterolEstado = when {
             colesterol > 300 -> EvaluacionSalud.Estado.EMERGENCIA
             colesterol in 240..300 -> EvaluacionSalud.Estado.ADVERTENCIA
             colesterol in 200..239 -> EvaluacionSalud.Estado.LEVE
+            else -> EvaluacionSalud.Estado.NORMAL
+        }
+        
+        // Evaluar presión arterial si está disponible (comorbilidad importante para colesterol)
+        val presionEstado = if (registro.presionSistolica != null && registro.presionDiastolica != null) {
+            val sistolica = registro.presionSistolica!!
+            val diastolica = registro.presionDiastolica!!
+            when {
+                sistolica > 180 || diastolica > 120 -> EvaluacionSalud.Estado.EMERGENCIA
+                sistolica in 140..180 || diastolica in 90..120 -> EvaluacionSalud.Estado.ADVERTENCIA
+                sistolica in 130..139 || diastolica in 85..89 -> EvaluacionSalud.Estado.LEVE
+                else -> EvaluacionSalud.Estado.NORMAL
+            }
+        } else {
+            EvaluacionSalud.Estado.NORMAL
+        }
+        
+        // Combinar inteligentemente: el riesgo cardiovascular es la suma de ambos factores
+        return when {
+            colesterolEstado == EvaluacionSalud.Estado.EMERGENCIA || presionEstado == EvaluacionSalud.Estado.EMERGENCIA -> 
+                EvaluacionSalud.Estado.EMERGENCIA
+            colesterolEstado == EvaluacionSalud.Estado.ADVERTENCIA && presionEstado == EvaluacionSalud.Estado.ADVERTENCIA -> 
+                EvaluacionSalud.Estado.EMERGENCIA  // Colesterol alto + presión alta = muy riesgoso
+            colesterolEstado == EvaluacionSalud.Estado.ADVERTENCIA || presionEstado == EvaluacionSalud.Estado.ADVERTENCIA -> 
+                EvaluacionSalud.Estado.ADVERTENCIA
+            colesterolEstado == EvaluacionSalud.Estado.LEVE || presionEstado == EvaluacionSalud.Estado.LEVE -> 
+                EvaluacionSalud.Estado.LEVE
             else -> EvaluacionSalud.Estado.NORMAL
         }
     }

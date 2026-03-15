@@ -295,9 +295,10 @@ class SyncRepository(
                                     registradoEn = registroDto.registradoEn,
                                     isSynced = true  // Ya están en el backend
                                 )
-                                registroSaludDao.upsert(entity)
+                                // ✅ USAR upsertRegistroSalud para evitar duplicados por fecha+hora
+                                registroSaludDao.upsertRegistroSalud(entity)
                             }
-                            Timber.d("✅ ${body.registrosSalud.size} registros históricos guardados en Room")
+                            Timber.d("✅ ${body.registrosSalud.size} registros históricos guardados en Room (sin duplicados)")
                         } catch (e: Exception) {
                             Timber.e(e, "❌ Error guardando registros históricos en Room")
                         }
@@ -417,39 +418,58 @@ class SyncRepository(
     }
 
     /**
-     * Sincronización completa: PUSH primero, luego PULL
+     * Sincronización: PUSH siempre + PULL solo en primer arranque/errores críticos
+     * @param usuarioId ID del usuario
+     * @param forcePull Si true, ejecutar PULL aunque ya se haya hecho (para admin manual)
      */
-    suspend fun fullSync(usuarioId: Int): Result<String> {
+    suspend fun fullSync(usuarioId: Int, forcePull: Boolean = false): Result<String> {
         return withContext(Dispatchers.IO) {
             try {
-                Timber.d("🔄 Iniciando sincronización completa para usuario: $usuarioId")
+                Timber.d("🔄 Iniciando sincronización para usuario: $usuarioId (forcePull: $forcePull)")
 
-                // 1. PUSH primero
+                // 1. PUSH siempre
                 val pushResult = pushDataToBackend(usuarioId)
                 if (pushResult.isFailure) {
-                    Timber.e("❌ PUSH falló, abortando sync completo")
+                    Timber.e("❌ PUSH falló, abortando sync")
                     return@withContext pushResult.mapCatching { "" }
                 }
+                Timber.d("✅ PUSH completado exitosamente")
 
-                // 2. PULL después
-                val pullResult = pullDataFromBackend(usuarioId)
-                if (pullResult.isFailure) {
-                    Timber.e("❌ PULL falló, pero PUSH fue exitoso")
-                    return@withContext pullResult.mapCatching { "" }
+                // 2. Determinar si hacer PULL
+                val firstPullDone = sharedPreferences.getBoolean("first_pull_done_$usuarioId", false)
+                val shouldPull = !firstPullDone || forcePull
+
+                if (shouldPull) {
+                    Timber.d("📥 Ejecutando PULL${if (forcePull) " (FORZADO POR ADMIN)" else " (PRIMER ARRANQUE)"}")
+                    
+                    val pullResult = pullDataFromBackend(usuarioId)
+                    if (pullResult.isFailure) {
+                        Timber.e("❌ PULL falló, pero PUSH fue exitoso")
+                        // No abortar si PULL falla - el PUSH es lo importante
+                    } else {
+                        // 3. Actualizar usuario en Room con los datos del backend
+                        val pullData = pullResult.getOrNull()
+                        if (pullData != null) {
+                            actualizarUsuarioEnRoom(pullData.usuario, pullData.estadoCuenta)
+                            Timber.d("✅ Usuario actualizado con datos del backend")
+                        }
+                        
+                        // Marcar que ya hizo el primer PULL (solo si no fue forzado)
+                        if (!forcePull) {
+                            sharedPreferences.edit()
+                                .putBoolean("first_pull_done_$usuarioId", true)
+                                .apply()
+                            Timber.d("✅ Primer PULL completado. Futuras syncs solo harán PUSH")
+                        }
+                    }
+                } else {
+                    Timber.d("📤 PULL omitido - Ya completado en arranque anterior. Solo PUSH ejecutado")
                 }
 
-                // 3. Actualizar usuario en Room con los datos del backend
-                val pullData = pullResult.getOrNull()
-                if (pullData != null) {
-                    // Pasar tanto el usuario como el estadoCuenta
-                    actualizarUsuarioEnRoom(pullData.usuario, pullData.estadoCuenta)
-                    Timber.d("✅ Usuario actualizado en Room con datos del backend")
-                }
-
-                Timber.d("✅ Sincronización completa exitosa")
+                Timber.d("✅ Sincronización completada")
                 Result.success("Sync completed successfully")
             } catch (e: Exception) {
-                Timber.e(e, "❌ Error durante sincronización completa")
+                Timber.e(e, "❌ Error durante sincronización")
                 Result.failure(e)
             }
         }

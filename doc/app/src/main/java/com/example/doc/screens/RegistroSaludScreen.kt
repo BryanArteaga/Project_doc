@@ -85,6 +85,9 @@ fun RegistroSaludScreen(
     var glucosa by remember { mutableStateOf("") }
     var colesterol by remember { mutableStateOf("") }
     var pesoNuevo by remember { mutableStateOf("") }
+    var pulso by remember { mutableStateOf("") }  // ✅ Pulso (opcional, solo Obesidad)
+    var presionSistolicaColesterol by remember { mutableStateOf("") }  // ✅ Presión para Colesterol
+    var presionDiastolicaColesterol by remember { mutableStateOf("") }  // ✅ Presión para Colesterol
     var calorias by remember { mutableStateOf("") }
     var ejercicioHoras by remember { mutableStateOf("") }
     var ejercicioMinutos by remember { mutableStateOf("") }
@@ -217,7 +220,7 @@ fun RegistroSaludScreen(
 
     // Detecta si hay al menos un parámetro llenado
     val hayParametroLlenado = listOf(
-        presionSistolica, presionDiastolica, glucosa, colesterol, pesoNuevo, calorias, animo
+        presionSistolica, presionDiastolica, glucosa, colesterol, pesoNuevo, pulso, calorias, animo
     ).any { it.isNotBlank() } || hizoEjercicioSinApp != null || hizoEjercicioExtra != null
 
     fun intentarGuardarRegistro() {
@@ -286,10 +289,30 @@ fun RegistroSaludScreen(
                 errors.add("El peso debe estar entre 30 y 250 kg")
             }
         }
+        if (user.enfermedad == "Obesidad" && pulso.isNotBlank()) {
+            val pulsoValue = pulso.toIntOrNull() ?: 0
+            if (pulsoValue !in 30..220) {
+                errors.add("El pulso debe estar entre 30 y 220 latidos/min")
+            }
+        }
         if (user.enfermedad == "Colesterol alto" && colesterol.isNotBlank()) {
             val colesterolValue = colesterol.toIntOrNull() ?: 0
             if (colesterolValue !in 100..400) {
                 errors.add("El colesterol debe estar entre 100 y 400 mg/dL")
+            }
+        }
+        if (user.enfermedad == "Colesterol alto") {
+            if (presionSistolicaColesterol.isNotBlank()) {
+                val sistolica = presionSistolicaColesterol.toIntOrNull() ?: 0
+                if (sistolica !in 70..200) {
+                    errors.add("La presión sistólica debe estar entre 70 y 200 mmHg")
+                }
+            }
+            if (presionDiastolicaColesterol.isNotBlank()) {
+                val diastolica = presionDiastolicaColesterol.toIntOrNull() ?: 0
+                if (diastolica !in 40..130) {
+                    errors.add("La presión diastólica debe estar entre 40 y 130 mmHg")
+                }
             }
         }
         if (calorias.isNotBlank()) {
@@ -338,20 +361,35 @@ fun RegistroSaludScreen(
 
         coroutineScope.launch {
             if (user.enfermedad == "Obesidad" && pesoNuevo.isNotBlank()) {
-                val nuevoPeso = pesoNuevo.toDoubleOrNull() ?: user.peso
+                // ✅ Redondear peso a 1 decimal para evitar 75.1999969482422
+                val nuevoPeso = (pesoNuevo.toDoubleOrNull() ?: user.peso).let { 
+                    kotlin.math.round(it * 10.0) / 10.0 
+                }
                 usuarioViewModel.actualizarUsuario(user.copy(peso = nuevoPeso))
             }
             val presionFinal = if (user.enfermedad == "Hipertensión") {
                 "${presionSistolica.trim()}/${presionDiastolica.trim()}"
+            } else null
+            
+            val presionFinalColesterol = if (user.enfermedad == "Colesterol alto" && 
+                (presionSistolicaColesterol.isNotBlank() || presionDiastolicaColesterol.isNotBlank())) {
+                val syst = presionSistolicaColesterol.trim().ifBlank { null }
+                val dias = presionDiastolicaColesterol.trim().ifBlank { null }
+                if (syst != null && dias != null) "$syst/$dias" else null
             } else null
 
             val registro = RegistroSalud(
                 usuarioId = user.id,
                 fecha = currentDate,
                 presionArterial = presionFinal,
+                presionSistolica = if (user.enfermedad == "Hipertensión") presionSistolica.trim().toIntOrNull() else presionSistolicaColesterol.trim().toIntOrNull(),
+                presionDiastolica = if (user.enfermedad == "Hipertensión") presionDiastolica.trim().toIntOrNull() else presionDiastolicaColesterol.trim().toIntOrNull(),
                 glucosa = glucosa.trim().toIntOrNull(),
                 imc = imc,
                 colesterol = colesterol.trim().toIntOrNull(),
+                // ✅ Redondear peso a 1 decimal al guardar
+                peso = pesoNuevo.trim().toDoubleOrNull()?.let { kotlin.math.round(it * 10.0) / 10.0 },
+                pulso = pulso.trim().toIntOrNull(),  // ✅ Pasar pulso al registro
                 calorias = calorias.trim().toIntOrNull(),
                 ejercicioMinutos = ejercicioTotal,  // Pasar minutos al registro
                 estadoAnimo = animo.trim()
@@ -543,15 +581,38 @@ fun RegistroSaludScreen(
                                 OutlinedTextField(
                                     value = pesoNuevo,
                                     onValueChange = {
-                                        pesoNuevo = it.filter { it.isDigit() || it == '.' }
+                                        // ✅ Arreglar precisión decimal: permitir solo un decimal
+                                        val filtered = it.filter { c -> c.isDigit() || c == '.' }
+                                        pesoNuevo = if (filtered.count { c -> c == '.' } <= 1) {
+                                            val parts = filtered.split('.')
+                                            if (parts.size == 2 && parts[1].length > 1) {
+                                                parts[0] + "." + parts[1].substring(0, 1)
+                                            } else {
+                                                filtered
+                                            }
+                                        } else {
+                                            filtered.replace(".", "", false).substring(0, filtered.length - 1)
+                                        }
                                     },
                                     label = { Text("Peso actual (kg, opcional)") },
-                                    placeholder = { Text("00.0", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
+                                    placeholder = { Text("75.5", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
+                                    textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    visualTransformation = SafeDecimalVisualTransformation("00.0")
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                OutlinedTextField(
+                                    value = pulso,
+                                    onValueChange = { pulso = it.filter { it.isDigit() } },
+                                    label = { Text("Pulso (latidos/min, opcional)") },
+                                    placeholder = { Text("70", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
                                     textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
                                     modifier = Modifier.fillMaxWidth(),
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    visualTransformation = SafeDecimalVisualTransformation("00.0")
+                                    visualTransformation = SafeIntegerVisualTransformation("000")
                                 )
+                                Spacer(modifier = Modifier.height(8.dp))
                                 // IMC como parámetro no editable
                                 OutlinedTextField(
                                     value = imc?.let {
@@ -570,16 +631,54 @@ fun RegistroSaludScreen(
                                 )
                             }
 
-                            "Colesterol alto" -> OutlinedTextField(
-                                value = colesterol,
-                                onValueChange = { colesterol = it.filter { it.isDigit() } },
-                                label = { Text("Colesterol (mg/dL)") },
-                                placeholder = { Text("000", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
-                                textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
-                                modifier = Modifier.fillMaxWidth(),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                visualTransformation = SafeIntegerVisualTransformation("000")
-                            )
+                            "Colesterol alto" -> {
+                                OutlinedTextField(
+                                    value = colesterol,
+                                    onValueChange = { colesterol = it.filter { it.isDigit() } },
+                                    label = { Text("Colesterol (mg/dL)") },
+                                    placeholder = { Text("200", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
+                                    textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    visualTransformation = SafeIntegerVisualTransformation("000")
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    "Presión arterial (opcional)",
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 14.sp
+                                )
+                                Row(
+                                    Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    OutlinedTextField(
+                                        value = presionSistolicaColesterol,
+                                        onValueChange = {
+                                            presionSistolicaColesterol = it.filter { c -> c.isDigit() }
+                                        },
+                                        label = { Text("Sistólica") },
+                                        placeholder = { Text("120", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
+                                        modifier = Modifier.weight(1f),
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        visualTransformation = SafeIntegerVisualTransformation("000")
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("/", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    OutlinedTextField(
+                                        value = presionDiastolicaColesterol,
+                                        onValueChange = {
+                                            presionDiastolicaColesterol = it.filter { c -> c.isDigit() }
+                                        },
+                                        label = { Text("Diastólica") },
+                                        placeholder = { Text("80", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
+                                        modifier = Modifier.weight(1f),
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        visualTransformation = SafeIntegerVisualTransformation("00")
+                                    )
+                                }
+                            }
                         }
 
                         OutlinedTextField(

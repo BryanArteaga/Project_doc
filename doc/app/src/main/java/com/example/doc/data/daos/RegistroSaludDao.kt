@@ -27,6 +27,22 @@ interface RegistroSaludDao {
     @Query("SELECT * FROM registros_salud WHERE usuarioId = :usuarioId ORDER BY fecha DESC LIMIT :limit")
     fun getRegistrosRecientesFlow(usuarioId: Int, limit: Int = 10): Flow<List<RegistroSaludEntity>>
 
+    @Query("SELECT * FROM registros_salud WHERE usuarioId = :usuarioId AND fecha = :fecha AND hora = :hora LIMIT 1")
+    suspend fun getRegistroPorFechaHora(usuarioId: Int, fecha: String, hora: String?): RegistroSaludEntity?
+
+    // ✅ UPSERT por fecha+hora (no por ID) - Previene duplicados
+    @Transaction
+    suspend fun upsertRegistroSalud(registro: RegistroSaludEntity) {
+        val existente = getRegistroPorFechaHora(registro.usuarioId, registro.fecha, registro.hora)
+        if (existente != null) {
+            // UPDATE: usar ID existente para evitar duplicados
+            update(registro.copy(id = existente.id))
+        } else {
+            // INSERT: nuevo registro
+            insert(registro)
+        }
+    }
+
     @Query("SELECT * FROM registros_salud WHERE usuarioId = :usuarioId AND fecha = :fecha LIMIT 1")
     suspend fun getRegistroPorFecha(usuarioId: Int, fecha: String): RegistroSaludEntity?
 

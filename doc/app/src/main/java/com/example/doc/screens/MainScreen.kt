@@ -549,12 +549,37 @@ fun MainScreen(
                                 ) {
                                     Column(modifier = Modifier.padding(14.dp)) {
                                         Text(text = reg.fecha.substring(0, 10), fontWeight = FontWeight.Bold, color = Color(0xFF2196F3), fontSize = 15.sp)
-                                        reg.presionArterial?.let { Text("Presión: $it", fontSize = 14.sp) }
-                                        reg.glucosa?.let { Text("Glucosa: $it mg/dL", fontSize = 14.sp) }
-                                        reg.imc?.let { Text("IMC: ${String.format(java.util.Locale.US, "%.2f", it)}", fontSize = 14.sp) }
-                                        reg.colesterol?.let { Text("Colesterol: $it mg/dL", fontSize = 14.sp) }
+                                        
+                                        // ✅ Mostrar parámetros específicos según enfermedad
+                                        when (usuario?.enfermedad) {
+                                            "Hipertensión" -> {
+                                                reg.presionArterial?.let { Text("Presión: $it", fontSize = 14.sp) }
+                                                reg.presionSistolica?.let { syst ->
+                                                    reg.presionDiastolica?.let { dias ->
+                                                        Text("Presión: $syst/$dias mmHg", fontSize = 14.sp)
+                                                    }
+                                                }
+                                            }
+                                            "Diabetes" -> {
+                                                reg.glucosa?.let { Text("Glucosa: $it mg/dL", fontSize = 14.sp) }
+                                            }
+                                            "Obesidad" -> {
+                                                reg.peso?.let { Text("Peso: ${String.format(java.util.Locale.US, "%.1f", it)} kg", fontSize = 14.sp) }
+                                                reg.pulso?.let { Text("Pulso: $it lat/min", fontSize = 14.sp) }
+                                                reg.imc?.let { Text("IMC: ${String.format(java.util.Locale.US, "%.2f", it)}", fontSize = 14.sp) }
+                                            }
+                                            "Colesterol alto" -> {
+                                                reg.colesterol?.let { Text("Colesterol: $it mg/dL", fontSize = 14.sp) }
+                                                reg.presionSistolica?.let { syst ->
+                                                    reg.presionDiastolica?.let { dias ->
+                                                        if (syst > 0) Text("Presión: $syst/$dias mmHg", fontSize = 14.sp)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        
+                                        // Campos comunes a todas las enfermedades
                                         Text("Calorías: ${reg.calorias}", fontSize = 14.sp)
-                                        // ✅ Mostrar ejercicioMinutos (no el nombre del ejercicio que es null)
                                         Text("Ejercicio: ${com.example.doc.utils.HealthFormatUtils.formatearMinutos(reg.ejercicioMinutos)}", fontSize = 14.sp)
                                         Text("Ánimo: ${reg.estadoAnimo}", fontSize = 14.sp)
                                     }

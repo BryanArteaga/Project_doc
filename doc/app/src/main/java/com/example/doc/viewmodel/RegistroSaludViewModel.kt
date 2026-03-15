@@ -120,6 +120,8 @@ class RegistroSaludViewModel @Inject constructor(
                     colesterol = registroFinal.colesterol,
                     temperatura = registroFinal.temperatura,
                     peso = registroFinal.peso,
+                    imc = registroFinal.imc,  // ✅ Mapear IMC
+                    pulso = registroFinal.pulso,  // ✅ Mapear pulso
                     calorias = registroFinal.calorias,  // Ahora es Int?
                     ejercicio = registroFinal.ejercicio,  // Ahora es String?
                     ejercicioMinutos = registroFinal.ejercicioMinutos,  // ✅ Guardar minutos calculados
@@ -168,6 +170,8 @@ class RegistroSaludViewModel @Inject constructor(
                         colesterol = entidad.colesterol,
                         temperatura = entidad.temperatura,
                         peso = entidad.peso,
+                        imc = entidad.imc,  // ✅ MAPEAR IMC
+                        pulso = entidad.pulso,  // ✅ MAPEAR pulso
                         calorias = entidad.calorias,
                         ejercicio = entidad.ejercicio,
                         ejercicioMinutos = entidad.ejercicioMinutos,  // ✅ MAPEAR ejercicioMinutos

@@ -203,12 +203,15 @@ fun ConditionSelectionScreen(
                             onClick = {
                                 Timber.d("Botón de enfermedad clickeado: $condicion")
 
+                                // ✅ Redondear peso a 1 decimal
+                                val pesoRedondeado = kotlin.math.round(peso * 10.0) / 10.0
+
                                 val usuario = Usuario(
                                     cedula = cedula,
                                     nombre = name,
                                     apellido = apellido,
                                     edad = edad,
-                                    peso = peso,
+                                    peso = pesoRedondeado,
                                     altura = String.format(java.util.Locale.US, "%.2f", altura).toDouble(),
                                     sexo = sexo,
                                     enfermedad = condicion,

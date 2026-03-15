@@ -11,6 +11,7 @@ import com.example.doc.data.migrations.MIGRATION_19_20
 import com.example.doc.data.migrations.MIGRATION_20_21
 import com.example.doc.data.migrations.MIGRATION_21_22
 import com.example.doc.data.migrations.MIGRATION_23_24
+import com.example.doc.data.migrations.MIGRATION_25_26
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 
@@ -23,7 +24,7 @@ import kotlinx.coroutines.Dispatchers
         ConsejoEntity::class,
         AsignacionEjercicioEntity::class
     ],
-    version = 24,
+    version = 26,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -46,7 +47,7 @@ abstract class AppDatabase : RoomDatabase() {
                     "medicini_db"
                 )
                     .addCallback(AppDatabaseCallback(context, scope))
-                    .addMigrations(MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_23_24)
+                    .addMigrations(MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_23_24, MIGRATION_25_26)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

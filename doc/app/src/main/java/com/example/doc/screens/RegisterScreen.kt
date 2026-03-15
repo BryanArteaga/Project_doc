@@ -501,8 +501,9 @@ fun RegisterScreen(navController: NavController, usuarioViewModel: UsuarioViewMo
 
                             // ✅ Cédula válida y todos los campos completos - navegar a seleccion de condicion
                             Timber.d("✅ Validación exitosa - cedula válida: $cedula")
+                            val pesoRedondeado = safeDouble(peso.text).let { kotlin.math.round(it * 10.0) / 10.0 }
                             navController.navigate(
-                                "${Routes.Condition}?cedula=${cedula.trim()}&name=${nombre.trim()}&apellido=${apellido.trim()}&edad=${calcularEdad(fechaNacimiento.text)}&peso=${safeDouble(peso.text)}&altura=${safeAltura(altura.text)}&sexo=$sexo"
+                                "${Routes.Condition}?cedula=${cedula.trim()}&name=${nombre.trim()}&apellido=${apellido.trim()}&edad=${calcularEdad(fechaNacimiento.text)}&peso=$pesoRedondeado&altura=${safeAltura(altura.text)}&sexo=$sexo"
                             )
                         },
                         modifier = Modifier

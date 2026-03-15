@@ -66,7 +66,8 @@ export const createUsuario = async (req: Request, res: Response) => {
           cedula: cedula || null,
           fechaNacimiento: fechaNacimiento ? new Date(fechaNacimiento) : null,
           edad: edad || null,
-          peso: peso || null,
+          // ✅ Redondear peso a 1 decimal para evitar precisión flotante
+          peso: peso ? Math.round(peso * 10) / 10 : null,
           altura: altura || null,
           sexo: sexo || null,
           enfermedad: enfermedad || null,
@@ -166,7 +167,8 @@ export const updateProfile = async (req: Request, res: Response) => {
     const updatedUser = await prisma.usuario.update({
       where: { id: usuarioId },
       data: {
-        ...(peso !== undefined && { peso }),
+        // ✅ Redondear peso a 1 decimal si viene en la actualización
+        ...(peso !== undefined && { peso: Math.round(peso * 10) / 10 }),
         ...(notifEnabled !== undefined && { notifEnabled }),
         ...(notifType !== undefined && { notifType }),
         ...(notifDetails !== undefined && { notifDetails })
