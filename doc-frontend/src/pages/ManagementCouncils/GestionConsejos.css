@@ -1,0 +1,274 @@
+/* ======== Gestión de Consejos Page ======== */
+.gestion-consejos-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+/* Header */
+.gestion-header {
+  margin-bottom: 2rem;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1f2937;
+  transition: all 0.3s ease;
+}
+
+html.dark .back-button {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+.back-button:hover {
+  background-color: #f3f4f6;
+  border-color: #667eea;
+}
+
+html.dark .back-button:hover {
+  background-color: #2d3748;
+  border-color: #667eea;
+}
+
+.gestion-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+  flex: 1;
+  text-align: center;
+}
+
+html.dark .gestion-title {
+  color: #f1f5f9;
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.5rem;
+  background-color: #667eea;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn-primary:hover {
+  background-color: #5568d3;
+}
+
+html.dark .btn-primary {
+  background-color: #667eea;
+}
+
+html.dark .btn-primary:hover {
+  background-color: #7c8ff0;
+}
+
+.btn-primary svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+/* Consejos Section */
+.consejos-section {
+  margin-bottom: 2rem;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  background-color: #f8fafc;
+  border: 2px dashed #e5e7eb;
+  border-radius: 1rem;
+  text-align: center;
+}
+
+html.dark .empty-state {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+.empty-icon {
+  color: #9ca3af;
+  margin-bottom: 1rem;
+  opacity: 0.6;
+}
+
+html.dark .empty-icon {
+  color: #64748b;
+}
+
+.empty-state p {
+  color: #6b7280;
+  font-size: 1rem;
+  margin: 0;
+}
+
+html.dark .empty-state p {
+  color: #9ca3af;
+}
+
+/* Form Styles */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+html.dark .form-group label {
+  color: #f1f5f9;
+}
+
+.form-input,
+.form-textarea {
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background-color: white;
+  color: #1f2937;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: all 0.3s ease;
+}
+
+html.dark .form-input,
+html.dark .form-textarea {
+  background-color: #2d3748;
+  border-color: #475569;
+  color: #f1f5f9;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+html.dark .form-input:focus,
+html.dark .form-textarea:focus {
+  border-color: #667eea;
+}
+
+.form-input:disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+html.dark .form-input:disabled {
+  background-color: #334155;
+  opacity: 0.6;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.form-textarea.error {
+  border-color: #ef4444;
+}
+
+.error-message {
+  font-size: 0.85rem;
+  color: #ef4444;
+  margin-top: -0.25rem;
+}
+
+.char-count {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  text-align: right;
+}
+
+html.dark .char-count {
+  color: #64748b;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .gestion-consejos-page {
+    padding: 1rem;
+  }
+
+  .header-top {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .gestion-title {
+    font-size: 1.5rem;
+  }
+
+  .back-button,
+  .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .empty-state {
+    padding: 2rem 1rem;
+  }
+
+  .empty-icon {
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .gestion-consejos-page {
+    padding: 1rem 0.5rem;
+  }
+
+  .gestion-title {
+    font-size: 1.25rem;
+  }
+
+  .form-group label {
+    font-size: 0.9rem;
+  }
+
+  .form-input,
+  .form-textarea {
+    font-size: 0.9rem;
+    padding: 0.6rem 0.75rem;
+  }
+}

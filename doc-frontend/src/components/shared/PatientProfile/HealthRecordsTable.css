@@ -1,0 +1,172 @@
+/* ============================================================
+   HEALTH RECORDS TABLE - REUSABLE COMPONENT
+   ============================================================ */
+
+.health-records-table {
+  background: white;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.health-records-table--dark {
+  background-color: #1a1a1a;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.health-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.health-table thead {
+  background-color: #f8fafc;
+}
+
+.health-records-table--dark .health-table thead {
+  background-color: #2a2a2a;
+}
+
+.health-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 700;
+  color: #122056;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.health-records-table--dark .health-table th {
+  color: #e0e0e0;
+  border-bottom-color: #3a3a3a;
+}
+
+.health-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.health-table th.sortable:hover {
+  background-color: #e0e7ff;
+}
+
+.health-records-table--dark .health-table th.sortable:hover {
+  background-color: #3a3a5a;
+}
+
+.sort-icon {
+  width: 16px;
+  height: 16px;
+  color: #3b82f6;
+}
+
+.health-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.2s ease;
+}
+
+.health-records-table--dark .health-table tbody tr {
+  border-bottom-color: #3a3a3a;
+}
+
+.health-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.health-records-table--dark .health-table tbody tr:hover {
+  background-color: #2a2a2a;
+}
+
+.health-table td {
+  padding: 1rem;
+  font-size: 0.9rem;
+  color: #122056;
+}
+
+.health-records-table--dark .health-table td {
+  color: #e0e0e0;
+}
+
+.date-cell,
+.time-cell {
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.health-records-table--dark .date-cell,
+.health-records-table--dark .time-cell {
+  color: #60a5fa;
+}
+
+.value-cell {
+  font-weight: 500;
+}
+
+.emoji-cell {
+  text-align: center;
+  font-size: 1.25rem;
+}
+
+.no-records {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #999;
+  font-style: italic;
+}
+
+.health-records-table--dark .no-records {
+  color: #666;
+}
+
+.records-info {
+  padding: 1rem;
+  font-size: 0.85rem;
+  color: #666;
+  border-top: 1px solid #e5e7eb;
+  margin: 0;
+  text-align: center;
+}
+
+.health-records-table--dark .records-info {
+  color: #aaa;
+  border-top-color: #3a3a3a;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .health-table th,
+  .health-table td {
+    padding: 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .health-table th {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .health-table th,
+  .health-table td {
+    padding: 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  .health-table th {
+    font-size: 0.6rem;
+  }
+
+  .emoji-cell {
+    font-size: 1rem;
+  }
+}

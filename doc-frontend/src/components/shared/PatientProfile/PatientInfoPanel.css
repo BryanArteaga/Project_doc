@@ -1,0 +1,158 @@
+/* ============================================================
+   PATIENT INFO PANEL - REUSABLE COMPONENT
+   ============================================================ */
+
+.patient-info-panel {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.patient-info-panel--dark {
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+}
+
+/* Header */
+.patient-info-header {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  align-items: flex-start;
+}
+
+.patient-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: white;
+  flex-shrink: 0;
+}
+
+.patient-header-content {
+  flex: 1;
+}
+
+.patient-name {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #122056;
+}
+
+.patient-info-panel--dark .patient-name {
+  color: #ffffff;
+}
+
+.patient-cedula {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.95rem;
+  color: #666;
+}
+
+.patient-info-panel--dark .patient-cedula {
+  color: #aaa;
+}
+
+.patient-enfermedad-badge {
+  display: inline-block;
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  color: white;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+/* Info Grid */
+.patient-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background-color: #f8fafc;
+  border-radius: 0.5rem;
+  border-left: 3px solid #3b82f6;
+}
+
+.patient-info-panel--dark .info-card {
+  background-color: #2a2a2a;
+  border-left-color: #60a5fa;
+}
+
+.info-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.patient-info-panel--dark .info-label {
+  color: #aaa;
+}
+
+.info-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #122056;
+}
+
+.patient-info-panel--dark .info-value {
+  color: #e0e0e0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .patient-info-panel {
+    padding: 1rem;
+  }
+
+  .patient-info-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .patient-name {
+    font-size: 1.5rem;
+  }
+
+  .patient-info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .patient-info-panel {
+    padding: 0.75rem;
+  }
+
+  .patient-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .patient-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 1.2rem;
+  }
+
+  .patient-name {
+    font-size: 1.25rem;
+  }
+}

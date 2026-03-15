@@ -1,6 +1,11 @@
+/* ============================================================
+   MANAGE PATIENTS - REFACTORED CSS
+   Using shared components and standardized styling
+   ============================================================ */
+
 .manage-patients-container {
-  width: 100%;
-  margin: 0;
+  max-width: 1400px;
+  margin: 0 auto;
   padding: 1.5rem 1rem;
   box-sizing: border-box;
 }
@@ -17,19 +22,73 @@
   }
 }
 
+html.dark .manage-patients-container,
+html.dark .manage-patients-container {
+  background-color: #0f172a;
+  color: #e0e0e0;
+}
+
+/* ============================================================
+   HEADER & LAYOUT
+   ============================================================ */
+
 .manage-patients-header {
   margin-bottom: 2rem;
 }
 
-.manage-patients-title {
-  font-size: 1.875rem;
-  font-weight: bold;
-  color: #122056;
-  margin-top: 1rem;
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #f0f0f0;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #122056;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  background-color: #e8e8e8;
+  border-color: #d0d0d0;
+}
+
+html.dark .back-button,
+html.dark .back-button {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #ffffff;
+}
+
+html.dark .back-button:hover,
+html.dark .back-button:hover {
+  background-color: #334155;
+  border-color: #475569;
+}
+
+.manage-patients-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #122056;
+  margin: 0;
+  flex: 1;
+  text-align: center;
+}
+
+html.dark .manage-patients-title,
 html.dark .manage-patients-title {
-  color: #f1f5f9;
+  color: #ffffff;
 }
 
 .manage-patients-subtitle {
@@ -38,183 +97,45 @@ html.dark .manage-patients-title {
   color: #64748b;
 }
 
+html.dark .manage-patients-subtitle,
 html.dark .manage-patients-subtitle {
   color: #94a3b8;
 }
 
-.search-container {
-  position: relative;
-  margin-bottom: 2rem;
-  max-width: 32rem;
-}
+/* ============================================================
+   RESPONSIVE DESIGN
+   ============================================================ */
 
-.search-icon {
-  position: absolute;
-  left: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #5B65DC;
-  width: 1.25rem;
-  height: 1.25rem;
-}
+@media (max-width: 768px) {
+  .header-top {
+    flex-direction: column;
+  }
 
-html.dark .search-icon {
-  color: #64748b;
-}
+  .manage-patients-title {
+    font-size: 2rem;
+  }
 
-.search-input {
-  width: 100%;
-  padding: 0.75rem 1rem 0.75rem 3rem;
-  border: 2px solid #EEEFFD;
-  background-color: #FAFAFD;
-  color: #122056;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  outline: none;
-  transition: all 0.3s;
-}
-
-.search-input:focus {
-  border-color: #5B65DC;
-  box-shadow: 0 0 0 3px rgba(91, 101, 220, 0.1);
-}
-
-html.dark .search-input {
-  background-color: #334155;
-  border-color: #475569;
-  color: #f1f5f9;
-}
-
-.patients-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-}
-
-@media (min-width: 768px) {
-  .patients-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .back-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
   }
 }
 
-@media (min-width: 1024px) {
-  .patients-grid {
-    grid-template-columns: repeat(3, 1fr);
+@media (max-width: 480px) {
+  .manage-patients-container {
+    padding: 0.75rem;
   }
-}
 
-.patient-card {
-  background-color: #FFFFFF;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 3px rgba(18, 32, 86, 0.1);
-  border: 1px solid #122056;
-  padding: 1.5rem;
-  transition: all 0.3s;
-}
+  .header-top {
+    gap: 0.5rem;
+  }
 
-.patient-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(18, 32, 86, 0.15);
-}
+  .manage-patients-title {
+    font-size: 1.5rem;
+  }
 
-html.dark .patient-card {
-  background-color: #1e293b;
-  border-color: #334155;
-}
-
-.patient-card-header {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.patient-avatar {
-  width: 3rem;
-  height: 3rem;
-  background-color: #5B65DC;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 600;
-  font-size: 1.125rem;
-  flex-shrink: 0;
-}
-
-.patient-info {
-  flex: 1;
-}
-
-.patient-name {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #122056;
-  margin-bottom: 0.25rem;
-}
-
-html.dark .patient-name {
-  color: #f1f5f9;
-}
-
-.patient-email {
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-html.dark .patient-email {
-  color: #94a3b8;
-}
-
-.patient-disease {
-  font-size: 0.75rem;
-  color: #64748b;
-  margin-top: 0.25rem;
-}
-
-html.dark .patient-disease {
-  color: #94a3b8;
-}
-
-.patient-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 1rem;
-  border-top: 1px solid #EEEFFD;
-}
-
-html.dark .patient-card-footer {
-  border-top-color: #334155;
-}
-
-.patient-status {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  padding: 0.25rem 0.75rem;
-  border-radius: 0.25rem;
-}
-
-.patient-status.active {
-  color: #10b981;
-  background-color: rgba(16, 185, 129, 0.1);
-}
-
-.patient-status.inactive {
-  color: #f59e0b;
-  background-color: rgba(245, 158, 11, 0.1);
-}
-
-.empty-state {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 3rem;
-  color: #64748b;
-}
-
-html.dark .empty-state {
-  color: #94a3b8;
+  .back-button {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
 }

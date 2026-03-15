@@ -93,10 +93,10 @@ const DoctorDashboard: React.FC = () => {
               onClick={() => navigate('/dashboard/gestion-ejercicios')}
             />
             <ActionCard
-              title="Añadir Consejos"
-              description="Próximamente disponible"
+              title="Gestión de Consejos"
+              description="Crear y gestionar consejos por enfermedad"
               icon={<Lightbulb className="w-6 h-6" />}
-              disabled
+              onClick={() => navigate('/dashboard/gestion-consejos')}
             />
           </div>
         </div>

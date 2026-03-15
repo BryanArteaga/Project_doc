@@ -1,0 +1,200 @@
+/* ============================================================
+   EXERCISE HISTORY TABLE - REUSABLE COMPONENT
+   ============================================================ */
+
+.exercise-history-table {
+  background: white;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.exercise-history-table--dark {
+  background-color: #1a1a1a;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.exercises-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.exercises-table thead {
+  background-color: #f8fafc;
+}
+
+.exercise-history-table--dark .exercises-table thead {
+  background-color: #2a2a2a;
+}
+
+.exercises-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 700;
+  color: #122056;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.exercise-history-table--dark .exercises-table th {
+  color: #e0e0e0;
+  border-bottom-color: #3a3a3a;
+}
+
+.exercises-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.exercises-table th.sortable:hover {
+  background-color: #e0e7ff;
+}
+
+.exercise-history-table--dark .exercises-table th.sortable:hover {
+  background-color: #3a3a5a;
+}
+
+.sort-icon {
+  width: 16px;
+  height: 16px;
+  color: #3b82f6;
+}
+
+.exercises-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.2s ease;
+}
+
+.exercise-history-table--dark .exercises-table tbody tr {
+  border-bottom-color: #3a3a3a;
+}
+
+.exercises-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.exercise-history-table--dark .exercises-table tbody tr:hover {
+  background-color: #2a2a2a;
+}
+
+.exercises-table td {
+  padding: 1rem;
+  font-size: 0.9rem;
+  color: #122056;
+}
+
+.exercise-history-table--dark .exercises-table td {
+  color: #e0e0e0;
+}
+
+.id-cell {
+  font-weight: 700;
+  color: #3b82f6;
+  width: 60px;
+}
+
+.exercise-history-table--dark .id-cell {
+  color: #60a5fa;
+}
+
+.name-cell {
+  font-weight: 600;
+  color: #122056;
+}
+
+.exercise-history-table--dark .name-cell {
+  color: #e0e0e0;
+}
+
+.date-cell,
+.time-cell {
+  font-weight: 600;
+  color: #3b82f6;
+  width: 80px;
+}
+
+.exercise-history-table--dark .date-cell,
+.exercise-history-table--dark .time-cell {
+  color: #60a5fa;
+}
+
+.duration-cell {
+  font-weight: 500;
+  width: 90px;
+}
+
+.description-cell {
+  color: #666;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exercise-history-table--dark .description-cell {
+  color: #aaa;
+}
+
+.no-exercises {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #999;
+  font-style: italic;
+}
+
+.exercise-history-table--dark .no-exercises {
+  color: #666;
+}
+
+.exercises-info {
+  padding: 1rem;
+  font-size: 0.85rem;
+  color: #666;
+  border-top: 1px solid #e5e7eb;
+  margin: 0;
+  text-align: center;
+}
+
+.exercise-history-table--dark .exercises-info {
+  color: #aaa;
+  border-top-color: #3a3a3a;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .exercises-table th,
+  .exercises-table td {
+    padding: 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .exercises-table th {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .exercises-table th,
+  .exercises-table td {
+    padding: 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  .exercises-table th {
+    font-size: 0.6rem;
+  }
+
+  .description-cell {
+    max-width: 100px;
+  }
+}

@@ -57,7 +57,7 @@ async function listExercises() {
     orderBy: { id: 'asc' },
   });
 
-  ejercicios.forEach((ej, idx) => {
+  ejercicios.forEach((ej: any, idx: number) => {
     const url = ej.urlImagen || '(sin imagen)';
     const urlDisplay = url.length > 60 ? url.substring(0, 60) + '...' : url;
     console.log(`#${String(ej.id).padEnd(3)} | ${ej.nombre.padEnd(40)} | ${ej.enfermedad.padEnd(15)} | ${urlDisplay}`);
@@ -106,7 +106,7 @@ async function clearNullImages() {
 
   console.log(`📊 Encontrados ${ejerciciosSinImagen.length} ejercicios sin imagen:\n`);
 
-  ejerciciosSinImagen.forEach((ej) => {
+  ejerciciosSinImagen.forEach((ej: any) => {
     console.log(`   - #${ej.id}: ${ej.nombre}`);
   });
 

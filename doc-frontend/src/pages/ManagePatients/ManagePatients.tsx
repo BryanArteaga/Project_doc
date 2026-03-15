@@ -1,21 +1,47 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/common/Layout/Layout';
-import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
-import { ArrowLeft, Search } from 'lucide-react';
+import PageTransition from '../../components/common/PageTransition';
+import { ArrowLeft, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { SearchFilter, DataGrid, Pagination } from '../../components/shared';
 import { doctorService } from '../../services/doctor.service';
 import { auditService, AuditAction, AuditLevel } from '../../utils/audit';
 import type { Patient } from '../../types';
 import './ManagePatients.css';
 
+const ITEMS_PER_PAGE = 12;
+
 const ManagePatients: React.FC = () => {
   const navigate = useNavigate();
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [filtrados, setFiltrados] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterEnfermedad, setFilterEnfermedad] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
+  // Obtener enfermedades únicas de los pacientes
+  const getUniqueEnfermedades = (): string[] => {
+    const enfermedades = new Set(patients
+      .map(p => p.enfermedad)
+      .filter(Boolean));
+    return Array.from(enfermedades).sort();
+  };
+
+  // Dark mode detection
+  useEffect(() => {
+    const checkDarkMode = () => setIsDarkMode(document.documentElement.classList.contains('dark'));
+    checkDarkMode();
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  // Cargar pacientes
   useEffect(() => {
     auditService.log(
       AuditAction.VIEW_PATIENTS,
@@ -24,6 +50,11 @@ const ManagePatients: React.FC = () => {
     );
     loadPatients();
   }, []);
+
+  // Aplicar filtros
+  useEffect(() => {
+    aplicarFiltros();
+  }, [patients, searchTerm, filterEnfermedad]);
 
   const loadPatients = async () => {
     try {
@@ -43,11 +74,33 @@ const ManagePatients: React.FC = () => {
     }
   };
 
-  const filteredPatients = patients.filter(patient =>
-    patient.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const aplicarFiltros = () => {
+    let resultado = [...patients];
+
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      resultado = resultado.filter(p =>
+        p.nombre.toLowerCase().includes(term) ||
+        p.apellido.toLowerCase().includes(term) ||
+        p.email.toLowerCase().includes(term)
+      );
+    }
+
+    if (filterEnfermedad) {
+      resultado = resultado.filter(p => p.enfermedad === filterEnfermedad);
+    }
+
+    // Calcular paginación
+    const total = Math.ceil(resultado.length / ITEMS_PER_PAGE);
+    setTotalPages(total || 1);
+    setCurrentPage(1);
+    setFiltrados(resultado);
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setFilterEnfermedad('');
+  };
 
   if (loading) {
     return (
@@ -57,77 +110,85 @@ const ManagePatients: React.FC = () => {
     );
   }
 
+  // Paginación
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedPatients = filtrados.slice(startIndex, endIndex);
+
+  const dataGridItems = paginatedPatients.map(patient => ({
+    id: patient.id,
+    title: `${patient.nombre} ${patient.apellido}`,
+    description: patient.email,
+    badges: [
+      ...(patient.enfermedad ? [{ label: patient.enfermedad, color: 'info' as const }] : []),
+      { label: `ID: ${patient.id}`, color: 'default' as const }
+    ],
+    onClick: () => {} // No hay acción de click
+  }));
+
   return (
     <Layout>
-      <div className="manage-patients-container">
-        <div className="manage-patients-header">
-          <button
-            onClick={() => navigate('/admin')}
-            style={{
-              backgroundColor: '#5B65DC',
-              color: '#ffffff',
-              border: 'none',
-              padding: '0.5rem 1rem',
-              borderRadius: '0.5rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontSize: '1rem',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              transition: 'all 0.3s ease',
-              boxShadow: '0 4px 20px rgba(91, 101, 220, 0.15)'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4A52C4'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#5B65DC'}
-          >
-            <ArrowLeft style={{ width: '1rem', height: '1rem' }} />
-            Volver
-          </button>
-          <h1 className="manage-patients-title">Gestionar Pacientes</h1>
-          <p className="manage-patients-subtitle">
-            Total de pacientes: {patients.length}
-          </p>
-        </div>
-
-        {/* Barra de búsqueda */}
-        <div className="search-container">
-          <Search className="search-icon" />
-          <input
-            type="text"
-            placeholder="Buscar por nombre o apellido..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-        </div>
-
-        {/* Lista de pacientes */}
-        <div className="patients-grid">
-          {filteredPatients.length === 0 ? (
-            <div className="empty-state">
-              <p>No se encontraron pacientes</p>
+      <PageTransition>
+        <div className="manage-patients-container">
+          {/* Header */}
+          <div className="manage-patients-header">
+            <div className="header-top">
+              <button onClick={() => navigate('/admin')} className="back-button">
+                <ArrowLeft size={20} />
+                Volver
+              </button>
+              <h1 className="manage-patients-title">Gestionar Pacientes</h1>
+              <div style={{ width: '120px' }} /> {/* Spacer para centrar título */}
             </div>
-          ) : (
-            filteredPatients.map((patient) => (
-              <div key={patient.id} className="patient-card">
-                <div className="patient-card-header">
-                  <div className="patient-avatar">
-                    {patient.nombre.charAt(0)}{patient.apellido.charAt(0)}
-                  </div>
-                  <div className="patient-info">
-                    <h3 className="patient-name">{patient.nombre} {patient.apellido}</h3>
-                    <p className="patient-email">{patient.email}</p>
-                    {patient.enfermedad && (
-                      <p className="patient-disease">🏥 {patient.enfermedad}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))
+            <p className="manage-patients-subtitle">
+              Total: {patients.length} pacientes
+            </p>
+
+            {/* Search & Filter */}
+            <SearchFilter
+              searchValue={searchTerm}
+              onSearchChange={setSearchTerm}
+              onSearchSubmit={() => setCurrentPage(1)}
+              filterOptions={[
+                {
+                  name: 'enfermedad',
+                  label: 'Enfermedad',
+                  type: 'select',
+                  options: getUniqueEnfermedades().map(e => ({ label: e, value: e })),
+                  value: filterEnfermedad
+                }
+              ]}
+              onFilterChange={(name, value) => {
+                if (name === 'enfermedad') setFilterEnfermedad(value as string);
+              }}
+              onApplyFilters={() => setCurrentPage(1)}
+              onClearFilters={handleClearFilters}
+              isDarkMode={isDarkMode}
+              placeholder="Buscar pacientes por nombre, apellido o email..."
+            />
+          </div>
+
+          {/* Data Grid */}
+          <DataGrid
+            items={dataGridItems}
+            isDarkMode={isDarkMode}
+            columns={3}
+            emptyMessage="No hay pacientes disponibles"
+          />
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              itemsPerPage={ITEMS_PER_PAGE}
+              totalItems={filtrados.length}
+              isDarkMode={isDarkMode}
+            />
           )}
         </div>
-      </div>
+      </PageTransition>
     </Layout>
   );
 };

@@ -27,6 +27,7 @@ interface PatientData {
         presionSistolica?: number;
         presionDiastolica?: number;
         glucosa?: number;
+        colesterol?: number;  // ✅ Colesterol (para Colesterol alto)
         peso?: number;
         ejercicioMinutos?: number;  // ✅ Minutos de ejercicio
         calorias?: number;
@@ -331,7 +332,7 @@ const PatientProfile: React.FC = () => {
                                                 <span className="metric-value">{latestHealth.glucosa} mg/dL</span>
                                             </div>
                                         )}
-                                        {/* Obesidad - Mostrar peso y presión */}
+                                        {/* Obesidad - Mostrar peso */}
                                         {patient.enfermedad === 'Obesidad' && (
                                             <>
                                                 {latestHealth.peso && (
@@ -340,27 +341,15 @@ const PatientProfile: React.FC = () => {
                                                         <span className="metric-value">{latestHealth.peso} kg</span>
                                                     </div>
                                                 )}
-                                                {latestHealth.presionSistolica && latestHealth.presionDiastolica && (
-                                                    <div className="metric">
-                                                        <span className="metric-label">Presión Arterial</span>
-                                                        <span className="metric-value">{latestHealth.presionSistolica}/{latestHealth.presionDiastolica} mmHg</span>
-                                                    </div>
-                                                )}
                                             </>
                                         )}
-                                        {/* Colesterol alto - Mostrar glucosa y presión */}
+                                        {/* Colesterol alto - Mostrar colesterol */}
                                         {patient.enfermedad === 'Colesterol alto' && (
                                             <>
-                                                {latestHealth.glucosa && (
+                                                {latestHealth.colesterol && (
                                                     <div className="metric">
-                                                        <span className="metric-label">Glucosa</span>
-                                                        <span className="metric-value">{latestHealth.glucosa} mg/dL</span>
-                                                    </div>
-                                                )}
-                                                {latestHealth.presionSistolica && latestHealth.presionDiastolica && (
-                                                    <div className="metric">
-                                                        <span className="metric-label">Presión Arterial</span>
-                                                        <span className="metric-value">{latestHealth.presionSistolica}/{latestHealth.presionDiastolica} mmHg</span>
+                                                        <span className="metric-label">Colesterol</span>
+                                                        <span className="metric-value">{latestHealth.colesterol} mg/dL</span>
                                                     </div>
                                                 )}
                                             </>
@@ -568,39 +557,23 @@ const PatientProfile: React.FC = () => {
                                                             </div>
                                                         </th>
                                                     )}
-                                                    {/* Obesidad - peso y presión */}
+                                                    {/* Obesidad - solo peso */}
                                                     {patient.enfermedad === 'Obesidad' && (
-                                                        <>
-                                                            <th onClick={() => handleSort('peso')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
-                                                                    Peso (kg)
-                                                                    {sortColumn === 'peso' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
-                                                                </div>
-                                                            </th>
-                                                            <th onClick={() => handleSort('presion')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
-                                                                    Presión Arterial
-                                                                    {sortColumn === 'presion' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
-                                                                </div>
-                                                            </th>
-                                                        </>
+                                                        <th onClick={() => handleSort('peso')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                                                                Peso (kg)
+                                                                {sortColumn === 'peso' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                                            </div>
+                                                        </th>
                                                     )}
-                                                    {/* Colesterol alto - glucosa y presión */}
+                                                    {/* Colesterol alto - solo colesterol */}
                                                     {patient.enfermedad === 'Colesterol alto' && (
-                                                        <>
-                                                            <th onClick={() => handleSort('glucosa')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
-                                                                    Glucosa (mg/dL)
-                                                                    {sortColumn === 'glucosa' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
-                                                                </div>
-                                                            </th>
-                                                            <th onClick={() => handleSort('presion')} style={{ cursor: 'pointer', userSelect: 'none' }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
-                                                                    Presión Arterial
-                                                                    {sortColumn === 'presion' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
-                                                                </div>
-                                                            </th>
-                                                        </>
+                                                        <th onClick={() => handleSort('colesterol')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                                                                Colesterol (mg/dL)
+                                                                {sortColumn === 'colesterol' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                                            </div>
+                                                        </th>
                                                     )}
                                                     {/* Columnas para todas las enfermedades */}
                                                     <th onClick={() => handleSort('ejercicio')} style={{ cursor: 'pointer', userSelect: 'none' }}>
@@ -649,29 +622,15 @@ const PatientProfile: React.FC = () => {
                                                             )}
                                                             {/* Obesidad */}
                                                             {patient.enfermedad === 'Obesidad' && (
-                                                                <>
-                                                                    <td style={{ fontSize: '1.05rem' }}>
-                                                                        {registro.peso ? <><strong style={{ color: '#5B65DC' }}>{registro.peso}</strong> kg</> : <span style={{ color: '#9ca3af' }}>-</span>}
-                                                                    </td>
-                                                                    <td style={{ fontSize: '1.05rem' }}>
-                                                                        {registro.presionSistolica && registro.presionDiastolica
-                                                                            ? <><strong style={{ color: '#5B65DC' }}>{registro.presionSistolica}</strong>/<strong style={{ color: '#5B65DC' }}>{registro.presionDiastolica}</strong></>
-                                                                            : <span style={{ color: '#9ca3af' }}>-</span>}
-                                                                    </td>
-                                                                </>
+                                                                <td style={{ fontSize: '1.05rem' }}>
+                                                                    {registro.peso ? <><strong style={{ color: '#5B65DC' }}>{registro.peso}</strong> kg</> : <span style={{ color: '#9ca3af' }}>-</span>}
+                                                                </td>
                                                             )}
                                                             {/* Colesterol alto */}
                                                             {patient.enfermedad === 'Colesterol alto' && (
-                                                                <>
-                                                                    <td style={{ fontSize: '1.05rem' }}>
-                                                                        {registro.glucosa ? <><strong style={{ color: '#5B65DC' }}>{registro.glucosa}</strong> mg/dL</> : <span style={{ color: '#9ca3af' }}>-</span>}
-                                                                    </td>
-                                                                    <td style={{ fontSize: '1.05rem' }}>
-                                                                        {registro.presionSistolica && registro.presionDiastolica
-                                                                            ? <><strong style={{ color: '#5B65DC' }}>{registro.presionSistolica}</strong>/<strong style={{ color: '#5B65DC' }}>{registro.presionDiastolica}</strong></>
-                                                                            : <span style={{ color: '#9ca3af' }}>-</span>}
-                                                                    </td>
-                                                                </>
+                                                                <td style={{ fontSize: '1.05rem' }}>
+                                                                    {registro.colesterol ? <><strong style={{ color: '#5B65DC' }}>{registro.colesterol}</strong> mg/dL</> : <span style={{ color: '#9ca3af' }}>-</span>}
+                                                                </td>
                                                             )}
                                                             {/* Columnas para todas las enfermedades */}
                                                             <td style={{ fontSize: '1.05rem', textAlign: 'center' }}>

@@ -25,12 +25,13 @@
 .modal-content {
   background-color: #ffffff;
   border-radius: 0.75rem;
-  max-width: 500px;
+  max-width: 350px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   animation: slideIn 0.2s ease-out;
+  padding: 0.625rem;
 }
 
 @keyframes slideIn {
@@ -52,7 +53,7 @@ html.dark .modal-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.5rem;
+  padding: 0.625rem 0.625rem 0.625rem 0.625rem;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -61,7 +62,7 @@ html.dark .modal-header {
 }
 
 .modal-title {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: #122056;
   margin: 0;
@@ -99,5 +100,5 @@ html.dark .modal-close:hover {
 }
 
 .modal-body {
-  padding: 1.5rem;
+  padding: 0.625rem;
 }

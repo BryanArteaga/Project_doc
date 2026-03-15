@@ -101,7 +101,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         onClose={() => setShowLogoutModal(false)}
         title="Cerrar sesión"
       >
-        <div style={{ padding: '1rem 0' }}>
+        <div style={{ padding: '0' }}>
           <p style={{ fontSize: '1rem', marginBottom: '1.5rem', color: '#64748b', textAlign: 'center' }}>
             ¿Está seguro que desea cerrar sesión?
           </p>
@@ -112,7 +112,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 backgroundColor: '#5B65DC',
                 color: '#ffffff',
                 border: 'none',
-                padding: '0.5rem 1.5rem',
+                padding: '0.5rem 1rem',
                 borderRadius: '0.5rem',
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -130,7 +130,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 backgroundColor: '#64748b',
                 color: '#ffffff',
                 border: 'none',
-                padding: '0.5rem 1.5rem',
+                padding: '0.5rem 1rem',
                 borderRadius: '0.5rem',
                 fontWeight: 600,
                 cursor: 'pointer',

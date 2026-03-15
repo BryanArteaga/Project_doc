@@ -20,6 +20,7 @@ const ViewPatients = lazy(() => import('./pages/ViewPatients'));
 const PatientProfile = lazy(() => import('./pages/PatientProfile'));
 const AuditLogs = lazy(() => import('./pages/AuditLogs/AuditLogs'));
 const GestionEjercicios = lazy(() => import('./pages/ManageExercise'));
+const GestionConsejos = lazy(() => import('./pages/ManagementCouncils'));
 
 // Componente para proteger rutas que requieren autenticación
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -122,6 +123,15 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <GestionEjercicios />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/dashboard/gestion-consejos"
+        element={
+          <ProtectedRoute>
+            <GestionConsejos />
           </ProtectedRoute>
         }
       />

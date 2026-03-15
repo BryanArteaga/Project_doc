@@ -23,6 +23,8 @@ html.dark .layout-container {
   border-bottom: 1px solid #EEEFFD;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-sizing: border-box;
+  position: relative;
+  z-index: 2000;
 }
 
 html.dark .layout-header {
