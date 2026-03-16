@@ -22,6 +22,7 @@ model Doctor {
   actualizadoEn  DateTime  @updatedAt
   pacientes      Usuario[] @relation("DoctorPacientes")
   asignaciones   AsignacionEjercicio[]
+  notas          NotaMedica[] @relation("NotasDelDoctor")
 
   @@index([cedula], map: "idx_doctor_cedula")
   @@index([email], map: "idx_doctor_email")
@@ -60,6 +61,7 @@ model Usuario {
   registrosSalud        RegistroSalud[]
   asignaciones          AsignacionEjercicio[] @relation("AsignacionesRecibidas")
   doctorAsignado        Doctor?               @relation("DoctorPacientes", fields: [idDoctorAsignado], references: [id])
+  notas                 NotaMedica[] @relation("NotasDelPaciente")
 
   @@index([estadoCuenta])
   @@index([idDoctorAsignado])
@@ -213,6 +215,21 @@ model ConfiguracionSistema {
 
   @@index([clave])
   @@map("configuracion_sistema")
+}
+
+model NotaMedica {
+  id            Int       @id @default(autoincrement())
+  pacienteId    Int
+  doctorId      Int
+  contenido     String
+  fecha         DateTime  @default(now())
+  actualizadoEn DateTime  @updatedAt
+  paciente      Usuario   @relation("NotasDelPaciente", fields: [pacienteId], references: [id], onDelete: Cascade)
+  doctor        Doctor    @relation("NotasDelDoctor", fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([pacienteId, fecha])
+  @@index([doctorId])
+  @@map("notas_medicas")
 }
 
 enum StaffRole {

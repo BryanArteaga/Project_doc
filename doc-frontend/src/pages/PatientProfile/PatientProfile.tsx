@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../../components/common/Layout/Layout';
 import Loading from '../../components/common/Loading';
 import PageTransition from '../../components/common/PageTransition';
+import MedicalNotes from '../../components/common/MedicalNotes';
 import { ArrowLeft, User, Activity, TrendingUp, Calendar, ChevronDown, ChevronUp, ArrowUp, ArrowDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
@@ -392,6 +393,24 @@ const PatientProfile: React.FC = () => {
                                     return porDia.size > 0 ? Math.round(totalMinutos / porDia.size) : 0;
                                 };
 
+                                // ✅ Calcular promedio diario de calorías (agrupando por fecha)
+                                const calcularPromedioDiarioCalorias = (registros: typeof calorias) => {
+                                    if (registros.length === 0) return 0;
+                                    
+                                    // Agrupar por fecha
+                                    const porDia = new Map<string, number>();
+                                    registros.forEach(r => {
+                                        const fecha = r.registradoEn ? new Date(r.registradoEn).toISOString().split('T')[0] : '';
+                                        if (fecha) {
+                                            porDia.set(fecha, (porDia.get(fecha) || 0) + (r.calorias || 0));
+                                        }
+                                    });
+                                    
+                                    // Promedio = suma total / número de días
+                                    const totalCalorias = Array.from(porDia.values()).reduce((a, b) => a + b, 0);
+                                    return porDia.size > 0 ? Math.round(totalCalorias / porDia.size) : 0;
+                                };
+
                                 return (
                                     <div className="stats-section">
                                         <div className="section-header-static">
@@ -481,7 +500,7 @@ const PatientProfile: React.FC = () => {
                                                 </div>
                                                 <div className="stat-compact-item">
                                                     <div className="stat-compact-label">Promedio/día</div>
-                                                    <div className="stat-compact-value">{calcularPromedioDiario(calorias as typeof ejercicios)}</div>
+                                                    <div className="stat-compact-value">{calcularPromedioDiarioCalorias(calorias)}</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -731,7 +750,8 @@ const PatientProfile: React.FC = () => {
                             </div>
                         )}
                     </div>
-                </div>
+                    {/* Notas Médicas */}
+                    {data && <MedicalNotes pacienteId={data.id} />}                </div>
             </PageTransition>
         </Layout>
     );

@@ -16,8 +16,10 @@ const INTENSIDADES: Intensidad[] = ['Baja', 'Media', 'Alta'];
 const ITEMS_PER_PAGE = 12;
 
 interface FormData extends CreateEjercicioRequest {
-  duracionMinutos: number;
-  duracionSegundos: number;
+  duracionMinutos: number | '';
+  duracionSegundos: number | '';
+  series: number | '';
+  descansoEntreSeries: number | '';
 }
 
 interface PacienteAsignado {
@@ -178,9 +180,10 @@ const GestionEjercicios: React.FC = () => {
 
     if (!formData.nombre.trim()) errors.nombre = 'El nombre es requerido';
     if (!(formData.descripcion ?? '').trim()) errors.descripcion = 'La descripción es requerida';
+    if (formData.duracionMinutos === '' || formData.duracionSegundos === '') errors.duracion = 'La duración es requerida';
     if (formData.duracion <= 0) errors.duracion = 'La duración debe ser mayor a 0';
-    if (formData.series < 1) errors.series = 'Las series deben ser al menos 1';
-    if (formData.descansoEntreSeries < 0) errors.descansoEntreSeries = 'El descanso no puede ser negativo';
+    if (formData.series === '' || formData.series < 1) errors.series = 'Las series deben ser al menos 1';
+    if (formData.descansoEntreSeries === '' || formData.descansoEntreSeries < 0) errors.descansoEntreSeries = 'El descanso no puede ser negativo';
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -238,15 +241,17 @@ const GestionEjercicios: React.FC = () => {
 
     try {
       setIsSubmitting(true);
-      const duracionSegundos = (formData.duracionMinutos * 60) + formData.duracionSegundos;
+      const minutos = typeof formData.duracionMinutos === 'number' ? formData.duracionMinutos : 0;
+      const segundos = typeof formData.duracionSegundos === 'number' ? formData.duracionSegundos : 0;
+      const duracionSegundos = (minutos * 60) + segundos;
 
       const dataToSend = {
         nombre: formData.nombre.trim(),
         descripcion: (formData.descripcion ?? '').trim() || undefined,
         duracion: duracionSegundos,
         intensidad: formData.intensidad,
-        series: formData.series,
-        descansoEntreSeries: formData.descansoEntreSeries,
+        series: typeof formData.series === 'number' ? formData.series : 1,
+        descansoEntreSeries: typeof formData.descansoEntreSeries === 'number' ? formData.descansoEntreSeries : 0,
         enfermedad: formData.enfermedad
       };
 
@@ -503,128 +508,140 @@ const GestionEjercicios: React.FC = () => {
             submitLabel={editingId ? 'Actualizar' : 'Crear'}
             isDarkMode={isDarkMode}
           >
-            {/* Nombre */}
-            <div className="form-group">
-              <label htmlFor="nombre">Nombre *</label>
-              <input
-                id="nombre"
-                type="text"
-                value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                className="form-input"
-                placeholder="Nombre del ejercicio"
-              />
-              {formErrors.nombre && <span className="error-message">{formErrors.nombre}</span>}
-            </div>
+            <div className="form-columns">
+              {/* COLUMNA IZQUIERDA */}
+              <div className="form-columns-left">
+                {/* Nombre */}
+                <div className="form-group">
+                  <label htmlFor="nombre">Nombre *</label>
+                  <input
+                    id="nombre"
+                    type="text"
+                    value={formData.nombre}
+                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                    className="form-input"
+                    placeholder="Nombre del ejercicio"
+                  />
+                  {formErrors.nombre && <span className="error-message">{formErrors.nombre}</span>}
+                </div>
 
-            {/* Descripción */}
-            <div className="form-group">
-              <label htmlFor="descripcion">Descripción *</label>
-              <textarea
-                id="descripcion"
-                value={formData.descripcion}
-                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                className="form-textarea"
-                placeholder="Describe el ejercicio..."
-                rows={3}
-              />
-              {formErrors.descripcion && <span className="error-message">{formErrors.descripcion}</span>}
-            </div>
+                {/* Descripción */}
+                <div className="form-group">
+                  <label htmlFor="descripcion">Descripción *</label>
+                  <textarea
+                    id="descripcion"
+                    value={formData.descripcion}
+                    onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                    className="form-textarea"
+                    placeholder="Describe el ejercicio..."
+                    rows={3}
+                  />
+                  {formErrors.descripcion && <span className="error-message">{formErrors.descripcion}</span>}
+                </div>
 
-            {/* Duración */}
-            <div className="form-group">
-              <label htmlFor="duracion">Duración (MM:SS) *</label>
-              <div className="duration-input">
-                <input
-                  type="number"
-                  value={formData.duracionMinutos}
-                  onChange={(e) => {
-                    const mins = parseInt(e.target.value) || 0;
-                    setFormData({ ...formData, duracionMinutos: mins, duracion: (mins * 60) + formData.duracionSegundos });
-                  }}
-                  min="0"
-                  max="999"
-                  className="form-input"
-                  placeholder="MM"
-                />
-                <span>:</span>
-                <input
-                  type="number"
-                  value={formData.duracionSegundos}
-                  onChange={(e) => {
-                    const secs = Math.min(parseInt(e.target.value) || 0, 59);
-                    setFormData({ ...formData, duracionSegundos: secs, duracion: (formData.duracionMinutos * 60) + secs });
-                  }}
-                  min="0"
-                  max="59"
-                  className="form-input"
-                  placeholder="SS"
-                />
+                {/* Enfermedad */}
+                <div className="form-group">
+                  <label htmlFor="enfermedad">Enfermedad *</label>
+                  <select
+                    id="enfermedad"
+                    value={formData.enfermedad}
+                    onChange={(e) => setFormData({ ...formData, enfermedad: e.target.value as Enfermedad })}
+                    className="form-input"
+                  >
+                    {ENFERMEDADES.map(e => <option key={e} value={e}>{e}</option>)}
+                  </select>
+                </div>
+
+                {/* Intensidad */}
+                <div className="form-group">
+                  <label htmlFor="intensidad">Intensidad *</label>
+                  <select
+                    id="intensidad"
+                    value={formData.intensidad}
+                    onChange={(e) => setFormData({ ...formData, intensidad: e.target.value as Intensidad })}
+                    className="form-input"
+                  >
+                    {INTENSIDADES.map(i => <option key={i} value={i}>{i}</option>)}
+                  </select>
+                </div>
               </div>
-            </div>
 
-            {/* Intensidad */}
-            <div className="form-group">
-              <label htmlFor="intensidad">Intensidad *</label>
-              <select
-                id="intensidad"
-                value={formData.intensidad}
-                onChange={(e) => setFormData({ ...formData, intensidad: e.target.value as Intensidad })}
-                className="form-input"
-              >
-                {INTENSIDADES.map(i => <option key={i} value={i}>{i}</option>)}
-              </select>
-            </div>
+              {/* COLUMNA DERECHA */}
+              <div className="form-columns-right">
+                {/* Imagen */}
+                <div className="form-group">
+                  <label htmlFor="imagen">Imagen</label>
+                  <input
+                    id="imagen"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                    className="form-input"
+                  />
+                </div>
 
-            {/* Enfermedad */}
-            <div className="form-group">
-              <label htmlFor="enfermedad">Enfermedad *</label>
-              <select
-                id="enfermedad"
-                value={formData.enfermedad}
-                onChange={(e) => setFormData({ ...formData, enfermedad: e.target.value as Enfermedad })}
-                className="form-input"
-              >
-                {ENFERMEDADES.map(e => <option key={e} value={e}>{e}</option>)}
-              </select>
-            </div>
+                {/* Duración */}
+                <div className="form-group">
+                  <label htmlFor="duracion">Duración (MM:SS) *</label>
+                  <div className="duration-input">
+                    <input
+                      type="number"
+                      value={formData.duracionMinutos}
+                      onChange={(e) => {
+                        const mins = e.target.value === '' ? '' : parseInt(e.target.value);
+                        const minVal = typeof mins === 'number' ? mins * 60 : 0;
+                        const secVal = typeof formData.duracionSegundos === 'number' ? formData.duracionSegundos : 0;
+                        setFormData({ ...formData, duracionMinutos: mins, duracion: minVal + secVal });
+                      }}
+                      min="0"
+                      max="999"
+                      className="form-input"
+                      placeholder="MM"
+                    />
+                    <span>:</span>
+                    <input
+                      type="number"
+                      value={formData.duracionSegundos}
+                      onChange={(e) => {
+                        const secs = e.target.value === '' ? '' : Math.min(parseInt(e.target.value), 59);
+                        const secVal = typeof secs === 'number' ? secs : 0;
+                        const minVal = typeof formData.duracionMinutos === 'number' ? formData.duracionMinutos * 60 : 0;
+                        setFormData({ ...formData, duracionSegundos: secs, duracion: minVal + secVal });
+                      }}
+                      min="0"
+                      max="59"
+                      className="form-input"
+                      placeholder="SS"
+                    />
+                  </div>
+                </div>
 
-            {/* Series y Descanso */}
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="series">Series *</label>
-                <input
-                  id="series"
-                  type="number"
-                  value={formData.series}
-                  onChange={(e) => setFormData({ ...formData, series: parseInt(e.target.value) || 1 })}
-                  min="1"
-                  className="form-input"
-                />
+                {/* Series */}
+                <div className="form-group">
+                  <label htmlFor="series">Series *</label>
+                  <input
+                    id="series"
+                    type="number"
+                    value={formData.series}
+                    onChange={(e) => setFormData({ ...formData, series: e.target.value === '' ? '' : parseInt(e.target.value) })}
+                    min="1"
+                    className="form-input"
+                  />
+                </div>
+
+                {/* Descanso */}
+                <div className="form-group">
+                  <label htmlFor="descanso">Descanso (seg) *</label>
+                  <input
+                    id="descanso"
+                    type="number"
+                    value={formData.descansoEntreSeries}
+                    onChange={(e) => setFormData({ ...formData, descansoEntreSeries: e.target.value === '' ? '' : Math.max(0, parseInt(e.target.value)) })}
+                    min="0"
+                    className="form-input"
+                  />
+                </div>
               </div>
-              <div className="form-group">
-                <label htmlFor="descanso">Descanso (seg) *</label>
-                <input
-                  id="descanso"
-                  type="number"
-                  value={formData.descansoEntreSeries}
-                  onChange={(e) => setFormData({ ...formData, descansoEntreSeries: Math.max(0, parseInt(e.target.value) || 0) })}
-                  min="0"
-                  className="form-input"
-                />
-              </div>
-            </div>
-
-            {/* Imagen */}
-            <div className="form-group">
-              <label htmlFor="imagen">Imagen</label>
-              <input
-                id="imagen"
-                type="file"
-                accept="image/*"
-                onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                className="form-input"
-              />
             </div>
           </CRUDModal>
 

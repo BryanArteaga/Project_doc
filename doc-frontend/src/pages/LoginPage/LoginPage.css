@@ -1,19 +1,41 @@
 .login-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  position: relative;
 }
 
-html.dark .login-container {
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/backgrounds/login-light.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(5.5px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+html.dark .login-container::before {
+  background-image: url('/backgrounds/login-dark.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(5.5px);
 }
 
 .login-wrapper {
   max-width: 26rem;
   width: 100%;
+  position: relative;
+  z-index: 10;
 }
 
 .login-logo-section {
@@ -49,13 +71,17 @@ html.dark .login-logo svg {
 .login-title {
   font-size: 2rem;
   font-weight: 700;
-  color: white;
+  color: #1f2937;
   margin-bottom: 0.5rem;
   letter-spacing: -0.025em;
 }
 
+html.dark .login-title {
+  color: white;
+}
+
 .login-subtitle {
-  color: rgba(255, 255, 255, 0.9);
+  color: #374151;
   font-size: 0.875rem;
   margin-top: 0.5rem;
 }
@@ -242,7 +268,7 @@ html.dark .login-help-text {
   text-align: center;
   margin-top: 1.5rem;
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: #4b5563;
 }
 
 html.dark .login-footer {

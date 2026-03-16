@@ -7,11 +7,12 @@
   padding: 2rem;
   max-width: 1400px;
   margin: 0 auto;
+  background-color: transparent;
 }
 
 html.dark .gestion-ejercicios-page,
 html.dark .gestion-ejercicios-page {
-  background-color: #0f172a ;
+  background-color: transparent;
   color: #e0e0e0;
 }
 
@@ -112,8 +113,9 @@ html.dark .back-button:hover {
 }
 
 .duration-input input {
-  flex: 1;
-  max-width: 80px;
+  flex: 0 0 auto;
+  width: 75px;
+  max-width: 75px;
 }
 
 .duration-input span {
@@ -132,7 +134,31 @@ html.dark .duration-input span {
    ============================================================ */
 
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ============================================================
+   FORM COLUMNS - TWO COLUMN LAYOUT
+   ============================================================ */
+
+.form-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.form-columns-left,
+.form-columns-right {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .form-columns {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
 }
 
 .form-group label {
@@ -227,15 +253,16 @@ html.dark .error-message {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 9999;
+  min-height: 100vh;
 }
 
 .crud-modal-container {
   background: white;
   border-radius: 0.75rem;
   box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
-  width: 90%;
-  max-width: 600px;
+  width: 95%;
+  max-width: 1100px;
   max-height: 90vh;
   overflow-y: auto;
 }

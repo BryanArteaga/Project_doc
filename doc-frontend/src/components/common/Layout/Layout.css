@@ -3,16 +3,39 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  background-color: #FAFAFD !important;
   color: #122056;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   scrollbar-gutter: stable;
   box-sizing: border-box;
+  position: relative;
+}
+
+.layout-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/backgrounds/pages-light.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(2.5px);
+  pointer-events: none;
+  z-index: 0;
 }
 
 html.dark .layout-container {
-  background-color: #0f172a !important;
   color: #f1f5f9;
+}
+
+html.dark .layout-container::before {
+  background-image: url('/backgrounds/pages-dark.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(2.5px);
 }
 
 .layout-header {
@@ -196,6 +219,8 @@ html.dark .layout-action-btn-logout:hover {
   width: 100%;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
 .layout-footer {

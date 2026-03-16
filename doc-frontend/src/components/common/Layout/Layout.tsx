@@ -27,7 +27,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   if (loggingOut) {
-    return <Loading message="Cerrando sesión..." />;
+    return <Loading message="Cerrando sesión..." fullScreen />;
   }
 
   return (

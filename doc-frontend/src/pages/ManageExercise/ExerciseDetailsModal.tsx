@@ -173,9 +173,7 @@ const ExerciseDetailsModal: React.FC<ExerciseDetailsModalProps> = ({
                     />
                   </div>
                 )}
-                <div className="header-content">
-                  <h2>{ejercicio.nombre}</h2>
-                </div>
+
               </div>
 
               {/* Basic Details Section */}

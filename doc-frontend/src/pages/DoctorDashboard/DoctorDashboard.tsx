@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import Layout from '../../components/common/Layout/Layout';
 import Loading from '../../components/common/Loading';
 import PageTransition from '../../components/common/PageTransition';
+import { getCache, setCache } from '../../utils/cache';
 import './DoctorDashboard.css';
 
 const DoctorDashboard: React.FC = () => {
@@ -20,7 +21,21 @@ const DoctorDashboard: React.FC = () => {
     if (!isAuthenticated) {
       return;
     }
-    loadData();
+    
+    // Intentar cargar del caché primero
+    const cachedStats = getCache<DashboardStats>('doctor_dashboard_stats');
+    
+    if (cachedStats) {
+      // Si hay caché válido, mostrar esos datos inmediatamente
+      setStats(cachedStats);
+      setLoading(false);
+      
+      // Hacer una carga silenciosa en background para actualizar
+      loadDataSilent();
+    } else {
+      // Si no hay caché, mostrar loading y cargar del servidor
+      loadData();
+    }
   }, [isAuthenticated]);
 
   const loadData = async () => {
@@ -28,6 +43,8 @@ const DoctorDashboard: React.FC = () => {
       setLoading(true);
       const statsData = await doctorService.getStats();
       setStats(statsData);
+      // Guardar en caché por 30 minutos
+      setCache('doctor_dashboard_stats', statsData, 30);
     } catch (error: any) {
       console.error('Error al cargar datos:', error);
       if (error.response?.status === 401) {
@@ -37,6 +54,17 @@ const DoctorDashboard: React.FC = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadDataSilent = async () => {
+    try {
+      const statsData = await doctorService.getStats();
+      setStats(statsData);
+      // Actualizar caché
+      setCache('doctor_dashboard_stats', statsData, 30);
+    } catch (error: any) {
+      console.warn('Error al actualizar datos en background:', error.message);
     }
   };
 

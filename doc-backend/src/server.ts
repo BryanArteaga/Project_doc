@@ -14,6 +14,7 @@ import doctorRoutes from './routes/doctor.routes';
 import syncRoutes from './routes/sync.routes';
 import notificationRoutes from './routes/notification.routes';
 import uploadRoutes from './routes/upload.routes';
+import notaMedicaRoutes from './routes/notaMedica.routes';
 import { prisma } from './lib/prisma';
 import { initializeFirebase } from './config/firebase';
 import { NotificationScheduler } from './services/notification-scheduler';
@@ -132,6 +133,7 @@ app.use('/api/doctor', doctorRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/notas-medicas', notaMedicaRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

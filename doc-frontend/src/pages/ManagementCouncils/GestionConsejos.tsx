@@ -20,9 +20,15 @@ const GestionConsejos: React.FC = () => {
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
 
-  // Search & Filter states
-  const [searchTerm, setSearchTerm] = useState('');
+  // Search & Filter states - Input en vivo
+  const [searchInput, setSearchInput] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');   // búsqueda aplicada (on-demand)
+  
+  // Filtro pendiente (siendo editado)
+  const [filterEnfermedad_temp, setFilterEnfermedad_temp] = useState<Enfermedad | ''>('');
+  // Filtro aplicado
   const [filterEnfermedad, setFilterEnfermedad] = useState<Enfermedad | ''>('');
 
   // Form states
@@ -67,29 +73,27 @@ const GestionConsejos: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
+  // Cargar consejos cuando cambia el filtro de enfermedad aplicado
   useEffect(() => {
-    loadConsejos(1);
+    loadConsejos();
   }, [filterEnfermedad]);
 
+  // Aplicar filtros de búsqueda cuando cambian los consejos o el término de búsqueda
   useEffect(() => {
     aplicarFiltros();
   }, [consejos, searchTerm]);
 
-  const loadConsejos = async (page: number = 1) => {
+  const loadConsejos = async () => {
     try {
       setLoading(true);
-      const limit = searchTerm ? 9999 : ITEMS_PER_PAGE;
-      const actualPage = searchTerm ? 1 : page;
-
       const datos = await consejoService.listarConsejos({
-        page: actualPage,
-        limit,
+        page: 1,
+        limit: 9999,
         enfermedad: filterEnfermedad || undefined
       });
 
       setConsejos(datos.consejos);
-      setTotalPages(searchTerm ? 1 : datos.paginacion.totalPaginas);
-      setCurrentPage(actualPage);
+      setCurrentPage(1);
     } catch (error: any) {
       console.error('Error al cargar consejos:', error);
       toast.error('Error al cargar consejos');
@@ -109,6 +113,7 @@ const GestionConsejos: React.FC = () => {
     }
 
     setFiltrados(resultado);
+    setTotalPages(Math.ceil(resultado.length / ITEMS_PER_PAGE));
   };
 
   const validateForm = (): boolean => {
@@ -162,7 +167,7 @@ const GestionConsejos: React.FC = () => {
         toast.success('Consejo creado');
       }
 
-      loadConsejos(1);
+      loadConsejos();
       setShowModal(false);
       setShowConfirmSave(false);
       setEditingId(null);
@@ -196,7 +201,7 @@ const GestionConsejos: React.FC = () => {
       try {
         await consejoService.eliminarConsejo(id);
         toast.success('Consejo eliminado');
-        loadConsejos(1);
+        loadConsejos();
       } catch (error: any) {
         toast.error('Error al eliminar consejo');
       }
@@ -222,12 +227,27 @@ const GestionConsejos: React.FC = () => {
     }
   };
 
-  const handleClearFilters = () => {
-    setSearchTerm('');
-    setFilterEnfermedad('');
+  const handleSearch = () => {
+    setSearchLoading(true);
+    setSearchTerm(searchInput);
+    setCurrentPage(1);
+    setTimeout(() => setSearchLoading(false), 300);
   };
 
-  if (loading) {
+  const handleApplyFilters = () => {
+    setFilterEnfermedad(filterEnfermedad_temp);
+    setCurrentPage(1);
+  };
+
+  const handleClearFilters = () => {
+    setSearchInput('');
+    setSearchTerm('');
+    setFilterEnfermedad_temp('');
+    setFilterEnfermedad('');
+    setCurrentPage(1);
+  };
+
+  if (loading || searchLoading) {
     return (
       <Layout>
         <Loading message="Cargando consejos..." fullHeight />
@@ -235,7 +255,11 @@ const GestionConsejos: React.FC = () => {
     );
   }
 
-  const dataGridItems = filtrados.map(consejo => {
+  // Calcular paginación
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedConsejos = filtrados.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const dataGridItems = paginatedConsejos.map(consejo => {
     const enfermedadColor = getEnfermedadColor(consejo.enfermedad);
     return {
       id: consejo.id,
@@ -284,20 +308,22 @@ const GestionConsejos: React.FC = () => {
 
             {/* Search & Filter */}
             <SearchFilter
-              searchValue={searchTerm}
-              onSearchChange={setSearchTerm}
-              onSearchSubmit={() => loadConsejos(1)}
+              searchValue={searchInput}
+              onSearchChange={setSearchInput}
+              onSearchSubmit={handleSearch}
               filterOptions={[
                 {
                   name: 'enfermedad',
                   label: 'Enfermedad',
                   type: 'select',
                   options: ENFERMEDADES.map(e => ({ label: e, value: e })),
-                  value: filterEnfermedad
+                  value: filterEnfermedad_temp
                 }
               ]}
-              onFilterChange={(name, value) => setFilterEnfermedad(value as Enfermedad | '')}
-              onApplyFilters={() => loadConsejos(1)}
+              onFilterChange={(name, value) => {
+                if (name === 'enfermedad') setFilterEnfermedad_temp(value as Enfermedad | '');
+              }}
+              onApplyFilters={handleApplyFilters}
               onClearFilters={handleClearFilters}
               isDarkMode={isDarkMode}
               placeholder="Buscar consejos..."
@@ -326,7 +352,7 @@ const GestionConsejos: React.FC = () => {
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
-              onPageChange={(page) => loadConsejos(page)}
+              onPageChange={(page) => setCurrentPage(page)}
               itemsPerPage={ITEMS_PER_PAGE}
               totalItems={filtrados.length}
               isDarkMode={isDarkMode}
@@ -354,7 +380,6 @@ const GestionConsejos: React.FC = () => {
                 value={formData.enfermedad}
                 onChange={(e) => setFormData({ ...formData, enfermedad: e.target.value as Enfermedad })}
                 className="form-input"
-                disabled={!!editingId}
               >
                 <option value="">Selecciona una enfermedad</option>
                 {ENFERMEDADES.map(e => (
