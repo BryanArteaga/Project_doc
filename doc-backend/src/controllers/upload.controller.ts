@@ -34,7 +34,7 @@ export const uploadEjercicioImagen = async (req: AuthRequest, res: Response) => 
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 8);
     const extension = req.file.mimetype.split('/')[1];
-    const fileName = `ejercicio-${timestamp}-${randomStr}.${extension}`;
+    const fileName = `ejercicio/ejercicio-${timestamp}-${randomStr}.${extension}`;
 
     // Subir archivo a Supabase Storage
     const { data, error } = await supabaseAdmin.storage

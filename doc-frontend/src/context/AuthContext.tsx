@@ -49,19 +49,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         try {
           // Intentar verificar el token con el servidor
-          // Si falla, limpiar la sesión
+          // Pero igual mantener la sesión aunque esto falle
           const { doctor: currentDoctor } = await authService.getCurrentDoctor();
           setToken(savedToken);
           setDoctor(currentDoctor);
           authService.saveDoctorData(currentDoctor);
         } catch (error) {
-          // Token inválido, expirado o servidor no responde correctamente
-          // En todos los casos, limpiar la sesión
-          console.log('Sesión inválida detectada, limpiando...');
-          logError(error as Error, 'Token validation failed during app initialization');
-          authService.removeToken();
-          setToken(null);
-          setDoctor(null);
+          // Si falla la validación, NO limpiar la sesión automáticamente
+          // El token será rechazado cuando se use realmente en otras peticiones (401)
+          // Mantener el token y datos guardados temporalmente
+          console.log('Validación de token falló, pero manteniendo sesión local...');
+          setToken(savedToken);
+          setDoctor(savedDoctor);
+          // No hacer log de error aquí para no generar spam en auditoría
         }
       }
       
@@ -130,8 +130,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       authService.removeToken();
       setToken(null);
       setDoctor(null);
-      setLoggingOut(false);
       toast.success('Sesión cerrada');
+      
+      // Redirigir a login después de limpiar la sesión
+      // Usar setTimeout para asegurar que el estado se actualiza antes
+      setTimeout(() => {
+        setLoggingOut(false);
+        window.location.href = '/login';
+      }, 100);
     }
   };
 

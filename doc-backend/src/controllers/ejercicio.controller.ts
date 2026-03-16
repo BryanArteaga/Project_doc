@@ -19,10 +19,14 @@ export const createEjercicio = async (req: Request, res: Response) => {
       intensidad: z.enum(['Baja', 'Media', 'Alta']),
       series: z.number().min(1),
       descansoEntreSeries: z.number().min(0),
-      enfermedad: z.enum(['Hipertensión', 'Diabetes', 'Obesidad', 'Colesterol alto']),
+      tipo: z.enum(['POR_ENFERMEDAD', 'POR_PACIENTES']).optional().default('POR_ENFERMEDAD'),
+      enfermedad: z.enum(['Hipertensión', 'Diabetes', 'Obesidad', 'Colesterol alto']).optional(),
       urlImagen: z.string().optional().nullable(),
       urlVideo: z.string().optional().nullable()
-    });
+    }).refine(
+      (data) => data.tipo === 'POR_PACIENTES' || data.enfermedad, 
+      { message: 'Enfer medad es requerida para ejercicios "Por Enfermedad"' }
+    );
 
     const validated = schema.parse(req.body);
 
@@ -34,7 +38,8 @@ export const createEjercicio = async (req: Request, res: Response) => {
       intensidad: validated.intensidad,
       series: validated.series,
       descansoEntreSeries: validated.descansoEntreSeries,
-      enfermedad: validated.enfermedad,
+      tipo: validated.tipo || 'POR_ENFERMEDAD',
+      enfermedad: validated.enfermedad || null,
       urlImagen: validated.urlImagen || null,
       urlVideo: validated.urlVideo || null
     };
@@ -103,11 +108,48 @@ export const getEjercicios = async (req: AuthRequest, res: Response) => {
         prisma.ejercicio.count({ where })
       ]);
 
+      // ✅ CARGAR datos de asignaciones para cada ejercicio
+      const ejerciciosConAsignaciones = await Promise.all(
+        ejercicios.map(async (ejercicio: any) => {
+          const asignaciones = await prisma.asignacionEjercicio.findMany({
+            where: {
+              ejercicioId: ejercicio.id,
+              activo: true
+            },
+            include: {
+              usuario: {
+                select: {
+                  id: true,
+                  nombre: true,
+                  apellido: true,
+                  enfermedad: true,
+                  cedula: true
+                }
+              }
+            }
+          });
+
+          return {
+            ...ejercicio,
+            totalAsignados: asignaciones.length,
+            pacientesAsignados: asignaciones
+              .filter((a: any) => a.usuarioId !== null) // Solo individuales
+              .map((a: any) => ({
+                id: a.usuarioId!,
+                nombre: a.usuario?.nombre || '',
+                apellido: a.usuario?.apellido || '',
+                enfermedad: a.usuario?.enfermedad || '',
+                cedula: a.usuario?.cedula
+              }))
+          };
+        })
+      );
+
       const totalPaginas = Math.ceil(total / limit);
 
       console.log('✅ [getEjercicios] Ejercicios encontrados:', ejercicios.length, '/', total);
       return res.json({
-        ejercicios,
+        ejercicios: ejerciciosConAsignaciones,
         paginacion: {
           total,
           pagina: page,
@@ -198,6 +240,7 @@ export const updateEjercicio = async (req: Request, res: Response) => {
       intensidad: z.enum(['Baja', 'Media', 'Alta']).optional(),
       series: z.number().min(1).optional(),
       descansoEntreSeries: z.number().min(0).optional(),
+      tipo: z.enum(['POR_ENFERMEDAD', 'POR_PACIENTES']).optional(),
       enfermedad: z.enum(['Hipertensión', 'Diabetes', 'Obesidad', 'Colesterol alto']).optional(),
       urlImagen: z.string().optional().nullable(),
       urlVideo: z.string().optional().nullable()
@@ -238,6 +281,30 @@ export const deleteEjercicio = async (req: Request, res: Response) => {
       return res.status(400).json({ 
         error: 'No se puede eliminar ejercicio con asignaciones activas. Elimina las asignaciones primero.' 
       });
+    }
+
+    // Obtener el ejercicio para borrar la imagen
+    const ejercicio = await prisma.ejercicio.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (ejercicio) {
+      // Borrar imagen de Supabase Storage si existe
+      if (ejercicio.urlImagen) {
+        try {
+          const { supabaseAdmin } = require('../lib/supabase');
+          // Extraer el path del bucket de la URL
+          const match = ejercicio.urlImagen.match(/ejercicios\/(.+)$/);
+          if (match) {
+            const path = match[1];
+            console.log(`🗑️ Borrando imagen de Supabase: ${path}`);
+            await supabaseAdmin.storage.from('ejercicios').remove([path]);
+          }
+        } catch (storageError: any) {
+          console.warn('⚠️ No se pudo borrar la imagen:', storageError.message);
+          // No fallar por error de storage, continuar con la eliminación
+        }
+      }
     }
 
     await prisma.ejercicio.delete({

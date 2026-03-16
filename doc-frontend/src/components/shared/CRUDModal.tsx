@@ -38,10 +38,10 @@ export const CRUDModal: React.FC<CRUDModalProps> = ({
   children,
   isDarkMode = false,
 }) => {
-  if (!isOpen) return null;
-
-  // Handle ESC key press
+  // Handle ESC key press - SIEMPRE ejecutar el hook, no dentro de condicionales
   React.useEffect(() => {
+    if (!isOpen) return;
+    
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onCancel();
@@ -50,7 +50,9 @@ export const CRUDModal: React.FC<CRUDModalProps> = ({
 
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [onCancel]);
+  }, [isOpen, onCancel]);
+
+  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

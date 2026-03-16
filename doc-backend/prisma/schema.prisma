@@ -101,6 +101,7 @@ model Ejercicio {
   nombre              String
   descripcion         String?
   enfermedad          String?
+  tipo                String                @default("POR_ENFERMEDAD") // POR_ENFERMEDAD | POR_PACIENTES
   duracion            Int?
   intensidad          String?
   imagenResId         Int?

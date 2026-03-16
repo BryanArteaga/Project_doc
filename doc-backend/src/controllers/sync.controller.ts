@@ -258,24 +258,7 @@ export const pull = async (req: Request, res: Response) => {
       registradoEn: r.registradoEn.getTime() // Convertir DateTime a timestamp (milliseconds)
     }));
 
-    // Obtener ejercicios activos para este usuario
-    // (Se obtienen a través de su doctor)
-    const ejercicios = await prisma.ejercicio.findMany({
-      select: {
-        id: true,
-        nombre: true,
-        descripcion: true,
-        intensidad: true,
-        duracion: true,
-        enfermedad: true,
-        series: true,
-        descansoEntreSeries: true,
-        urlImagen: true,
-        urlVideo: true
-      }
-    });
-
-    // ✅ NUEVO: Obtener asignaciones de ejercicios del usuario
+    // Obtener asignaciones PRIMERO para después obtener solo los ejercicios asignados
     // - Directas (usuarioId = usuario.id)
     // - Generales (usuarioId = null AND enfermedad = usuario.enfermedad)
     // - Activas y no expiradas
@@ -308,7 +291,9 @@ export const pull = async (req: Request, res: Response) => {
             series: true,
             intensidad: true,
             urlImagen: true,
-            urlVideo: true
+            urlVideo: true,
+            enfermedad: true,
+            descansoEntreSeries: true
           }
         },
         doctor: {
@@ -322,6 +307,13 @@ export const pull = async (req: Request, res: Response) => {
       },
       orderBy: { fechaAsignacion: 'desc' }
     });
+
+    // 🔧 Extraer SOLO los ejercicios que fueron asignados (sin duplicados)
+    const ejerciciosAsignados = asignaciones.map((a: any) => a.ejercicio);
+    const ejercicioIdsUnicos = new Set(ejerciciosAsignados.map((e: any) => e.id));
+    const ejercicios = Array.from(ejercicioIdsUnicos).map((id: any) => 
+      ejerciciosAsignados.find((e: any) => e.id === id)
+    ).filter(Boolean) as any[];
 
     // 🔧 Mapear asignaciones para convertir timestamp
     const asignacionesMapeadas = asignaciones.map((a: any) => ({

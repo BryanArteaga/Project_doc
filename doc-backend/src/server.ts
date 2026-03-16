@@ -148,11 +148,42 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
 
   // ✅ Inicializar scheduler de notificaciones
   NotificationScheduler.start();
 });
+
+// ============ GRACEFUL SHUTDOWN ============
+import { cleanupPrisma } from './lib/prisma';
+
+const gracefulShutdown = async (signal: string) => {
+  console.log(`\n📡 ${signal} recibido, iniciando shutdown graceful...`);
+  
+  try {
+    // Cerrar servidor
+    server.close(async () => {
+      console.log('✅ Servidor cerrado');
+      
+      // Limpiar recursos de Prisma
+      await cleanupPrisma();
+      
+      process.exit(0);
+    });
+
+    // Timeout de 10 segundos para shutdown forzado
+    setTimeout(() => {
+      console.error('❌ Timeout en shutdown graceful, forzando salida...');
+      process.exit(1);
+    }, 10000);
+  } catch (err) {
+    console.error('❌ Error durante shutdown:', err);
+    process.exit(1);
+  }
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 

@@ -6,7 +6,9 @@ import {
   actualizarAsignacion,
   eliminarAsignacion,
   miasAsignacionesActivas,
-  estadisticasAsignaciones
+  estadisticasAsignaciones,
+  eliminarAsignacionPorEjercicioPaciente,
+  obtenerAsignacionesPorEjercicio
 } from '../controllers/asignacion-ejercicio.controller';
 import { requireDoctor, requireAuth } from '../middleware/auth.middleware';
 
@@ -24,11 +26,17 @@ router.get('/', listarAsignaciones);
 // GET /api/asignaciones/stats - Estadísticas de asignaciones
 router.get('/stats', estadisticasAsignaciones);
 
+// GET /api/asignaciones/ejercicio/:ejercicioId - Obtener asignaciones de un ejercicio específico
+router.get('/ejercicio/:ejercicioId', obtenerAsignacionesPorEjercicio);
+
 // GET /api/asignaciones/:id - Obtener una asignación específica
 router.get('/:id', obtenerAsignacion);
 
 // PATCH /api/asignaciones/:id - Actualizar asignación
 router.patch('/:id', actualizarAsignacion);
+
+// DELETE /api/asignaciones-ejercicios/ejercicio/:ejercicioId/paciente/:pacienteId - Eliminar por ejercicio y paciente
+router.delete('/ejercicio/:ejercicioId/paciente/:pacienteId', eliminarAsignacionPorEjercicioPaciente);
 
 // DELETE /api/asignaciones/:id - Eliminar asignación
 router.delete('/:id', eliminarAsignacion);

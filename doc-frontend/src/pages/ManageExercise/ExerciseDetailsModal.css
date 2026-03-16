@@ -141,22 +141,49 @@
 
 /* Details Header with Image */
 .details-header {
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #f0f4f8;
+  display: none;
 }
 
-.exercise-details-modal.dark .details-header {
-  border-bottom-color: #334155;
+/* Details Section */
+.details-section {
+  display: none;
 }
 
-.header-image {
-  flex-shrink: 0;
-  width: 120px;
-  height: 120px;
-  border-radius: 0.5rem;
+/* Grid 2 Columnas */
+.details-grid-2col {
+  display: none;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: none;
+}
+
+/* ============================================================
+   TWO COLUMN LAYOUT FOR DETAILS - ALIGNED HORIZONTALLY
+   ============================================================ */
+
+.details-two-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  row-gap: 1.2rem;
+  align-items: start;
+}
+
+/* Left Column items take full width of their column */
+.details-two-columns > .detail-row,
+.details-two-columns > .detail-item {
+  width: 100%;
+}
+
+/* Image Container - spans 2 rows at top right */
+.details-image-container {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  width: 100%;
+  height: 250px;
+  border-radius: 0.75rem;
   overflow: hidden;
   background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
   display: flex;
@@ -166,41 +193,39 @@
   border: 1px solid #e5e7eb;
 }
 
-.exercise-details-modal.dark .header-image {
+.exercise-details-modal.dark .details-image-container {
   background: #0f172a;
+  border-color: #334155;
 }
 
-.exercise-image {
+.details-exercise-image {
   width: 100%;
   height: 100%;
   object-fit: contain;
   display: block;
 }
 
-.header-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding-top: 0.5rem;
+/* Button styling in grid */
+.details-two-columns > .btn-action {
+  width: 100%;
 }
 
-.header-content h2 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #0f172a;
+/* Empty placeholder div for alignment */
+.details-two-columns > div:empty {
+  display: none;
 }
 
-.exercise-details-modal.dark .header-content h2 {
-  color: #f1f5f9;
-}
+@media (max-width: 768px) {
+  .details-two-columns {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+  }
 
-/* Details Section */
-.details-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
+  .details-image-container {
+    grid-column: 1;
+    grid-row: auto;
+    height: 200px;
+  }
 }
 
 /* Detail Row */
@@ -248,15 +273,9 @@
   color: #cbd5e1;
 }
 
-/* Grid 2 Columnas */
-.details-grid-2col {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  padding-top: 0.5rem;
-}
-
-.details-grid-2col .detail-item {
+/* Detail items in columns */
+.details-column-left .detail-item,
+.details-column-right .detail-item {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -267,12 +286,14 @@
   transition: all 0.2s ease;
 }
 
-.details-grid-2col .detail-item:hover {
+.details-column-left .detail-item:hover,
+.details-column-right .detail-item:hover {
   border-color: #d1d5db;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.exercise-details-modal.dark .details-grid-2col .detail-item {
+.exercise-details-modal.dark .details-column-left .detail-item,
+.exercise-details-modal.dark .details-column-right .detail-item {
   background: #0f172a;
   border-color: #334155;
 }
@@ -290,8 +311,7 @@
 }
 
 .btn-action {
-  flex: 1;
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
   font-size: 0.95rem;
@@ -301,6 +321,7 @@
   background: white;
   color: #1f2937;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  width: 100%;
 }
 
 .btn-action:hover {

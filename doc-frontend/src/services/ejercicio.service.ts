@@ -2,6 +2,7 @@ import api from './api';
 
 export type Enfermedad = 'Hipertensión' | 'Diabetes' | 'Obesidad' | 'Colesterol alto';
 export type Intensidad = 'Baja' | 'Media' | 'Alta';
+export type TipoEjercicio = 'POR_ENFERMEDAD' | 'POR_PACIENTES';
 
 export interface Ejercicio {
   id: number;
@@ -11,7 +12,8 @@ export interface Ejercicio {
   intensidad: Intensidad;
   series: number;
   descansoEntreSeries: number;
-  enfermedad: Enfermedad;
+  enfermedad?: Enfermedad;
+  tipo?: TipoEjercicio;
   urlImagen?: string;
   urlVideo?: string;
   createdAt?: string;
@@ -24,7 +26,8 @@ export interface CreateEjercicioRequest {
   intensidad: Intensidad;
   series: number;
   descansoEntreSeries: number;
-  enfermedad: Enfermedad;
+  enfermedad?: Enfermedad;
+  tipo?: TipoEjercicio;
   urlImagen?: string;
   urlVideo?: string;
 }

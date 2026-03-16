@@ -517,6 +517,132 @@ html.dark .no-data {
 }
 
 /* ============================================================
+   IMAGE UPLOAD STYLING
+   ============================================================ */
+
+.image-upload-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.form-input-file {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.image-upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border: 2px dashed #cbd5e1;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+  min-height: 180px;
+}
+
+.image-upload-placeholder:hover {
+  border-color: #3b82f6;
+}
+
+html.dark .image-upload-placeholder {
+  background: #0f172a;
+  border-color: #475569;
+}
+
+html.dark .image-upload-placeholder:hover {
+  border-color: #3b82f6;
+}
+
+.placeholder-text {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #6b7280;
+  text-align: center;
+}
+
+html.dark .placeholder-text {
+  color: #cbd5e1;
+}
+
+.image-preview-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background: #f9fafb;
+  overflow: hidden;
+  min-height: 180px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.image-preview-box:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+html.dark .image-preview-box {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+html.dark .image-preview-box:hover {
+  border-color: #475569;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.image-preview-img {
+  max-width: 100%;
+  max-height: 280px;
+  width: auto;
+  height: auto;
+  border-radius: 0.5rem;
+  object-fit: contain;
+  display: block;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* Click para seleccionar archivo */
+.image-upload-placeholder,
+.image-preview-box {
+  position: relative;
+}
+
+.image-upload-placeholder::after,
+.image-preview-box::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+}
+
+/* Hacer el contenedor clickeable vinculando el input */
+.image-upload-container > input[type="file"] {
+  display: none !important;
+}
+
+.form-group .image-upload-placeholder,
+.form-group .image-preview-box {
+  cursor: pointer;
+}
+
+/* ============================================================
    RESPONSIVE DESIGN
    ============================================================ */
 

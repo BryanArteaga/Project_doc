@@ -8,7 +8,7 @@ export const crearAsignacion = async (req: Request, res: Response) => {
   try {
     const doctorId = req.doctorDbId;
     const data: CreateAsignacionEjercicioDTO = req.body;
-    console.log('📝 [crearAsignacion] Iniciando - doctorId:', doctorId);
+    console.log('📝 [crearAsignacion] Iniciando - doctorId:', doctorId, 'data:', JSON.stringify(data));
 
     // Validación schema
     const schema = z.object({
@@ -19,7 +19,17 @@ export const crearAsignacion = async (req: Request, res: Response) => {
       fechaExpiracion: z.string().optional()
     });
 
-    const validated = schema.parse(data);
+    let validated;
+    try {
+      validated = schema.parse(data);
+      console.log('✅ Validación exitosa:', JSON.stringify(validated));
+    } catch (parseError: any) {
+      console.error('❌ Error de validación Zod:', parseError.errors);
+      return res.status(400).json({ 
+        error: 'Datos inválidos',
+        details: parseError.errors
+      });
+    }
 
     // Verificar que el ejercicio existe
     const ejercicio = await prisma.ejercicio.findUnique({
@@ -37,6 +47,24 @@ export const crearAsignacion = async (req: Request, res: Response) => {
       });
       if (!usuario) {
         return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+
+      // ✅ VERIFICAR si esta asignación ya existe (duplicado)
+      const asignacionExistente = await prisma.asignacionEjercicio.findUnique({
+        where: {
+          ejercicioId_doctorId_usuarioId: {
+            ejercicioId: validated.ejercicioId,
+            doctorId: doctorId!,
+            usuarioId: validated.usuarioId
+          }
+        }
+      });
+
+      if (asignacionExistente) {
+        return res.status(400).json({ 
+          error: 'Este paciente ya tiene asignado este ejercicio',
+          skipToast: true
+        });
       }
     }
 
@@ -71,7 +99,10 @@ export const crearAsignacion = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('❌ Error al crear asignación:', error.message, error.code);
     if (error.code === 'P2002') {
-      return res.status(400).json({ error: 'Esta asignación ya existe' });
+      return res.status(400).json({ 
+        error: 'Esta asignación ya existe',
+        skipToast: true
+      });
     }
     res.status(500).json({ error: 'Error al crear asignación', details: error.message });
   }
@@ -282,6 +313,54 @@ export const eliminarAsignacion = async (req: Request, res: Response) => {
   }
 };
 
+// ✅ ELIMINAR asignación por ejercicio y paciente
+export const eliminarAsignacionPorEjercicioPaciente = async (req: Request, res: Response) => {
+  try {
+    const { ejercicioId, pacienteId } = req.params;
+    const doctorId = req.doctorDbId;
+
+    console.log('🗑️ [eliminarAsignacionPorEjercicioPaciente] doctorId:', doctorId, 'ejercicioId:', ejercicioId, 'pacienteId:', pacienteId);
+
+    // Buscar la asignación con estos parámetros
+    const asignacion = await prisma.asignacionEjercicio.findUnique({
+      where: {
+        ejercicioId_doctorId_usuarioId: {
+          ejercicioId: parseInt(ejercicioId),
+          doctorId: doctorId!,
+          usuarioId: parseInt(pacienteId)
+        }
+      }
+    });
+
+    if (!asignacion) {
+      console.log('❌ Asignación no encontrada');
+      return res.status(404).json({ error: 'Asignación no encontrada' });
+    }
+
+    if (asignacion.doctorId !== doctorId) {
+      console.log('❌ Permisos insuficientes. doctorId en DB:', asignacion.doctorId, 'doctorId del request:', doctorId);
+      return res.status(403).json({ error: 'No tienes permisos para eliminar esta asignación' });
+    }
+
+    // Eliminar
+    await prisma.asignacionEjercicio.delete({
+      where: {
+        ejercicioId_doctorId_usuarioId: {
+          ejercicioId: parseInt(ejercicioId),
+          doctorId: doctorId!,
+          usuarioId: parseInt(pacienteId)
+        }
+      }
+    });
+
+    console.log('✅ Asignación eliminada correctamente');
+    res.json({ mensaje: 'Asignación eliminada correctamente' });
+  } catch (error) {
+    console.error('Error al eliminar asignación por ejercicio/paciente:', error);
+    res.status(500).json({ error: 'Error al eliminar asignación' });
+  }
+};
+
 // ✅ OBTENER mis asignaciones (para pacientes - solo activas y no expiradas)
 export const miasAsignacionesActivas = async (req: Request, res: Response) => {
   try {
@@ -384,5 +463,78 @@ export const estadisticasAsignaciones = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error al obtener estadísticas:', error);
     res.status(500).json({ error: 'Error al obtener estadísticas' });
+  }
+};
+
+// ✅ OBTENER ASIGNACIONES POR EJERCICIO - Lista pacientes asignados a un ejercicio
+export const obtenerAsignacionesPorEjercicio = async (req: Request, res: Response) => {
+  try {
+    const doctorId = req.doctorDbId;
+    const { ejercicioId } = req.params;
+
+    console.log('📝 [obtenerAsignacionesPorEjercicio] ejercicioId:', ejercicioId, 'doctorId:', doctorId);
+
+    if (!doctorId) {
+      return res.status(401).json({ error: 'No autenticado' });
+    }
+
+    if (!ejercicioId) {
+      return res.status(400).json({ error: 'ejercicioId es requerido' });
+    }
+
+    const ejercicioIdNum = parseInt(ejercicioId as string);
+
+    // Verificar que el ejercicio existe y que el doctor es dueño
+    const ejercicio = await prisma.ejercicio.findUnique({
+      where: { id: ejercicioIdNum }
+    });
+
+    if (!ejercicio) {
+      return res.status(404).json({ error: 'Ejercicio no encontrado' });
+    }
+
+    // Obtener todas las asignaciones (generales e individuales) para este ejercicio del doctor
+    const asignaciones = await prisma.asignacionEjercicio.findMany({
+      where: {
+        ejercicioId: ejercicioIdNum,
+        doctorId: doctorId!,
+        activo: true
+      },
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            apellido: true,
+            cedula: true,
+            enfermedad: true,
+            email: true
+          }
+        }
+      },
+      orderBy: [
+        { usuarioId: 'asc' }, // null (generales) primero, luego individuales
+        { fechaAsignacion: 'desc' }
+      ]
+    });
+
+    console.log('✅ [obtenerAsignacionesPorEjercicio] Encontradas', asignaciones.length, 'asignaciones');
+
+    res.json({
+      ejercicioId: ejercicioIdNum,
+      asignaciones: asignaciones.map((a: any) => ({
+        id: a.id,
+        usuarioId: a.usuarioId,
+        enfermedad: a.enfermedad,
+        usuario: a.usuario,
+        activo: a.activo,
+        fechaAsignacion: a.fechaAsignacion,
+        fechaExpiracion: a.fechaExpiracion,
+        descripcion: a.descripcion
+      }))
+    });
+  } catch (error: any) {
+    console.error('❌ Error al obtener asignaciones por ejercicio:', error.message);
+    res.status(500).json({ error: 'Error al obtener asignaciones', details: error.message });
   }
 };

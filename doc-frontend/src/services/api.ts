@@ -29,16 +29,15 @@ api.interceptors.response.use(
   (error: AxiosError) => {
     if (error.response?.status === 401) {
       // Token expirado o inválido
-      // Solo redirigir si no es una petición al endpoint de login
+      // Solo limpiar si no es una petición al endpoint de login
       const isLoginRequest = error.config?.url?.includes('/login');
+      const isCurrentDoctorRequest = error.config?.url?.includes('/doctor/me');
       
-      if (!isLoginRequest) {
+      // No limpiar token silenciosamente - ProtectedRoute manejará la redirección
+      // Excepto para peticiones explícitas de validación que fallan
+      if (!isLoginRequest && !isCurrentDoctorRequest) {
         localStorage.removeItem('doctor_token');
         localStorage.removeItem('doctor_data');
-        // Usar location.replace para limpiar el historial
-        setTimeout(() => {
-          window.location.replace('/login');
-        }, 100);
       }
     }
     return Promise.reject(error);

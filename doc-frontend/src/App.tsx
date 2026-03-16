@@ -24,11 +24,19 @@ const GestionConsejos = lazy(() => import('./pages/ManagementCouncils'));
 
 // Componente para proteger rutas que requieren autenticación
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading, loggingOut } = useAuth();
   const location = useLocation();
   
+  // No redirigir durante carga inicial o logout en progreso
+  if (loading || loggingOut) {
+    return <Loading fullScreen message="Verificando autenticación..." />;
+  }
+  
   if (!isAuthenticated) {
-    logUnauthorizedAccess(location.pathname);
+    // Solo loguear si no está en proceso de logout
+    if (!loggingOut) {
+      logUnauthorizedAccess(location.pathname);
+    }
     return <Navigate to="/login" replace />;
   }
   
@@ -37,11 +45,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 // Componente para proteger rutas que requieren rol de admin
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isAdmin, doctor } = useAuth();
+  const { isAuthenticated, isAdmin, doctor, loading, loggingOut } = useAuth();
   const location = useLocation();
   
+  // No redirigir durante carga inicial o logout en progreso
+  if (loading || loggingOut) {
+    return <Loading fullScreen message="Verificando autenticación..." />;
+  }
+  
   if (!isAuthenticated) {
-    logUnauthorizedAccess(location.pathname);
+    if (!loggingOut) {
+      logUnauthorizedAccess(location.pathname);
+    }
     return <Navigate to="/login" replace />;
   }
   

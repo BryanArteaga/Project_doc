@@ -32,6 +32,7 @@ interface ExerciseDetailsModalProps {
   pacientes: Paciente[];
   isDarkMode?: boolean;
   onRemoveAssignment?: (pacienteId: number) => void;
+  onAssignPatients?: (pacienteIds: number[]) => void;
   onConfirmClose?: () => void;
 }
 
@@ -43,12 +44,15 @@ const ExerciseDetailsModal: React.FC<ExerciseDetailsModalProps> = ({
   pacientes,
   isDarkMode = false,
   onRemoveAssignment,
+  onAssignPatients,
   onConfirmClose,
 }) => {
   // Modal modes
   const [mode, setMode] = useState<ModalMode>('details');
   const [showConfirmClose, setShowConfirmClose] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [showConfirmRemove, setShowConfirmRemove] = useState(false);
+  const [pacienteARemover, setPacienteARemover] = useState<number | null>(null);
   
   // Assignment search & selection
   const [searchPaciente, setSearchPaciente] = useState('');
@@ -146,6 +150,20 @@ const ExerciseDetailsModal: React.FC<ExerciseDetailsModalProps> = ({
     }
   };
 
+  // Confirm and execute remove assignment
+  const confirmRemove = async () => {
+    setIsClosing(true);
+    try {
+      if (pacienteARemover && onRemoveAssignment) {
+        await onRemoveAssignment(pacienteARemover);
+        setPacienteARemover(null);
+        setShowConfirmRemove(false);
+      }
+    } finally {
+      setIsClosing(false);
+    }
+  };
+
   return createPortal(
     <div className="exercise-modal-overlay" onClick={handleClose}>
       <div className={`exercise-details-modal ${isDarkMode ? 'dark' : ''}`} onClick={(e) => e.stopPropagation()}>
@@ -162,57 +180,51 @@ const ExerciseDetailsModal: React.FC<ExerciseDetailsModalProps> = ({
           {/* Mode: Details */}
           {mode === 'details' && (
             <>
-              {/* Header with Image and Title */}
-              <div className="details-header">
-                {ejercicio.urlImagen && (
-                  <div className="header-image">
-                    <img 
-                      src={ejercicio.urlImagen} 
-                      alt={ejercicio.nombre}
-                      className="exercise-image"
-                    />
-                  </div>
-                )}
-
-              </div>
-
-              {/* Basic Details Section */}
-              <div className="details-section">
-                {/* Enfermedad */}
+              {/* Two Column Layout with Horizontal Alignment */}
+              <div className="details-two-columns">
+                {/* Row 1 */}
                 <div className="detail-row">
                   <span className="detail-label">Enfermedad:</span>
                   <p className="detail-value">{ejercicio.enfermedad}</p>
                 </div>
+                <div className="details-image-container">
+                  {ejercicio.urlImagen && (
+                    <img 
+                      src={ejercicio.urlImagen} 
+                      alt={ejercicio.nombre}
+                      className="details-exercise-image"
+                    />
+                  )}
+                </div>
 
-                {/* Descripción */}
+                {/* Row 2 */}
                 <div className="detail-row">
                   <span className="detail-label">Descripción:</span>
                   <p className="detail-value description">{ejercicio.descripcion || '-'}</p>
                 </div>
+                <div></div>
 
-                {/* Grid 2 Columnas */}
-                <div className="details-grid-2col">
-                  <div className="detail-item">
-                    <span className="detail-label">Intensidad:</span>
-                    <p className="detail-value">{ejercicio.intensidad}</p>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Duración:</span>
-                    <p className="detail-value">{Math.floor(ejercicio.duracion / 60)}:{(ejercicio.duracion % 60).toString().padStart(2, '0')} min</p>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Series:</span>
-                    <p className="detail-value">{ejercicio.series}</p>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Descanso entre series:</span>
-                    <p className="detail-value">{ejercicio.descansoEntreSeries}s</p>
-                  </div>
+                {/* Row 3 */}
+                <div className="detail-item">
+                  <span className="detail-label">Intensidad:</span>
+                  <p className="detail-value">{ejercicio.intensidad}</p>
                 </div>
-              </div>
+                <div className="detail-item">
+                  <span className="detail-label">Duración:</span>
+                  <p className="detail-value">{Math.floor(ejercicio.duracion / 60)}:{(ejercicio.duracion % 60).toString().padStart(2, '0')} min</p>
+                </div>
 
-              {/* Action Buttons */}
-              <div className="action-buttons">
+                {/* Row 4 */}
+                <div className="detail-item">
+                  <span className="detail-label">Series:</span>
+                  <p className="detail-value">{ejercicio.series}</p>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Descanso entre series:</span>
+                  <p className="detail-value">{ejercicio.descansoEntreSeries}s</p>
+                </div>
+
+                {/* Row 5 - Buttons */}
                 <button
                   onClick={() => switchMode('assign')}
                   className="btn-action btn-assign"
@@ -302,9 +314,11 @@ const ExerciseDetailsModal: React.FC<ExerciseDetailsModalProps> = ({
                 </button>
                 <button
                   onClick={() => {
-                    // TODO: Agregar lógica de asignación
-                    console.log('Asignar pacientes:', selectedPacientes);
-                    switchMode('details');
+                    if (onAssignPatients) {
+                      onAssignPatients(selectedPacientes);
+                      setSelectedPacientes([]);
+                      switchMode('details');
+                    }
                   }}
                   className="btn-assign-submit"
                   disabled={selectedPacientes.length === 0}
@@ -332,9 +346,8 @@ const ExerciseDetailsModal: React.FC<ExerciseDetailsModalProps> = ({
                         </div>
                         <button
                           onClick={() => {
-                            if (onRemoveAssignment) {
-                              onRemoveAssignment(paciente.id);
-                            }
+                            setPacienteARemover(paciente.id);
+                            setShowConfirmRemove(true);
                           }}
                           className="btn-remove"
                           type="button"
@@ -422,6 +435,69 @@ const ExerciseDetailsModal: React.FC<ExerciseDetailsModalProps> = ({
                     type="button"
                   >
                     No, continuar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Confirm Remove Assignment Modal */}
+        {showConfirmRemove && pacienteARemover && (
+          <div className="exercise-modal-overlay" onClick={() => !isClosing && setShowConfirmRemove(false)}>
+            <div className="exercise-details-modal dark" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Remover Asignación</h2>
+                <button onClick={() => !isClosing && setShowConfirmRemove(false)} className="modal-close" type="button">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="modal-body" style={{ paddingTop: '1rem', paddingBottom: '1rem' }}>
+                <p style={{ fontSize: '1rem', marginBottom: '1.5rem', color: '#cbd5e1', textAlign: 'center' }}>
+                  ¿Estás seguro de que quieres remover la asignación de este ejercicio al paciente?
+                </p>
+                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                  <button
+                    onClick={confirmRemove}
+                    disabled={isClosing}
+                    style={{
+                      backgroundColor: '#ef4444',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '0.5rem 1.5rem',
+                      borderRadius: '0.5rem',
+                      fontWeight: 600,
+                      cursor: isClosing ? 'not-allowed' : 'pointer',
+                      fontSize: '1rem',
+                      transition: 'all 0.3s ease',
+                      opacity: isClosing ? 0.6 : 1,
+                    }}
+                    onMouseEnter={(e) => !isClosing && (e.currentTarget.style.backgroundColor = '#dc2626')}
+                    onMouseLeave={(e) => !isClosing && (e.currentTarget.style.backgroundColor = '#ef4444')}
+                    type="button"
+                  >
+                    Sí, remover
+                  </button>
+                  <button
+                    onClick={() => setShowConfirmRemove(false)}
+                    disabled={isClosing}
+                    style={{
+                      backgroundColor: '#64748b',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '0.5rem 1.5rem',
+                      borderRadius: '0.5rem',
+                      fontWeight: 600,
+                      cursor: isClosing ? 'not-allowed' : 'pointer',
+                      fontSize: '1rem',
+                      transition: 'all 0.3s ease',
+                      opacity: isClosing ? 0.6 : 1,
+                    }}
+                    onMouseEnter={(e) => !isClosing && (e.currentTarget.style.backgroundColor = '#475569')}
+                    onMouseLeave={(e) => !isClosing && (e.currentTarget.style.backgroundColor = '#64748b')}
+                    type="button"
+                  >
+                    Cancelar
                   </button>
                 </div>
               </div>
