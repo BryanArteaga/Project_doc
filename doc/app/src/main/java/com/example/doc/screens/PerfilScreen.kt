@@ -506,7 +506,7 @@ fun PerfilScreen(
                                     
                                     // 🔍 OPCIÓN B: Verificar si hay cambios en datos personales
                                     val hasPersonalDataChanges = usuario!!.nombre != nombre.trim() ||
-                                                                usuario!!.apellido.trim() != apellido.trim() ||
+                                                                (usuario!!.apellido ?: "") != apellido.trim() ||
                                                                 usuario!!.edad.toString() != edad ||
                                                                 usuario!!.peso.toString() != peso ||
                                                                 usuario!!.altura.toString() != altura
