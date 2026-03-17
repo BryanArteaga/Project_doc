@@ -17,5 +17,6 @@ data class EjercicioEntity(
     val series: Int = 3, // Número de series (por defecto 3)
     val descansoEntreSeries: Int = 30, // Descanso en segundos entre series (por defecto 30s)
     val urlImagen: String? = null, // URL de imagen desde el backend
-    val urlVideo: String? = null // URL de video desde el backend
+    val urlVideo: String? = null, // URL de video desde el backend
+    val createdAt: Long = 0  // Timestamp de creación (para ordenamiento)
 )

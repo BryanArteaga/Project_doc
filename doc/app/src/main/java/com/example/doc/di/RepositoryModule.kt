@@ -39,8 +39,11 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    fun provideEjercicioRepository(ejercicioDao: EjercicioDao): EjercicioRepository {
-        return EjercicioRepository(ejercicioDao)
+    fun provideEjercicioRepository(
+        ejercicioDao: EjercicioDao,
+        asignacionEjercicioDao: AsignacionEjercicioDao
+    ): EjercicioRepository {
+        return EjercicioRepository(ejercicioDao, asignacionEjercicioDao)
     }
 
     @Provides
@@ -64,6 +67,7 @@ object RepositoryModule {
         asignacionEjercicioDao: AsignacionEjercicioDao,
         usuarioDao: UsuarioDao,
         ejercicioDao: EjercicioDao,
+        consejoDao: ConsejoDao,
         sharedPreferences: SharedPreferences
     ): SyncRepository {
         return SyncRepository(
@@ -73,6 +77,7 @@ object RepositoryModule {
             asignacionEjercicioDao = asignacionEjercicioDao,
             usuarioDao = usuarioDao,
             ejercicioDao = ejercicioDao,
+            consejoDao = consejoDao,
             sharedPreferences = sharedPreferences
         )
     }

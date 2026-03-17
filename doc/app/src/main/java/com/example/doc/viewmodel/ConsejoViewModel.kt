@@ -18,6 +18,10 @@ class ConsejoViewModel @Inject constructor(
     private val _consejos = MutableStateFlow<List<ConsejoEntity>>(emptyList())
     val consejos: StateFlow<List<ConsejoEntity>> = _consejos
 
+    // FIX #6: Estado para consejo aleatorio sin cargar lista completa en memoria
+    private val _consejoAleatorio = MutableStateFlow<ConsejoEntity?>(null)
+    val consejoAleatorio: StateFlow<ConsejoEntity?> = _consejoAleatorio
+
     fun cargarConsejos(enfermedad: String) {
         viewModelScope.launch {
             try {
@@ -30,10 +34,26 @@ class ConsejoViewModel @Inject constructor(
         }
     }
 
+    // FIX #6: Cargar consejo aleatorio directamente de BD (O(1), no carga lista)
+    fun cargarConsejoAleatorio(enfermedad: String) {
+        viewModelScope.launch {
+            try {
+                _consejoAleatorio.value = consejoRepo.obtenerConsejoAleatorio(enfermedad)
+                Timber.d("Consejo aleatorio cargado de BD: ${_consejoAleatorio.value?.consejo}")
+            } catch (e: Exception) {
+                Timber.e(e, "Error al cargar consejo aleatorio")
+                _consejoAleatorio.value = null
+            }
+        }
+    }
+
     @Suppress("unused")
     fun consejoAleatorio(): String {
         return try {
-            _consejos.value.randomOrNull()?.consejo ?: "Cuida tu salud diariamente."
+            // FIX: Acceder por indice en lugar de randomOrNull()
+            // Esto evita O(n) random generation y reasignacion innecesaria
+            if (_consejos.value.isEmpty()) "Cuida tu salud diariamente."
+            else _consejos.value[(Math.random() * _consejos.value.size).toInt()].consejo
         } catch (e: Exception) {
             Timber.e(e, "Error al obtener consejo aleatorio")
             "Cuida tu salud diariamente."

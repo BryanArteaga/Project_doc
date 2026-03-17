@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.doc.model.Ejercicio
 import com.example.doc.repository.EjercicioRepository
 import com.example.doc.repository.EjercicioRealizadoRepository
+import com.example.doc.repository.SyncRepository
 import com.example.doc.utils.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -21,6 +22,7 @@ import javax.inject.Inject
 class EjercicioViewModel @Inject constructor(
     private val ejercicioRepo: EjercicioRepository,
     private val realizadoRepo: EjercicioRealizadoRepository,
+    private val syncRepository: SyncRepository,
     private val prefs: SharedPreferences
 ) : ViewModel() {
 
@@ -43,82 +45,118 @@ class EjercicioViewModel @Inject constructor(
                 // Pequeño delay para que corregirImagenesLocales() complete en onOpen
                 delay(150)
                 
-                val lastUpdateDate = prefs.getString("last_update_date", null)
-                val storedIdsJson = prefs.getString("current_exercise_ids", null)
-
-                if (lastUpdateDate != currentDate || storedIdsJson == null) {
-                    val allEjercicios = ejercicioRepo.obtenerEjerciciosPorEnfermedad(enfermedad).shuffled()
-                    val newList = allEjercicios.take(6)
-                    _ejercicios.value = newList.map { entity ->
-                        Ejercicio(
-                            id = entity.id,
-                            enfermedad = entity.enfermedad,
-                            nombre = entity.nombre,
-                            descripcion = entity.descripcion,
-                            duracion = entity.duracion,
-                            intensidad = entity.intensidad,
-                            imagenResId = entity.imagenResId,
-                            series = entity.series,
-                            descansoEntreSeries = entity.descansoEntreSeries,
-                            urlImagen = entity.urlImagen,
-                            urlVideo = entity.urlVideo
-                        )
-                    }
-                    val idsJson = JSONArray(_ejercicios.value.map { it.id }).toString()
-                    prefs.edit().putString("current_exercise_ids", idsJson)
-                        .putString("last_update_date", currentDate)
-                        .apply()
-                    Timber.d("Ejercicios refrescados para: $enfermedad, total: ${_ejercicios.value.size}")
-                } else {
-                    val idsArray = JSONArray(storedIdsJson)
-                    val ids = (0 until idsArray.length()).map { idsArray.getInt(it) }
-                    val entidades = ejercicioRepo.obtenerEjerciciosPorEnfermedad(enfermedad)
-                        .filter { it.id in ids }
-                        .sortedBy { ids.indexOf(it.id) }
-                    val entidadesFinales = if (entidades.size == ids.size) {
-                        entidades
-                    } else {
-                        val refrescados = ejercicioRepo.obtenerEjerciciosPorEnfermedad(enfermedad).shuffled().take(6)
-                        val idsJson = JSONArray(refrescados.map { it.id }).toString()
-                        prefs.edit().putString("current_exercise_ids", idsJson).apply()
-                        Timber.d("♻️ Caché de ejercicios regenerada porque apuntaba a IDs duplicados/obsoletos")
-                        refrescados
-                    }
-                    _ejercicios.value = entidadesFinales.map { entity ->
-                        Ejercicio(
-                            id = entity.id,
-                            enfermedad = entity.enfermedad,
-                            nombre = entity.nombre,
-                            descripcion = entity.descripcion,
-                            duracion = entity.duracion,
-                            intensidad = entity.intensidad,
-                            imagenResId = entity.imagenResId,
-                            series = entity.series,
-                            descansoEntreSeries = entity.descansoEntreSeries,
-                            urlImagen = entity.urlImagen,
-                            urlVideo = entity.urlVideo
-                        )
-                    }
-                    Timber.d("Ejercicios cargados desde caché: ${_ejercicios.value.size}")
+                // Obtener usuarioId desde SharedPreferences
+                val usuarioId = prefs.getInt("user_id", 0)
+                Timber.d("📱 Cargando ejercicios: enfermedad=$enfermedad, usuarioId=$usuarioId")
+                
+                // ✅ Obtener ejercicios generales + asignaciones directas, ordenados DESC
+                val allEjercicios = try {
+                    ejercicioRepo.obtenerEjerciciosConAsignaciones(enfermedad, usuarioId)
+                } catch (e: Exception) {
+                    Timber.w(e, "⚠️ Error al obtener ejercicios con asignaciones, usando solo generales")
+                    ejercicioRepo.obtenerEjerciciosPorEnfermedad(enfermedad)
                 }
+                
+                Timber.d("📊 Total ejercicios obtenidos: ${allEjercicios.size}")
+                
+                // ✅ IMPORTANTE: Respetar el orden guardado en SharedPreferences
+                // Si el usuario cambió un ejercicio, mantener ese orden local
+                val savedIdsJson = prefs.getString("current_exercise_ids", null)
+                val newList = if (savedIdsJson != null) {
+                    try {
+                        val savedIds = org.json.JSONArray(savedIdsJson)
+                        val idList = mutableListOf<Int>()
+                        for (i in 0 until savedIds.length()) {
+                            idList.add(savedIds.getInt(i))
+                        }
+                        Timber.d("🔄 IDs guardados: $idList, Total disponibles: ${allEjercicios.size}")
+                        
+                        // Restaurar en el mismo orden que el usuario estableció
+                        val ejercicioMap = allEjercicios.associateBy { it.id }
+                        val restored = idList.mapNotNull { id -> ejercicioMap[id] }
+                        
+                        // ✅ Si algunos IDs guardados no existen, agregar nuevos hasta tener 6
+                        val result = restored.toMutableList()
+                        if (result.size < 6) {
+                            val faltantes = 6 - result.size
+                            val nuevosEjercicios = allEjercicios
+                                .filter { !result.contains(it) }  // No agregar duplicados
+                                .take(faltantes)
+                            result.addAll(nuevosEjercicios)
+                            Timber.d("✅ Restaurados ${restored.size} + Agregados ${nuevosEjercicios.size}")
+                        }
+                        // Limitar a 6 ejercicios máximo
+                        if (result.size > 6) {
+                            result.take(6)
+                        } else {
+                            result
+                        }
+                    } catch (e: Exception) {
+                        Timber.w(e, "⚠️ Error al restaurar orden guardado, usando primeros 6")
+                        allEjercicios.take(6)
+                    }
+                } else {
+                    // Primera carga: tomar primeros 6
+                    allEjercicios.take(6)
+                }
+                
+                _ejercicios.value = newList.map { entity ->
+                    Ejercicio(
+                        id = entity.id,
+                        enfermedad = entity.enfermedad,
+                        nombre = entity.nombre,
+                        descripcion = entity.descripcion,
+                        duracion = entity.duracion,
+                        intensidad = entity.intensidad,
+                        imagenResId = entity.imagenResId,
+                        series = entity.series,
+                        descansoEntreSeries = entity.descansoEntreSeries,
+                        urlImagen = entity.urlImagen,
+                        urlVideo = entity.urlVideo
+                    )
+                }
+                
+                val idsJson = JSONArray(_ejercicios.value.map { it.id }).toString()
+                prefs.edit().putString("current_exercise_ids", idsJson)
+                    .putString("last_update_date", currentDate)
+                    .apply()
+                Timber.d("✅ Ejercicios cargados (con asignaciones): $enfermedad, total: ${_ejercicios.value.size}")
 
-                // Observer reactivo: actualiza imagenResId y urlImagen si la DB cambia
-                // (necesario porque corregirImagenesLocales corre async en onOpen)
+                // Observer reactivo PASIVO:
+                // ✅ Solo actualiza datos (imagenResId, urlImagen, nombre, descripción)
+                // ❌ NO agrega nuevos ejercicios - eso es manual o en otra pantalla
                 dbObserverJob?.cancel()
                 dbObserverJob = viewModelScope.launch {
                     ejercicioRepo.obtenerEjerciciosPorEnfermedadFlow(enfermedad)
                         .collect { entities ->
                             val entityMap = entities.associateBy { it.id }
                             val current = _ejercicios.value
+                            
                             if (current.isNotEmpty()) {
+                                // ♻️ Solo actualizar los ejercicios que ya están en la lista
                                 val updated = current.map { ej ->
                                     val e = entityMap[ej.id]
-                                    if (e != null) ej.copy(imagenResId = e.imagenResId, urlImagen = e.urlImagen)
-                                    else ej
+                                    if (e != null) {
+                                        ej.copy(
+                                            imagenResId = e.imagenResId,
+                                            urlImagen = e.urlImagen,
+                                            nombre = e.nombre,  // Si lo editaron
+                                            descripcion = e.descripcion,
+                                            duracion = e.duracion,
+                                            intensidad = e.intensidad,
+                                            series = e.series,
+                                            descansoEntreSeries = e.descansoEntreSeries,
+                                            urlVideo = e.urlVideo
+                                        )
+                                    } else ej
                                 }
+                                
                                 if (updated != current) {
                                     _ejercicios.value = updated
-                                    Timber.d("♻️ Ejercicios actualizados reactivamente (imagenResId/urlImagen)")
+                                    // Guardar nuevo orden por si cambió algo
+                                    val idsJson = JSONArray(updated.map { it.id }).toString()
+                                    prefs.edit().putString("current_exercise_ids", idsJson).apply()
+                                    Timber.d("♻️ Ejercicios actualizados (datos del DB)")
                                 }
                             }
                         }
@@ -127,6 +165,62 @@ class EjercicioViewModel @Inject constructor(
             } catch (e: Exception) {
                 Timber.e(e, "Error al cargar ejercicios")
                 _uiState.value = UiState.Error("Error al cargar ejercicios", e)
+            }
+        }
+    }
+
+    fun cargarEjerciciosActualizados(enfermedad: String, currentDate: String) {
+        viewModelScope.launch {
+            try {
+                _uiState.value = UiState.Loading
+                Timber.d("🔄 REFRESH FORZADO: Descargando nuevos ejercicios del backend...")
+                
+                val usuarioId = prefs.getInt("user_id", 0)
+                
+                // 1️⃣ Forzar PULL desde backend
+                val syncResult = syncRepository.fullSync(usuarioId, forcePull = true)
+                Timber.d("📡 PULL resultado: $syncResult")
+                
+                // 2️⃣ Cargar ejercicios (ahora con datos actualizados del backend)
+                val allEjercicios = try {
+                    ejercicioRepo.obtenerEjerciciosConAsignaciones(enfermedad, usuarioId)
+                } catch (e: Exception) {
+                    Timber.w(e, "⚠️ Error al obtener nuevos ejercicios, usando generales")
+                    ejercicioRepo.obtenerEjerciciosPorEnfermedad(enfermedad)
+                }
+                
+                Timber.d("📊 Nuevos ejercicios descargados: ${allEjercicios.size}")
+                
+                // 3️⃣ Mostrar primeros 6 en ASC (más antiguos primero), SIN restaurar guardados
+                val newList = allEjercicios.reversed().take(6)
+                _ejercicios.value = newList.map { entity ->
+                    Ejercicio(
+                        id = entity.id,
+                        enfermedad = entity.enfermedad,
+                        nombre = entity.nombre,
+                        descripcion = entity.descripcion,
+                        duracion = entity.duracion,
+                        intensidad = entity.intensidad,
+                        imagenResId = entity.imagenResId,
+                        series = entity.series,
+                        descansoEntreSeries = entity.descansoEntreSeries,
+                        urlImagen = entity.urlImagen,
+                        urlVideo = entity.urlVideo
+                    )
+                }
+                
+                // 4️⃣ Guardar nuevos IDs
+                val idsJson = JSONArray(_ejercicios.value.map { it.id }).toString()
+                prefs.edit()
+                    .putString("current_exercise_ids", idsJson)
+                    .putString("last_update_date", currentDate)
+                    .apply()
+                
+                Timber.d("✅ REFRESH completado: ${_ejercicios.value.size} nuevos ejercicios mostrados")
+                _uiState.value = UiState.Success(_ejercicios.value)
+            } catch (e: Exception) {
+                Timber.e(e, "❌ Error en REFRESH forzado")
+                _uiState.value = UiState.Error("Error al actualizar", e)
             }
         }
     }
@@ -179,12 +273,21 @@ class EjercicioViewModel @Inject constructor(
     fun cambiarEjercicio(enfermedad: String, ejercicioId: Int, currentDate: String) {
         viewModelScope.launch {
             try {
+                Timber.d("🔄 Iniciando cambio de ejercicio: $ejercicioId")
+                val usuarioId = prefs.getInt("user_id", 0)
+                
                 val currentEjercicios = _ejercicios.value
+                val oldEjercicio = currentEjercicios.find { it.id == ejercicioId }
                 val currentIds = currentEjercicios.map { it.id }.toSet()
-                val availableEjercicios = ejercicioRepo.obtenerEjerciciosPorEnfermedad(enfermedad)
+                
+                // ✅ Obtener TODOS los ejercicios disponibles (generales + asignaciones)
+                val availableEjercicios = ejercicioRepo.obtenerEjerciciosConAsignaciones(enfermedad, usuarioId)
                     .filter { it.id !in currentIds }
+                
                 val newEjercicio = availableEjercicios.shuffled().firstOrNull()
+                
                 if (newEjercicio != null) {
+                    // ✅ Actualizar UI localmente INMEDIATAMENTE
                     val newList = currentEjercicios.map { ejercicio ->
                         if (ejercicio.id == ejercicioId) {
                             Ejercicio(
@@ -207,12 +310,20 @@ class EjercicioViewModel @Inject constructor(
                     _ejercicios.value = newList
                     val idsJson = JSONArray(newList.map { it.id }).toString()
                     prefs.edit().putString("current_exercise_ids", idsJson).apply()
-                    Timber.d("Ejercicio cambiado: $ejercicioId -> ${newEjercicio.id}")
+                    Timber.d("✅ CAMBIO VISUAL: ${oldEjercicio?.nombre} ($ejercicioId) → ${newEjercicio.nombre} (${newEjercicio.id})")
+                    
+                    // ✅ Sincronizar con Backend (PUSH) - sin recargar
+                    try {
+                        syncRepository.fullSync(usuarioId)
+                        Timber.d("✅ Cambio sincronizado con Backend")
+                    } catch (e: Exception) {
+                        Timber.w(e, "⚠️ Sync falló, pero cambio local se mantuvo: ${newEjercicio.nombre}")
+                    }
                 } else {
-                    Timber.w("No hay ejercicios disponibles para cambiar")
+                    Timber.w("⚠️ No hay ejercicios disponibles para cambiar (todos ya en lista)")
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Error al cambiar ejercicio")
+                Timber.e(e, "❌ Error al cambiar ejercicio")
             }
         }
     }

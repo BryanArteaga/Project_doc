@@ -58,11 +58,13 @@ const GestionEjercicios: React.FC = () => {
   const [searchInput, setSearchInput] = useState('');
   const [filterEnfermedad_temp, setFilterEnfermedad_temp] = useState<Enfermedad | ''>('');
   const [filterIntensidad_temp, setFilterIntensidad_temp] = useState<Intensidad | ''>('');
+  const [sortBy_temp, setSortBy_temp] = useState<'az' | 'za' | 'reciente' | 'antiguo' | ''>('');
   
   // Search & Filter states - Applied (used in loadEjercicios)
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEnfermedad, setFilterEnfermedad] = useState<Enfermedad | ''>('');
   const [filterIntensidad, setFilterIntensidad] = useState<Intensidad | ''>('');
+  const [sortBy, setSortBy] = useState<'az' | 'za' | 'reciente' | 'antiguo' | ''>('');
 
   // Form states
   const [formData, setFormData] = useState<FormData>({
@@ -126,7 +128,7 @@ const GestionEjercicios: React.FC = () => {
 
   useEffect(() => {
     aplicarFiltros();
-  }, [ejercicios, searchTerm, filterEnfermedad, filterIntensidad]);
+  }, [ejercicios, searchTerm, filterEnfermedad, filterIntensidad, sortBy]);
 
   // ============ DATA LOADING ============
   const loadEjercicios = async (
@@ -247,6 +249,25 @@ const GestionEjercicios: React.FC = () => {
 
     if (filterIntensidad) {
       resultado = resultado.filter(e => e.intensidad === filterIntensidad);
+    }
+
+    // ✅ Aplicar ordenamiento
+    if (sortBy === 'az') {
+      resultado.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    } else if (sortBy === 'za') {
+      resultado.sort((a, b) => b.nombre.localeCompare(a.nombre, 'es'));
+    } else if (sortBy === 'reciente') {
+      resultado.sort((a, b) => {
+        const dateA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
+        const dateB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
+        return dateB - dateA;
+      });
+    } else if (sortBy === 'antiguo') {
+      resultado.sort((a, b) => {
+        const dateA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
+        const dateB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
+        return dateA - dateB;
+      });
     }
 
     setFiltrados(resultado);
@@ -539,6 +560,7 @@ const GestionEjercicios: React.FC = () => {
   const handleApplyFilters = () => {
     setFilterEnfermedad(filterEnfermedad_temp);
     setFilterIntensidad(filterIntensidad_temp);
+    setSortBy(sortBy_temp);
     loadEjercicios(1, searchTerm, filterEnfermedad_temp, filterIntensidad_temp);
   };
 
@@ -547,10 +569,12 @@ const GestionEjercicios: React.FC = () => {
     setSearchInput('');
     setFilterEnfermedad_temp('');
     setFilterIntensidad_temp('');
+    setSortBy_temp('');
     // Resetear estados aplicados
     setSearchTerm('');
     setFilterEnfermedad('');
     setFilterIntensidad('');
+    setSortBy('');
     // Recargar ejercicios sin filtros
     loadEjercicios(1, '', '', '');
   };
@@ -756,11 +780,24 @@ const GestionEjercicios: React.FC = () => {
                   type: 'select',
                   options: INTENSIDADES.map(i => ({ label: i, value: i })),
                   value: filterIntensidad_temp
+                },
+                {
+                  name: 'sortBy',
+                  label: 'Ordenar',
+                  type: 'select',
+                  options: [
+                    { label: 'A - Z', value: 'az' },
+                    { label: 'Z - A', value: 'za' },
+                    { label: 'Más reciente', value: 'reciente' },
+                    { label: 'Más antiguo', value: 'antiguo' }
+                  ],
+                  value: sortBy_temp
                 }
               ]}
               onFilterChange={(name, value) => {
                 if (name === 'enfermedad') setFilterEnfermedad_temp(value as Enfermedad | '');
                 if (name === 'intensidad') setFilterIntensidad_temp(value as Intensidad | '');
+                if (name === 'sortBy') setSortBy_temp(value as 'az' | 'za' | 'reciente' | 'antiguo' | '');
               }}
               onApplyFilters={handleApplyFilters}
               onClearFilters={handleClearFilters}
@@ -1394,6 +1431,7 @@ const GestionEjercicios: React.FC = () => {
               onAssignPatients={(pacienteIds) => {
                 handleAsignarPacientes(selectedEjercicioDetalle.id, pacienteIds);
               }}
+              onDelete={() => handleDelete(selectedEjercicioDetalle.id)}
             />
           )}
         </div>

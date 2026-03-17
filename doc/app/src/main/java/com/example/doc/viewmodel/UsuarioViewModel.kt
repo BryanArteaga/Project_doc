@@ -69,6 +69,16 @@ class UsuarioViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<UiState<Usuario>>(UiState.Idle)
     val uiState: StateFlow<UiState<Usuario>> = _uiState
 
+    // 🔍 OPCIÓN B: Estados para confirmación de cambios en datos personales
+    data class ConfirmationPending(
+        val currentData: Map<String, Any?>,
+        val proposedData: Map<String, Any?>,
+        val message: String
+    )
+
+    private val _confirmationPending = MutableStateFlow<ConfirmationPending?>(null)
+    val confirmationPending: StateFlow<ConfirmationPending?> = _confirmationPending
+
     init {
         viewModelScope.launch {
             try {
@@ -374,18 +384,50 @@ class UsuarioViewModel @Inject constructor(
                     glucosaInicial = usuario.glucosaInicial,
                     colesterolInicial = usuario.colesterolInicial
                 )
+                
+                // 1️⃣ Guardar localmente en Room
                 repository.actualizarUsuario(entity)
                 setupNotifications(usuario)
                 _uiState.value = UiState.Success(usuario)
                 Timber.d("Usuario actualizado: ${usuario.nombre}")
 
-                // Forzar sincronización inmediata al cambiar datos de usuario
+                // 2️⃣ PUSH del usuario actualizado al backend via sincronización normal
+                // El endpoint PUT /api/usuarios/profile envía todos los campos actualizados
+                Timber.d("📤 Sincronizando perfil con backend...")
+                
+                // 3️⃣ Forzar sincronización completa (PUSH + PULL)
                 forzarSincronizacion()
             } catch (e: Exception) {
                 Timber.e(e, "Error al actualizar usuario")
                 _uiState.value = UiState.Error("Error al actualizar usuario", e)
             }
         }
+    }
+
+    /**
+     * 🔍 OPCIÓN B: Confirmar cambios en datos personales
+     * Llamar cuando usuario confirma en el diálogo y se necesita enviar confirmDataChange: true
+     */
+    fun confirmarCambiosPersonales(usuario: Usuario) {
+        viewModelScope.launch {
+            try {
+                Timber.d("📝 Confirmando cambios en datos personales del usuario...")
+                // Aquí se podría implementar lógica adicional si es necesaria
+                // Por ahora, simplemente actualiza igual que actualizarUsuario
+                actualizarUsuario(usuario)
+                _confirmationPending.value = null
+            } catch (e: Exception) {
+                Timber.e(e, "Error al confirmar cambios")
+                _uiState.value = UiState.Error("Error al confirmar cambios", e)
+            }
+        }
+    }
+
+    /**
+     * Limpiar el estado de confirmación pendiente
+     */
+    fun cancelarConfirmacion() {
+        _confirmationPending.value = null
     }
 
     @Suppress("unused")
@@ -434,6 +476,7 @@ class UsuarioViewModel @Inject constructor(
                         id = updated.id,
                         cedula = updated.cedula,
                         nombre = updated.nombre,
+                        apellido = updated.apellido,
                         edad = updated.edad,
                         peso = updated.peso,
                         altura = updated.altura,

@@ -73,26 +73,18 @@ fun MainScreen(
 ) {
     val scrollState = rememberScrollState()
     val registrosScroll = rememberLazyListState()
+    
+    // FIX #7: Reducir observables solo a lo esencial
     val usuario by usuarioViewModel.usuario.collectAsState()
     val registros by registroSaludViewModel.registros.collectAsState()
     val consejos by consejoViewModel.consejos.collectAsState()
-
-    // Estados de sincronización
-    val isSyncing by usuarioViewModel.isSyncing.collectAsState()
-    val isSynced by usuarioViewModel.isSynced.collectAsState()
-    val lastSyncTime by usuarioViewModel.lastSyncTime.collectAsState()
     val syncState by usuarioViewModel.syncState.collectAsState()
 
-    // ✅ Estados del overlay de sincronización
+    // Estados específicos del overlay (separado para no causa recomposiciones en UI principal)
     val syncOverlayVisible by usuarioViewModel.syncOverlayVisible.collectAsState()
     val syncOverlayMessage by usuarioViewModel.syncOverlayMessage.collectAsState()
 
-    val showNotifDialog = remember { mutableStateOf(false) }
-    val context = LocalContext.current
-    val sharedPrefs = context.getSharedPreferences("DocPrefs", Context.MODE_PRIVATE)
-    var notifDialogShown by remember {
-        mutableStateOf(sharedPrefs.getBoolean("notifDialogShown_${usuario?.id}", false))
-    }
+    // Estados de popups (solo PopupViewModel)
     val showResultPopup by popupViewModel.showResultPopup
     val resultPopupMessage by popupViewModel.resultPopupMessage
     val resultPopupColor = popupViewModel.resultPopupColor
@@ -101,7 +93,18 @@ fun MainScreen(
     val evaluationColor = popupViewModel.evaluationColor
     val evaluationDetails by popupViewModel.evaluationDetails
 
-    // Estado de carga
+    val showNotifDialog = remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val sharedPrefs = context.getSharedPreferences("DocPrefs", Context.MODE_PRIVATE)
+    var notifDialogShown by remember {
+        mutableStateOf(sharedPrefs.getBoolean("notifDialogShown_${usuario?.id}", false))
+    }
+
+    // FIX #7: Estado local para consejo (no reactivo a cada cambio de consejos)
+    var consejoTexto by remember(consejos) {
+        mutableStateOf(consejos.randomOrNull()?.consejo ?: "Cargando...")
+    }
+
     var isLoading by remember { mutableStateOf(true) }
 
     // Log inicial
@@ -209,7 +212,8 @@ fun MainScreen(
                 // Mostrar evaluación si hay datos
                 if (usuario != null && registros.isNotEmpty()) {
                     android.util.Log.d("MainScreen", "Evaluando registro...")
-                    val evaluacionDetallada = SaludEvaluator.evaluarRegistroDetallado(usuario!!, registros.first())
+                    val evaluacionDetallada =
+                        SaludEvaluator.evaluarRegistroDetallado(usuario!!, registros.first())
 
                     popupViewModel.evaluationColor.value = when (evaluacionDetallada.estado) {
                         EvaluacionSalud.Estado.NORMAL -> Color(0xFF4CAF50)
@@ -236,12 +240,8 @@ fun MainScreen(
                 popupViewModel.showResultPopup.value = false
             }
         } catch (e: Exception) {
-            android.util.Log.e("MainScreen", "Error en LaunchedEffect resultados", e)
+            android.util.Log.e("MainScreen", "Error en LaunchedEffect de registro guardado", e)
         }
-    }
-
-    var consejoTexto by remember(consejos) {
-        mutableStateOf(consejos.randomOrNull()?.consejo ?: "Cargando...")
     }
 
     val nestedScrollConnection = remember {
@@ -258,20 +258,18 @@ fun MainScreen(
                 available: Offset,
                 source: NestedScrollSource
             ): Offset {
-                // 👇 Si la lista puede seguir haciendo scroll, consumir el gesto
+                // FIX #7: Si la lista puede seguir haciendo scroll, consumir el gesto
                 return if (
                     (available.y < 0 && registrosScroll.canScrollForward) ||
                     (available.y > 0 && registrosScroll.canScrollBackward)
                 ) {
                     Offset.Zero
                 } else {
-                    // 👇 Dejar que el padre maneje el scroll cuando está en el tope
                     available
                 }
             }
         }
     }
-
 
     Box(modifier = Modifier.fillMaxSize()) {
         // --- Imagen de fondo ---
@@ -324,458 +322,66 @@ fun MainScreen(
             ){
                 Spacer(modifier = Modifier.height(adaptiveTopPadding))
 
-                // Header mejorado - más natural
-                Card(
-                    shape = RoundedCornerShape(24.dp),
-                    elevation = CardDefaults.cardElevation(8.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 16.dp)
-                    ) {
-                        // Primera fila: Saludo y perfil
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "Hola, ${user.nombre}",
-                                    fontSize = 28.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = colorFondo
-                                )
-                                Text(
-                                    text = "¿Cómo te sientes hoy?",
-                                    fontSize = 16.sp,
-                                    color = Color.Gray,
-                                    modifier = Modifier.padding(top = 4.dp)
-                                )
-                            }
-                            IconButton(
-                                onClick = { navController.navigate("perfil") },
-                                modifier = Modifier
-                                    .size(56.dp)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(colorFondo.copy(alpha = 0.1f))
-                            ) {
-                                Icon(
-                                    Icons.Filled.Person,
-                                    contentDescription = "Perfil",
-                                    tint = colorFondo,
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            }
-                        }
-
-                        // Segunda fila: Indicador de sincronización
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 12.dp),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            SyncIconButton(
-                                syncState = syncState,
-                                onSyncClick = { usuarioViewModel.sincronizarManualmente() }
-                            )
-                        }
-                    }
-                }
+                // FIX #7: Usar componentes separados para evitar recomposiciones cascading
+                MainScreenHeader(
+                    usuario = user,
+                    navController = navController,
+                    syncState = syncState,
+                    onSyncClick = { usuarioViewModel.sincronizarManualmente() }
+                )
                 Spacer(modifier = Modifier.height(20.dp))
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = colorFondo),
-                    shape = RoundedCornerShape(24.dp),
-                    elevation = CardDefaults.cardElevation(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                        .clickable {
-                            // Cambio de consejo al tocar el card
-                            consejoTexto = consejos.randomOrNull()?.consejo ?: "Cargando..."
-                        }
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(280.dp)
-                            .background(
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(
-                                        colorFondo.copy(alpha = 0.95f),
-                                        colorFondo
-                                    )
-                                )
-                            )
-                            .padding(20.dp)
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            // Imagen representativa con diseño circular, borde y sombra
-                            Image(
-                                painter = painterResource(id = imagenId),
-                                contentDescription = "Imagen representativa de ${user.enfermedad}",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .size(140.dp)
-                                    .clip(RoundedCornerShape(100.dp))
-                                    .border(5.dp, Color.White, RoundedCornerShape(100.dp))
-                                    .shadow(
-                                        elevation = 12.dp,
-                                        shape = RoundedCornerShape(100.dp),
-                                        ambientColor = Color.Black.copy(alpha = 0.3f),
-                                        spotColor = Color.Black.copy(alpha = 0.3f)
-                                    )
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            // Texto del consejo con animación y mejor legibilidad
-                            AnimatedContent(
-                                targetState = consejoTexto,
-                                label = "ConsejoAnim"
-                            ) { consejo ->
-                                Text(
-                                    text = consejo,
-                                    fontSize = 17.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    lineHeight = 22.sp,
-                                    color = Color.White,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.padding(horizontal = 18.dp)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Divider(
-                                color = Color.White.copy(alpha = 0.4f),
-                                thickness = 1.dp,
-                                modifier = Modifier
-                                    .fillMaxWidth(0.6f)
-                                    .padding(top = 4.dp)
-                            )
-                        }
-                    }
-                }
+                
+                MainScreenConsejoCard(
+                    usuario = user,
+                    consejoTexto = consejoTexto,
+                    onConsejoTap = { nuevoConsejo -> consejoTexto = nuevoConsejo },
+                    consejos = consejos
+                )
                 Spacer(modifier = Modifier.height(20.dp))
-                Card(
-                    shape = RoundedCornerShape(32.dp),
-                    elevation = CardDefaults.cardElevation(8.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.93f)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Button(
-                            onClick = { navController.navigate("registro_salud") },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
-                        ) {
-                            Text(
-                                "Registrar datos de salud",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 17.sp
-                            )
-                        }
-                        Button(
-                            onClick = { navController.navigate("ejercicios") },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
-                        ) {
-                            Text(
-                                "Ejercicios recomendados",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 17.sp
-                            )
-                        }
-                    }
-                }
+                
+                MainScreenAccionesCard(navController = navController)
                 Spacer(modifier = Modifier.height(20.dp))
-                Card(
-                    shape = RoundedCornerShape(24.dp),
-                    elevation = CardDefaults.cardElevation(6.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.90f)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(14.dp)
-                    ) {
-                        Text(
-                            "Registros recientes",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        LazyColumn(
-                            state = registrosScroll,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = 120.dp, max = 260.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            items(registros.take(5)) { reg ->
-                                Card(
-                                    shape = RoundedCornerShape(18.dp),
-                                    elevation = CardDefaults.cardElevation(6.dp),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = Color.White.copy(alpha = 0.88f)
-                                    ),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 2.dp)
-                                        .clickable {
-                                            usuario?.let { user ->
-                                                val eval = SaludEvaluator.evaluarRegistroDetallado(user, reg)
-                                                popupViewModel.evaluationColor.value = when (eval.estado) {
-                                                    EvaluacionSalud.Estado.NORMAL -> Color(0xFF4CAF50)
-                                                    EvaluacionSalud.Estado.LEVE -> Color(0xFFA3DC39)
-                                                    EvaluacionSalud.Estado.ADVERTENCIA -> Color(0xFFFFA500)
-                                                    EvaluacionSalud.Estado.EMERGENCIA -> Color(0xFFD32F2F)
-                                                }
-                                                popupViewModel.evaluationMessage.value = eval.mensaje
-                                                popupViewModel.evaluationDetails.value = eval.detalles
-                                                popupViewModel.showEvaluationPopup.value = true
-                                            }
-                                        }
-                                ) {
-                                    Column(modifier = Modifier.padding(14.dp)) {
-                                        Text(text = reg.fecha.substring(0, 10), fontWeight = FontWeight.Bold, color = Color(0xFF2196F3), fontSize = 15.sp)
-                                        
-                                        // ✅ Mostrar parámetros específicos según enfermedad
-                                        when (usuario?.enfermedad) {
-                                            "Hipertensión" -> {
-                                                reg.presionArterial?.let { Text("Presión: $it", fontSize = 14.sp) }
-                                                reg.presionSistolica?.let { syst ->
-                                                    reg.presionDiastolica?.let { dias ->
-                                                        Text("Presión: $syst/$dias mmHg", fontSize = 14.sp)
-                                                    }
-                                                }
-                                            }
-                                            "Diabetes" -> {
-                                                reg.glucosa?.let { Text("Glucosa: $it mg/dL", fontSize = 14.sp) }
-                                            }
-                                            "Obesidad" -> {
-                                                reg.peso?.let { Text("Peso: ${String.format(java.util.Locale.US, "%.1f", it)} kg", fontSize = 14.sp) }
-                                                reg.pulso?.let { Text("Pulso: $it lat/min", fontSize = 14.sp) }
-                                                reg.imc?.let { Text("IMC: ${String.format(java.util.Locale.US, "%.2f", it)}", fontSize = 14.sp) }
-                                            }
-                                            "Colesterol alto" -> {
-                                                reg.colesterol?.let { Text("Colesterol: $it mg/dL", fontSize = 14.sp) }
-                                                reg.presionSistolica?.let { syst ->
-                                                    reg.presionDiastolica?.let { dias ->
-                                                        if (syst > 0) Text("Presión: $syst/$dias mmHg", fontSize = 14.sp)
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        
-                                        // Campos comunes a todas las enfermedades
-                                        Text("Calorías: ${reg.calorias}", fontSize = 14.sp)
-                                        Text("Ejercicio: ${com.example.doc.utils.HealthFormatUtils.formatearMinutos(reg.ejercicioMinutos)}", fontSize = 14.sp)
-                                        Text("Ánimo: ${reg.estadoAnimo}", fontSize = 14.sp)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                
+                MainScreenRegistrosCard(
+                    usuario = user,
+                    registros = registros,
+                    popupViewModel = popupViewModel,
+                    registrosScroll = registrosScroll
+                )
             }  // Fin de usuario?.let
             // --- POPUPS overlays (SIEMPRE al final del Box) ---
-            if (showResultPopup) {
-                android.util.Log.d("MainScreen", "Mostrando ResultPopup: $resultPopupMessage")
-
-                // animación de entrada (se usa aunque esté dentro del Dialog)
-                val scale by animateFloatAsState(
-                    targetValue = if (showResultPopup) 1f else 0.8f,
-                    animationSpec = tween(durationMillis = 300)
-                )
-                val alpha by animateFloatAsState(
-                    targetValue = if (showResultPopup) 1f else 0f,
-                    animationSpec = tween(durationMillis = 300)
-                )
-
-                Dialog(
-                    onDismissRequest = {
-                        // al tocar fuera: cerrar resultado y abrir evaluación (si procede)
-                        popupViewModel.showResultPopup.value = false
-                        usuario?.let { user ->
-                            if (registros.isNotEmpty() && !popupViewModel.showEvaluationPopup.value) {
-                                val eval = SaludEvaluator.evaluarRegistroDetallado(user, registros.first())
-                                popupViewModel.evaluationColor.value = when (eval.estado) {
-                                    EvaluacionSalud.Estado.NORMAL -> Color(0xFF4CAF50)
-                                    EvaluacionSalud.Estado.LEVE -> Color(0xFFA3DC39)
-                                    EvaluacionSalud.Estado.ADVERTENCIA -> Color(0xFFFFA500)
-                                    EvaluacionSalud.Estado.EMERGENCIA -> Color(0xFFD32F2F)
-                                }
-                                popupViewModel.evaluationMessage.value = eval.mensaje
-                                popupViewModel.evaluationDetails.value = eval.detalles
-                                popupViewModel.showEvaluationPopup.value = true
+            // FIX #7: Usar componentes separados para popups
+            MainScreenResultPopup(
+                isVisible = showResultPopup,
+                message = resultPopupMessage,
+                color = resultPopupColor.value,
+                onDismiss = {
+                    popupViewModel.showResultPopup.value = false
+                    usuario?.let { user ->
+                        if (registros.isNotEmpty() && !popupViewModel.showEvaluationPopup.value) {
+                            val eval = SaludEvaluator.evaluarRegistroDetallado(user, registros.first())
+                            popupViewModel.evaluationColor.value = when (eval.estado) {
+                                EvaluacionSalud.Estado.NORMAL -> Color(0xFF4CAF50)
+                                EvaluacionSalud.Estado.LEVE -> Color(0xFFA3DC39)
+                                EvaluacionSalud.Estado.ADVERTENCIA -> Color(0xFFFFA500)
+                                EvaluacionSalud.Estado.EMERGENCIA -> Color(0xFFD32F2F)
                             }
-                        }
-                    }
-                ) {
-                    // Nota: no ocupes fillMaxSize aquí para que el "fuera" del dialog sea realmente fuera.
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = resultPopupColor.value,
-                            contentColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(16.dp),
-                        elevation = CardDefaults.cardElevation(10.dp),
-                        modifier = Modifier
-                            .padding(horizontal = 32.dp)
-                            .fillMaxWidth(0.85f)
-                            .scale(scale)
-                            .alpha(alpha) // si quieres que también vaya desvaneciendo
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .padding(20.dp)
-                                .fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                imageVector = if (resultPopupMessage.contains("✔")) {
-                                    Icons.Filled.CheckCircle
-                                } else {
-                                    Icons.Filled.Error
-                                },
-                                contentDescription = "Estado del registro",
-                                modifier = Modifier.size(48.dp),
-                                tint = Color.White
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = resultPopupMessage,
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 16.dp)
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
+                            popupViewModel.evaluationMessage.value = eval.mensaje
+                            popupViewModel.evaluationDetails.value = eval.detalles
+                            popupViewModel.showEvaluationPopup.value = true
                         }
                     }
                 }
-            }
+            )
 
-            if (showEvaluationPopup) {
-                android.util.Log.d("MainScreen", "Mostrando EvaluationPopup: $evaluationMessage")
+            MainScreenEvaluationPopup(
+                isVisible = showEvaluationPopup,
+                message = evaluationMessage,
+                color = evaluationColor.value,
+                details = evaluationDetails,
+                onDismiss = { popupViewModel.showEvaluationPopup.value = false }
+            )
 
-                val scale by animateFloatAsState(
-                    targetValue = if (showEvaluationPopup) 1f else 0.8f,
-                    animationSpec = tween(durationMillis = 300)
-                )
-                val alpha by animateFloatAsState(
-                    targetValue = if (showEvaluationPopup) 1f else 0f,
-                    animationSpec = tween(durationMillis = 300)
-                )
-
-                Dialog(
-                    onDismissRequest = {
-                        // tocar fuera cierra la evaluación
-                        popupViewModel.showEvaluationPopup.value = false
-                    },
-                    properties = androidx.compose.ui.window.DialogProperties(
-                        usePlatformDefaultWidth = false
-                    )
-                ) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = evaluationColor.value,
-                            contentColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(20.dp),
-                        elevation = CardDefaults.cardElevation(12.dp),
-                        modifier = Modifier
-                            .padding(horizontal = 24.dp)
-                            .fillMaxWidth(0.95f)
-                            .scale(scale)
-                            .alpha(alpha)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .padding(24.dp)
-                                .fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                imageVector = when (evaluationColor.value) {
-                                    Color(0xFF4CAF50) -> Icons.Filled.CheckCircle // ÓPTIMO
-                                    Color(0xFFA3DC39) -> Icons.Filled.Info // LEVE
-                                    Color(0xFFFFA500) -> Icons.Filled.Warning // ADVERTENCIA
-                                    Color(0xFFD32F2F) -> Icons.Filled.Error // EMERGENCIA
-                                    else -> Icons.Filled.Info
-                                },
-                                contentDescription = "Estado de evaluación",
-                                modifier = Modifier.size(56.dp),
-                                tint = Color.White
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = evaluationMessage,
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 16.dp)
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Divider(color = Color.White.copy(alpha = 0.6f), thickness = 1.dp)
-                            Spacer(modifier = Modifier.height(12.dp))
-                            evaluationDetails.forEach { detail ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Info,
-                                        contentDescription = "Detalle",
-                                        modifier = Modifier
-                                            .size(20.dp)
-                                            .padding(end = 8.dp),
-                                        tint = Color.White.copy(alpha = 0.8f)
-                                    )
-                                    Text(
-                                        text = detail,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        fontWeight = FontWeight.Medium,
-                                        color = Color.White,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(20.dp))
-                            Button(
-                                onClick = { popupViewModel.showEvaluationPopup.value = false },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color.White,
-                                    contentColor = Color(0xFF2196F3)
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text(
-                                    "Aceptar",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp
-                                )
-                            }
-                        }
-                    }
-                }
-            }
             if (showNotifDialog.value) {
                 android.util.Log.d("MainScreen", "Mostrando NotifDialog")
                 AlertDialog(

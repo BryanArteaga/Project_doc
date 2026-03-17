@@ -126,6 +126,14 @@ export interface EstadoAccountResponse {
   ultimaSincronizacion: string;
 }
 
+// ✅ DTO para Consejo en PULL
+export interface ConsejoResponse {
+  id: number;
+  consejo: string;
+  enfermedad: string;
+  creadoEn: Date;
+}
+
 export interface UsuarioResponse {
   id: number;
   nombre: string;
@@ -150,6 +158,7 @@ export interface SyncPullResponse {
   registrosSalud: RegistroSaludResponse[];         // ✅ Registros de salud históricos
   asignaciones: AsignacionEjercicioResponse[];     // ✅ NUEVO: Asignaciones de ejercicios
   ejercicios: EjercicioResponse[];
+  consejos: ConsejoResponse[];                     // ✅ NUEVO: Consejos por enfermedad
   notificaciones: NotificacionResponse[];
   estadoCuenta: EstadoAccountResponse;
 }
@@ -174,6 +183,15 @@ export interface SyncErrorResponse {
   error: string;
   code: 'NETWORK_ERROR' | 'AUTH_ERROR' | 'VALIDATION_ERROR' | 'SERVER_ERROR';
   timestamp: string;
+}
+
+// ✅ NUEVO: Respuesta para verificar si hay cambios sin descargar datos
+export interface CheckUpdatesResponse {
+  shouldPull: boolean;                    // True si hay cambios y la app debe hacer PULL
+  hasExerciseUpdates: boolean;            // Si hay ejercicios nuevos/actualizados
+  hasAdviceUpdates: boolean;              // Si hay consejos nuevos/actualizados
+  hasAssignmentUpdates: boolean;          // Si hay asignaciones nuevas/actualizadas
+  lastBackendSync: number;                // Timestamp en milisegundos del servidor
 }
 
 // ============ TIPOS INTERNOS PARA BD ============

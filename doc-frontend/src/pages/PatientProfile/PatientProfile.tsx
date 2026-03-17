@@ -301,7 +301,7 @@ const PatientProfile: React.FC = () => {
                                 {patient.edad && <div className="info-item"><span>Edad:</span><span>{patient.edad} años</span></div>}
                                 {patient.sexo && <div className="info-item"><span>Sexo:</span><span>{patient.sexo}</span></div>}
                                 {patient.peso && <div className="info-item"><span>Peso:</span><span>{patient.peso} kg</span></div>}
-                                {patient.altura && <div className="info-item"><span>Altura:</span><span>{patient.altura} cm</span></div>}
+                                {patient.altura && <div className="info-item"><span>Altura:</span><span>{patient.altura} m</span></div>}
                                 {patient.enfermedad && <div className="info-item"><span>Enfermedad:</span><span>{patient.enfermedad}</span></div>}
                             </div>
                         </div>

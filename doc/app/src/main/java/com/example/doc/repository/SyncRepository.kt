@@ -15,7 +15,9 @@ import com.example.doc.network.PushEjercicioRealizadoRequest
 import com.example.doc.network.FCMTokenRequest
 import com.example.doc.network.CreateUsuarioRequest
 import com.example.doc.network.AsignacionEjercicioDTO
+import com.example.doc.network.UpdateProfileRequest
 import com.example.doc.data.daos.AsignacionEjercicioDao
+import com.example.doc.data.daos.ConsejoDao
 import timber.log.Timber
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -41,7 +43,8 @@ data class SyncPullResponse(
     val notificaciones: List<NotificacionDTO>,
     val estadoCuenta: EstadoCuentaDTO,
     val registrosSalud: List<RegistroSaludDTO> = emptyList(),  // ✅ NUEVO: Registros históricos del backend
-    val asignaciones: List<AsignacionEjercicioDTO> = emptyList()  // ✅ NUEVO: Asignaciones de ejercicios
+    val asignaciones: List<AsignacionEjercicioDTO> = emptyList(),  // ✅ NUEVO: Asignaciones de ejercicios
+    val consejos: List<ConsejoDTO> = emptyList()  // ✅ NUEVO: Consejos por enfermedad
 )
 
 data class RegistroSaludDTO(
@@ -94,6 +97,14 @@ data class EjercicioDTO(
     val urlVideo: String? = null
 )
 
+// ✅ NUEVO: DTO para Consejos
+data class ConsejoDTO(
+    val id: Int,
+    val consejo: String,
+    val enfermedad: String,
+    val creadoEn: String  // ISO 8601 timestamp from backend
+)
+
 data class NotificacionDTO(
     val id: Int,
     val tipo: String,
@@ -115,6 +126,15 @@ data class SyncStatus(
     val datosRemote: Map<String, Int>
 )
 
+// ✅ NUEVO: Respuesta para verificar si hay cambios sin descargar datos
+data class CheckUpdatesResponse(
+    val shouldPull: Boolean,                    // True si hay cambios y la app debe hacer PULL
+    val hasExerciseUpdates: Boolean,            // Si hay ejercicios nuevos/actualizados
+    val hasAdviceUpdates: Boolean,              // Si hay consejos nuevos/actualizados
+    val hasAssignmentUpdates: Boolean,          // Si hay asignaciones nuevas/actualizadas
+    val lastBackendSync: Long                   // Timestamp en milisegundos del servidor
+)
+
 /**
  * Repositorio de Sincronización
  * Maneja la sincronización bidireccional (PUSH/PULL) con el backend
@@ -126,6 +146,7 @@ class SyncRepository(
     private val asignacionEjercicioDao: AsignacionEjercicioDao,
     private val usuarioDao: UsuarioDao,
     private val ejercicioDao: EjercicioDao,
+    private val consejoDao: ConsejoDao,
     private val sharedPreferences: SharedPreferences
 ) {
 
@@ -163,6 +184,34 @@ class SyncRepository(
                     crearUsuarioEnBackendSiNoExiste(usuarioEnRoom)
                     // Pequeño delay para asegurar que la actualización se propagó
                     kotlinx.coroutines.delay(100)
+                    
+                    // 📤 PUSH de actualización del usuario (nombre, peso, edad, etc)
+                    Timber.d("📤 Actualizando perfil del usuario en backend...")
+                    try {
+                        val updateProfileRequest = UpdateProfileRequest(
+                            usuarioId = usuarioEnRoom.id,
+                            cedula = usuarioEnRoom.cedula,
+                            nombre = usuarioEnRoom.nombre,
+                            apellido = usuarioEnRoom.apellido,
+                            edad = usuarioEnRoom.edad,
+                            peso = usuarioEnRoom.peso,
+                            altura = usuarioEnRoom.altura,
+                            sexo = usuarioEnRoom.sexo,
+                            glucosaInicial = usuarioEnRoom.glucosaInicial?.toDouble(),
+                            colesterolInicial = usuarioEnRoom.colesterolInicial?.toDouble(),
+                            notifEnabled = usuarioEnRoom.notifEnabled,
+                            notifType = usuarioEnRoom.notifType,
+                            notifDetails = usuarioEnRoom.notifDetails
+                        )
+                        val updateResponse = apiService.updateProfile(updateProfileRequest)
+                        if (updateResponse.isSuccessful) {
+                            Timber.d("✅ Perfil del usuario actualizado en backend")
+                        } else {
+                            Timber.w("⚠️ No se pudo actualizar perfil en backend: ${updateResponse.code()}")
+                        }
+                    } catch (e: Exception) {
+                        Timber.w(e, "⚠️ Error actualizando perfil en backend, continuando con PUSH de registros...")
+                    }
                 }
 
                 val usuarioActualizado = usuarioDao.getUsuarioSuspend()
@@ -257,6 +306,46 @@ class SyncRepository(
     }
 
     /**
+     * PUSH específico del perfil/usuario actualizado
+     * Se llama cuando el usuario edita sus datos en el perfil
+     */
+    suspend fun pushUserProfileUpdate(usuario: UsuarioEntity): Result<String> {
+        return withContext(Dispatchers.IO) {
+            try {
+                Timber.d("📤 Iniciando PUSH de actualización de perfil para usuario: ${usuario.id}")
+                
+                val updateRequest = UpdateProfileRequest(
+                    usuarioId = usuario.id,
+                    nombre = usuario.nombre,
+                    apellido = usuario.apellido,
+                    edad = usuario.edad,
+                    peso = usuario.peso,
+                    altura = usuario.altura,
+                    sexo = usuario.sexo,
+                    glucosaInicial = usuario.glucosaInicial?.toDouble(),
+                    colesterolInicial = usuario.colesterolInicial?.toDouble(),
+                    notifEnabled = usuario.notifEnabled,
+                    notifType = usuario.notifType,
+                    notifDetails = usuario.notifDetails
+                )
+
+                val response = apiService.updateProfile(updateRequest)
+
+                if (response.isSuccessful) {
+                    Timber.d("✅ PUSH de perfil exitoso para usuario: ${usuario.nombre}")
+                    Result.success("Perfil enviado al backend correctamente")
+                } else {
+                    Timber.e("❌ Error al enviar perfil: ${response.message()}")
+                    Result.failure(Exception("Error en PUSH de perfil: ${response.message()}"))
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "❌ Excepción en PUSH de perfil")
+                Result.failure(e)
+            }
+        }
+    }
+
+    /**
      * PULL: Obtener datos del backend
      * - Ejercicios asignados
      * - Notificaciones del doctor
@@ -343,10 +432,10 @@ class SyncRepository(
                     // ✅ NUEVO: Guardar ejercicios en la base de datos local
                     if (body.ejercicios.isNotEmpty()) {
                         try {
-                            // 🔧 Obtener ejercicios existentes para preservar imagenResId
+                            // FIX: Usar getAll() con limite para evitar OOM
                             val idsToSync = body.ejercicios.map { it.id }
                             val ejerciciosExistentes = try {
-                                ejercicioDao.getAll()
+                                ejercicioDao.getAll(limit = 200)  // FIX: Limit 200 en lugar de ilimitado
                                     .filter { it.id in idsToSync }
                                     .associateBy { it.id }
                             } catch (e: Exception) {
@@ -382,13 +471,43 @@ class SyncRepository(
                                     series = dto.series ?: existente?.series ?: 3,  // Backend o local o default
                                     descansoEntreSeries = dto.descansoEntreSeries ?: existente?.descansoEntreSeries ?: 30,
                                     urlImagen = dto.urlImagen ?: existente?.urlImagen,  // Preservar si backend no envía
-                                    urlVideo = dto.urlVideo ?: existente?.urlVideo
+                                    urlVideo = dto.urlVideo ?: existente?.urlVideo,
+                                    createdAt = System.currentTimeMillis()  // Timestamp para ordenamiento
                                 )
                             }
                             ejercicioDao.upsertAll(ejerciciosEntities)
-                            Timber.d("✅ ${body.ejercicios.size} ejercicios guardados en Room")
+                            Timber.d("✅ ${body.ejercicios.size} ejercicios guardados en Room (ordenados por fecha)")
                         } catch (e: Exception) {
                             Timber.e(e, "❌ Error guardando ejercicios en Room")
+                        }
+                    }
+
+                    // ✅ GUARDAR CONSEJOS en la base de datos local
+                    if (body.consejos.isNotEmpty()) {
+                        try {
+                            // Convertir DTOs a Entities y guardar
+                            val consejosEntities = body.consejos.map { dto ->
+                                // Parsear fecha ISO 8601 a timestamp (compatible con API 24+)
+                                val creadoEn = try {
+                                    val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+                                    isoFormat.timeZone = java.util.TimeZone.getTimeZone("UTC")
+                                    val date = isoFormat.parse(dto.creadoEn)
+                                    date?.time ?: System.currentTimeMillis()
+                                } catch (e: Exception) {
+                                    System.currentTimeMillis()
+                                }
+                                
+                                com.example.doc.data.entities.ConsejoEntity(
+                                    id = dto.id,
+                                    consejo = dto.consejo,
+                                    enfermedad = dto.enfermedad,
+                                    creadoEn = creadoEn
+                                )
+                            }
+                            consejoDao.insertAll(consejosEntities)
+                            Timber.d("✅ ${body.consejos.size} consejos guardados en Room (ordenados por fecha)")
+                        } catch (e: Exception) {
+                            Timber.e(e, "❌ Error guardando consejos en Room")
                         }
                     }
 
@@ -430,46 +549,95 @@ class SyncRepository(
                 // 1. PUSH siempre
                 val pushResult = pushDataToBackend(usuarioId)
                 if (pushResult.isFailure) {
-                    Timber.e("❌ PUSH falló, abortando sync")
-                    return@withContext pushResult.mapCatching { "" }
+                    Timber.e("❌ PUSH falló")
+                    return@withContext Result.failure(Exception("PUSH falló"))
                 }
-                Timber.d("✅ PUSH completado exitosamente")
 
-                // 2. Determinar si hacer PULL
+                // 2. Decidir si hacer PULL
                 val firstPullDone = sharedPreferences.getBoolean("first_pull_done_$usuarioId", false)
-                val shouldPull = !firstPullDone || forcePull
+                val lastSyncMs = sharedPreferences.getLong("last_backend_sync_$usuarioId", 0)
+                
+                val shouldPull = when {
+                    forcePull || !firstPullDone -> {
+                        // SIEMPRE PULL si es forzado O es la primera sincronización
+                        if (forcePull) Timber.d("📥 PULL forzado por admin")
+                        if (!firstPullDone) Timber.d("📥 PULL necesario: primer arranque (siempre obligatorio)")
+                        true
+                    }
+                    else -> {
+                        // Verificar si hay cambios sin descargar datos
+                        Timber.d("🔍 Verificando si hay cambios desde último sync ($lastSyncMs)")
+                        val checkResult = checkForUpdates(usuarioId, lastSyncMs)
+                        checkResult.getOrNull()?.shouldPull ?: false
+                    }
+                }
 
                 if (shouldPull) {
-                    Timber.d("📥 Ejecutando PULL${if (forcePull) " (FORZADO POR ADMIN)" else " (PRIMER ARRANQUE)"}")
+                    Timber.d("📥 Ejecutando PULL...")
                     
                     val pullResult = pullDataFromBackend(usuarioId)
                     if (pullResult.isFailure) {
-                        Timber.e("❌ PULL falló, pero PUSH fue exitoso")
+                        Timber.e("❌ PULL falló, pero PUSH fue exitoso. Reintentará en próxima sincronización")
                         // No abortar si PULL falla - el PUSH es lo importante
+                        // NO actualizar timestamp para que el próximo retry vea los cambios
                     } else {
                         // 3. Actualizar usuario en Room con los datos del backend
                         val pullData = pullResult.getOrNull()
                         if (pullData != null) {
+                            // Guardar consejos
+                            if (pullData.consejos.isNotEmpty()) {
+                                Timber.d("💡 Sincronizando ${pullData.consejos.size} consejos")
+                                // Aquí se guardarían consejos si hay DAO (por ahora solo se logea)
+                            }
+                            
                             actualizarUsuarioEnRoom(pullData.usuario, pullData.estadoCuenta)
-                            Timber.d("✅ Usuario actualizado con datos del backend")
+                            Timber.d("✅ Usuario actualizado con datos del backend (${pullData.ejercicios.size} ejercicios, ${pullData.consejos.size} consejos)")
                         }
                         
-                        // Marcar que ya hizo el primer PULL (solo si no fue forzado)
-                        if (!forcePull) {
+                        // Marcar que ya hizo el primer PULL exitoso (solo si no fue forzado)
+                        if (!forcePull && !firstPullDone) {
                             sharedPreferences.edit()
                                 .putBoolean("first_pull_done_$usuarioId", true)
                                 .apply()
-                            Timber.d("✅ Primer PULL completado. Futuras syncs solo harán PUSH")
+                            Timber.d("✅ Primer PULL completado - próximas sincronizaciones solo si hay cambios")
                         }
+                        
+                        // Actualizar timestamp SOLO si PULL fue exitoso
+                        // Esto garantiza que los reintentos vean cambios desde el último sync válido
+                        sharedPreferences.edit()
+                            .putLong("last_backend_sync_$usuarioId", System.currentTimeMillis())
+                            .apply()
                     }
                 } else {
-                    Timber.d("📤 PULL omitido - Ya completado en arranque anterior. Solo PUSH ejecutado")
+                    Timber.d("⏭️  PULL omitido: no hay cambios detectados. Solo PUSH ejecutado (ya sincronizado)")
                 }
 
                 Timber.d("✅ Sincronización completada")
                 Result.success("Sync completed successfully")
             } catch (e: Exception) {
                 Timber.e(e, "❌ Error durante sincronización")
+                Result.failure(e)
+            }
+        }
+    }
+
+    /**
+     * Verificar si hay cambios en el backend sin descargar todo
+     */
+    private suspend fun checkForUpdates(usuarioId: Int, lastSync: Long): Result<CheckUpdatesResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.checkUpdates(usuarioId, lastSync)
+                if (response.isSuccessful) {
+                    val body = response.body()!!
+                    Timber.d("✅ Check updates: shouldPull=${body.shouldPull}, ejercicios=${body.hasExerciseUpdates}, consejos=${body.hasAdviceUpdates}, asignaciones=${body.hasAssignmentUpdates}")
+                    Result.success(body)
+                } else {
+                    Timber.e("❌ Error en checkUpdates: ${response.code()}")
+                    Result.failure(Exception("Check updates failed: ${response.message()}"))
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "❌ Excepción en checkUpdates")
                 Result.failure(e)
             }
         }

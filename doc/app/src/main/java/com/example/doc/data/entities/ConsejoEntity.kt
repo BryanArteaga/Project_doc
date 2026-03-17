@@ -7,5 +7,6 @@ import androidx.room.PrimaryKey
 data class ConsejoEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val enfermedad: String,
-    val consejo: String
+    val consejo: String,
+    val creadoEn: Long = 0  // Timestamp de creación (para ordenamiento)
 )

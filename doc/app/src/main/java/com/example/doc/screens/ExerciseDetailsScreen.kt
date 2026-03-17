@@ -205,7 +205,7 @@ fun ExerciseDetailsScreen(
                         // Información en cards
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             // Card de duración
                             Card(
@@ -218,7 +218,7 @@ fun ExerciseDetailsScreen(
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(16.dp),
+                                        .padding(14.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     val duracionTexto = when {
@@ -229,13 +229,13 @@ fun ExerciseDetailsScreen(
 
                                     Text(
                                         text = duracionTexto,
-                                        fontSize = 28.sp,
+                                        fontSize = 20.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF2196F3)
                                     )
                                     Text(
                                         text = unidadTexto,
-                                        fontSize = 13.sp,
+                                        fontSize = 11.sp,
                                         color = Color(0xFF757575)
                                     )
                                 }
@@ -256,12 +256,12 @@ fun ExerciseDetailsScreen(
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(16.dp),
+                                        .padding(14.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Text(
                                         text = ejercicio.intensidad,
-                                        fontSize = 18.sp,
+                                        fontSize = 20.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = when (ejercicio.intensidad.lowercase()) {
                                             "baja" -> Color(0xFF2E7D32)
@@ -271,7 +271,35 @@ fun ExerciseDetailsScreen(
                                     )
                                     Text(
                                         text = "intensidad",
-                                        fontSize = 13.sp,
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF757575)
+                                    )
+                                }
+                            }
+
+                            // Card de series
+                            Card(
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFFFFE0B2)
+                                ),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(14.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = ejercicio.series.toString(),
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFE65100)
+                                    )
+                                    Text(
+                                        text = "series",
+                                        fontSize = 11.sp,
                                         color = Color(0xFF757575)
                                     )
                                 }
@@ -307,6 +335,8 @@ fun ExerciseDetailsScreen(
                                 )
                             }
                         }
+
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
             }

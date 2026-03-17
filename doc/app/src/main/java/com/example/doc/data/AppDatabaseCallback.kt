@@ -18,9 +18,10 @@ class AppDatabaseCallback(
 ) : RoomDatabase.Callback() {
 
     private suspend fun repoblarSiVacio(ejercicioDao: EjercicioDao, consejoDao: ConsejoDao) {
-        val ejercicios = ejercicioDao.getAll()
+        // FIX: Usar getCount() en lugar de cargar toda la tabla
+        val ejerciciosCount = ejercicioDao.getCount()
         val consejos = consejoDao.getConsejosPorEnfermedad("Hipertensión")
-        if (ejercicios.isEmpty() || consejos.isEmpty()) {
+        if (ejerciciosCount == 0 || consejos.isEmpty()) {
             populateInitialData(ejercicioDao, consejoDao)
         }
         
@@ -312,8 +313,8 @@ class AppDatabaseCallback(
             Pair("Mountain climbers",                "Colesterol alto") to R.drawable.ejercicio_escaladora
         )
 
-        val todos = ejercicioDao.getAll()
-        Timber.d("🔍 Verificando ${todos.size} ejercicios para corrección...")
+        val todos = ejercicioDao.getAll(limit = 200)  // FIX: Cargar con limite, no todos
+        Timber.d("Verificando ${todos.size} ejercicios para correccion...")
         val aActualizar = mutableListOf<EjercicioEntity>()
         todos.forEach { ejercicio ->
             // Solo corregir ejercicios locales (sin imagen de backend/Storage)

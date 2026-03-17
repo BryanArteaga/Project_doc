@@ -30,6 +30,11 @@ const GestionConsejos: React.FC = () => {
   const [filterEnfermedad_temp, setFilterEnfermedad_temp] = useState<Enfermedad | ''>('');
   // Filtro aplicado
   const [filterEnfermedad, setFilterEnfermedad] = useState<Enfermedad | ''>('');
+  
+  // ✅ Ordenamiento - Input en vivo
+  const [sortBy_temp, setSortBy_temp] = useState<'az' | 'za' | 'reciente' | 'antiguo' | ''>('');
+  // ✅ Ordenamiento - Aplicado
+  const [sortBy, setSortBy] = useState<'az' | 'za' | 'reciente' | 'antiguo' | ''>('');
 
   // Form states
   const [formData, setFormData] = useState<CreateConsejoRequest>({
@@ -81,7 +86,7 @@ const GestionConsejos: React.FC = () => {
   // Aplicar filtros de búsqueda cuando cambian los consejos o el término de búsqueda
   useEffect(() => {
     aplicarFiltros();
-  }, [consejos, searchTerm]);
+  }, [consejos, searchTerm, sortBy]);
 
   const loadConsejos = async () => {
     try {
@@ -110,6 +115,25 @@ const GestionConsejos: React.FC = () => {
       resultado = resultado.filter(c => 
         c.consejo.toLowerCase().includes(term)
       );
+    }
+
+    // ✅ Aplicar ordenamiento
+    if (sortBy === 'az') {
+      resultado.sort((a, b) => a.consejo.localeCompare(b.consejo, 'es'));
+    } else if (sortBy === 'za') {
+      resultado.sort((a, b) => b.consejo.localeCompare(a.consejo, 'es'));
+    } else if (sortBy === 'reciente') {
+      resultado.sort((a, b) => {
+        const dateA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
+        const dateB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
+        return dateB - dateA;
+      });
+    } else if (sortBy === 'antiguo') {
+      resultado.sort((a, b) => {
+        const dateA = a.creadoEn ? new Date(a.creadoEn).getTime() : 0;
+        const dateB = b.creadoEn ? new Date(b.creadoEn).getTime() : 0;
+        return dateA - dateB;
+      });
     }
 
     setFiltrados(resultado);
@@ -236,6 +260,7 @@ const GestionConsejos: React.FC = () => {
 
   const handleApplyFilters = () => {
     setFilterEnfermedad(filterEnfermedad_temp);
+    setSortBy(sortBy_temp);
     setCurrentPage(1);
   };
 
@@ -244,6 +269,8 @@ const GestionConsejos: React.FC = () => {
     setSearchTerm('');
     setFilterEnfermedad_temp('');
     setFilterEnfermedad('');
+    setSortBy_temp('');
+    setSortBy('');
     setCurrentPage(1);
   };
 
@@ -318,10 +345,23 @@ const GestionConsejos: React.FC = () => {
                   type: 'select',
                   options: ENFERMEDADES.map(e => ({ label: e, value: e })),
                   value: filterEnfermedad_temp
+                },
+                {
+                  name: 'sortBy',
+                  label: 'Ordenar',
+                  type: 'select',
+                  options: [
+                    { label: 'A - Z', value: 'az' },
+                    { label: 'Z - A', value: 'za' },
+                    { label: 'Más reciente', value: 'reciente' },
+                    { label: 'Más antiguo', value: 'antiguo' }
+                  ],
+                  value: sortBy_temp
                 }
               ]}
               onFilterChange={(name, value) => {
                 if (name === 'enfermedad') setFilterEnfermedad_temp(value as Enfermedad | '');
+                if (name === 'sortBy') setSortBy_temp(value as 'az' | 'za' | 'reciente' | 'antiguo' | '');
               }}
               onApplyFilters={handleApplyFilters}
               onClearFilters={handleClearFilters}

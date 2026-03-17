@@ -22,9 +22,9 @@ import com.example.doc.network.LongTimestampDeserializer
 @Suppress("unused")
 object NetworkModule {
 
-    private const val CONNECT_TIMEOUT = 30L
-    private const val READ_TIMEOUT = 30L
-    private const val WRITE_TIMEOUT = 30L
+    private const val CONNECT_TIMEOUT = 15L  // FIX: Reducido de 30s (evita ANR + UX)
+    private const val READ_TIMEOUT = 15L     // FIX: Reducido de 30s
+    private const val WRITE_TIMEOUT = 15L    // FIX: Reducido de 30s
 
     /**
      * Interceptor para agregar headers a todas las requests

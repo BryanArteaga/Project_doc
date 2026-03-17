@@ -31,12 +31,12 @@ export const PatientInfoPanel: React.FC<PatientInfoPanelProps> = ({
   const containerClass = `patient-info-panel ${isDarkMode ? 'patient-info-panel--dark' : ''}`;
   
   const displayPeso = patient.peso ? `${patient.peso} kg` : '-';
-  const displayAltura = patient.altura ? `${patient.altura} cm` : '-';
+  const displayAltura = patient.altura ? `${patient.altura} m` : '-';
   const displaySexo = patient.sexo || '-';
   
   // Calcular IMC si hay peso y altura
   const imc = patient.peso && patient.altura 
-    ? (patient.peso / ((patient.altura / 100) ** 2)).toFixed(1)
+    ? (patient.peso / (patient.altura ** 2)).toFixed(1)
     : null;
 
   return (

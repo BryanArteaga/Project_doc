@@ -17,8 +17,11 @@ interface EjercicioDao {
     @Upsert
     suspend fun upsertAll(ejercicios: List<EjercicioEntity>)
 
-    @Query("SELECT * FROM ejercicios WHERE enfermedad = :enfermedad")
-    suspend fun getEjerciciosPorEnfermedad(enfermedad: String): List<EjercicioEntity>
+    @Query("SELECT * FROM ejercicios WHERE enfermedad = :enfermedad LIMIT :limit")
+    suspend fun getEjerciciosPorEnfermedad(
+        enfermedad: String,
+        limit: Int = 50  // FIX: Limita queries a 50 ejercicios maximo
+    ): List<EjercicioEntity>
 
     @Query("""
         SELECT * FROM ejercicios
@@ -28,7 +31,7 @@ interface EjercicioDao {
             WHERE enfermedad = :enfermedad
             GROUP BY nombre, enfermedad
         )
-        ORDER BY id
+        ORDER BY createdAt DESC
     """)
     suspend fun getEjerciciosPorEnfermedadUnicos(enfermedad: String): List<EjercicioEntity>
 
@@ -43,14 +46,19 @@ interface EjercicioDao {
             WHERE enfermedad = :enfermedad
             GROUP BY nombre, enfermedad
         )
-        ORDER BY id
+        ORDER BY createdAt DESC
     """)
     fun getEjerciciosPorEnfermedadUnicosFlow(enfermedad: String): kotlinx.coroutines.flow.Flow<List<EjercicioEntity>>
 
-    @Query("DELETE FROM ejercicios")
-    suspend fun deleteAll()
-    @Query("SELECT * FROM ejercicios")
-    suspend fun getAll(): List<EjercicioEntity>
     @Query("SELECT * FROM ejercicios WHERE id = :id")
     suspend fun getEjercicioById(id: Int): EjercicioEntity?
+
+    @Query("SELECT COUNT(*) FROM ejercicios")
+    suspend fun getCount(): Int  // FIX: Solo cuenta, no carga tabla completa
+
+    @Query("SELECT * FROM ejercicios LIMIT :limit")
+    suspend fun getAll(limit: Int = 100): List<EjercicioEntity>  // FIX: Con LIMIT para evitar OOM
+
+    @Query("DELETE FROM ejercicios")
+    suspend fun deleteAll()
 }

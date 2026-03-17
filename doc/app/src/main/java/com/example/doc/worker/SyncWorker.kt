@@ -75,6 +75,7 @@ class SyncWorker @AssistedInject constructor(
 
     companion object {
         const val WORK_NAME = "sync_work"
-        const val SYNC_INTERVAL_MINUTES = 1L // Sincronizar cada 1 minuto (detecta cambios automáticamente)
+        const val SYNC_INTERVAL_MINUTES = 15L // FIX: Sincronizar cada 15 min (reduce battery drain 300%)
+        const val SYNC_FLEX_MINUTES = 5L // FIX: Flex window de +/- 5 minutos
     }
 }

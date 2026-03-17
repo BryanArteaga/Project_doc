@@ -91,6 +91,12 @@ fun PerfilScreen(
     var errorMessages by remember { mutableStateOf<List<String>>(emptyList()) }
     var showConfirmationDialog by remember { mutableStateOf(false) }
     var confirmationMessage by remember { mutableStateOf("") }
+    
+    // 🔍 OPCIÓN B: Estados para confirmación de cambios en datos personales
+    var showPersonalDataConfirmation by remember { mutableStateOf(false) }
+    var pendingUpdatedUser by remember { mutableStateOf<com.example.doc.model.Usuario?>(null) }
+    var oldPersonalData by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var newPersonalData by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
 
     val notifOptions = listOf(
         "Diaria (hora fija)" to "daily_fixed",
@@ -115,6 +121,103 @@ fun PerfilScreen(
             }
         )
     }
+
+    // 🔍 OPCIÓN B: AlertDialog para confirmar cambios en datos personales
+    if (showPersonalDataConfirmation && pendingUpdatedUser != null) {
+        AlertDialog(
+            onDismissRequest = { 
+                showPersonalDataConfirmation = false
+                pendingUpdatedUser = null
+            },
+            title = { Text("¿Cambiar datos personales?") },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        "Está a punto de cambiar sus datos personales:",
+                        modifier = Modifier.fillMaxWidth(),
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    // Mostrar cambios
+                    oldPersonalData.forEach { (field, oldValue) ->
+                        val newValue = newPersonalData[field] ?: oldValue
+                        if (oldValue != newValue) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Text(
+                                    "$field:",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF666666)
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "\"$oldValue\"",
+                                        fontSize = 12.sp,
+                                        color = Color.Red,
+                                        modifier = Modifier.weight(0.5f)
+                                    )
+                                    Text(" → ", fontSize = 12.sp, textAlign = TextAlign.Center, modifier = Modifier.weight(0.2f))
+                                    Text(
+                                        "\"$newValue\"",
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF2196F3),
+                                        modifier = Modifier.weight(0.5f),
+                                        textAlign = TextAlign.End
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                        }
+                    }
+                    
+                    Text(
+                        "Esta acción no se puede deshacer.",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        fontSize = 12.sp,
+                        color = Color(0xFFFF6B00),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingUpdatedUser?.let { updatedUser ->
+                            usuarioViewModel.actualizarUsuario(updatedUser)
+                            usuarioViewModel.sincronizarManualmente()
+                            isEditing = false
+                        }
+                        showPersonalDataConfirmation = false
+                        pendingUpdatedUser = null
+                    }
+                ) {
+                    Text("Sí, Confirmar", color = Color(0xFF2196F3), fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showPersonalDataConfirmation = false
+                        pendingUpdatedUser = null
+                    }
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -258,9 +361,14 @@ fun PerfilScreen(
                                 Column(modifier = Modifier.weight(1f)) {
                                     OutlinedTextField(
                                         value = cedula,
-                                        onValueChange = { cedula = it },
+                                        onValueChange = {},  // 🔒 CEDULA READ-ONLY: No permitir cambios
                                         label = { Text("Cédula") },
-                                        modifier = Modifier.fillMaxWidth()
+                                        modifier = Modifier.fillMaxWidth(),
+                                        readOnly = true,
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            disabledBorderColor = Color(0xFFBDBDBD),
+                                            disabledTextColor = Color(0xFF757575)
+                                        )
                                     )
                                 }
                                 Column(modifier = Modifier.weight(1f)) {
@@ -304,9 +412,14 @@ fun PerfilScreen(
                             Spacer(modifier = Modifier.height(12.dp))
                             OutlinedTextField(
                                 value = cedula,
-                                onValueChange = { cedula = it },
+                                onValueChange = {},  // 🔒 CEDULA READ-ONLY: No permitir cambios
                                 label = { Text("Cédula") },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                readOnly = true,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    disabledBorderColor = Color(0xFFBDBDBD),
+                                    disabledTextColor = Color(0xFF757575)
+                                )
                             )
                             OutlinedTextField(
                                 value = edad,
@@ -362,9 +475,8 @@ fun PerfilScreen(
                                         errors.add("El nombre debe contener solo letras")
                                     }
 
-                                    if (cedula.length != 10 || !cedula.all { it.isDigit() }) {
-                                        errors.add("La cédula debe tener 10 dígitos numéricos")
-                                    }
+                                    // 🔒 CEDULA NO SE VALIDA - Es READ-ONLY
+                                    
                                     if (edad.toIntOrNull() !in 8..100) {
                                         errors.add("La edad invalida")
                                     }
@@ -387,13 +499,42 @@ fun PerfilScreen(
                                     val updatedUser = usuario!!.copy(
                                         nombre = nombre,
                                         apellido = apellido.trim(),
-                                        cedula = cedula.trim(),
                                         edad = edad.toIntOrNull() ?: usuario!!.edad,
                                         peso = peso.toDoubleOrNull() ?: usuario!!.peso,
                                         altura = altura.toDoubleOrNull() ?: usuario!!.altura
                                     )
-                                    usuarioViewModel.actualizarUsuario(updatedUser)
-                                    isEditing = false
+                                    
+                                    // 🔍 OPCIÓN B: Verificar si hay cambios en datos personales
+                                    val hasPersonalDataChanges = usuario!!.nombre != nombre.trim() ||
+                                                                usuario!!.apellido.trim() != apellido.trim() ||
+                                                                usuario!!.edad.toString() != edad ||
+                                                                usuario!!.peso.toString() != peso ||
+                                                                usuario!!.altura.toString() != altura
+                                    
+                                    if (hasPersonalDataChanges) {
+                                        // Guardar datos antiguos y nuevos para mostrar en el diálogo
+                                        oldPersonalData = mapOf(
+                                            "Nombre" to (usuario!!.nombre ?: ""),
+                                            "Apellido" to (usuario!!.apellido ?: ""),
+                                            "Edad" to usuario!!.edad.toString(),
+                                            "Peso" to usuario!!.peso.toString(),
+                                            "Altura" to usuario!!.altura.toString()
+                                        )
+                                        newPersonalData = mapOf(
+                                            "Nombre" to nombre.trim(),
+                                            "Apellido" to apellido.trim(),
+                                            "Edad" to edad,
+                                            "Peso" to peso,
+                                            "Altura" to altura
+                                        )
+                                        pendingUpdatedUser = updatedUser
+                                        showPersonalDataConfirmation = true
+                                    } else {
+                                        // Sin cambios en datos personales, guardar directamente
+                                        usuarioViewModel.actualizarUsuario(updatedUser)
+                                        usuarioViewModel.sincronizarManualmente()
+                                        isEditing = false
+                                    }
                                 },
                                 modifier = Modifier
                                     .weight(1f)

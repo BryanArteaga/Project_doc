@@ -22,6 +22,7 @@ interface Ejercicio {
   duracion: number;
   series: number;
   descansoEntreSeries: number;
+  tipo?: string;  // ✅ Agregado para verificar tipo de ejercicio
   totalAsignados?: number;
   pacientesAsignados?: PacienteAsignado[];
 }
@@ -34,6 +35,7 @@ interface ExerciseDetailsModalProps {
   onRemoveAssignment?: (pacienteId: number) => void;
   onAssignPatients?: (pacienteIds: number[]) => void;
   onConfirmClose?: () => void;
+  onDelete?: () => void;  // ✅ Agregado para eliminar ejercicio
 }
 
 type ModalMode = 'details' | 'assign' | 'assigned';
@@ -46,12 +48,14 @@ const ExerciseDetailsModal: React.FC<ExerciseDetailsModalProps> = ({
   onRemoveAssignment,
   onAssignPatients,
   onConfirmClose,
+  onDelete,  // ✅ Agregado
 }) => {
   // Modal modes
   const [mode, setMode] = useState<ModalMode>('details');
   const [showConfirmClose, setShowConfirmClose] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [showConfirmRemove, setShowConfirmRemove] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);  // ✅ Agregado
   const [pacienteARemover, setPacienteARemover] = useState<number | null>(null);
   
   // Assignment search & selection
@@ -124,6 +128,20 @@ const ExerciseDetailsModal: React.FC<ExerciseDetailsModalProps> = ({
       setSelectedPacientes([]);
       setSearchPaciente('');
       setFilterEnfermedad('');
+    }
+  };
+
+  // Confirm and execute delete
+  const confirmDelete = async () => {
+    setIsClosing(true);
+    try {
+      if (onDelete) {
+        await onDelete();
+        setShowConfirmDelete(false);
+        onClose();
+      }
+    } finally {
+      setIsClosing(false);
     }
   };
 
@@ -239,6 +257,23 @@ const ExerciseDetailsModal: React.FC<ExerciseDetailsModalProps> = ({
                 >
                   Pacientes Asignados ({ejercicio.totalAsignados || 0})
                 </button>
+                
+                {/* ✅ Botón Eliminar - Solo si es tipo POR_PACIENTES con 1 o menos pacientes */}
+                {ejercicio.tipo === 'POR_PACIENTES' && (ejercicio.totalAsignados || 0) <= 1 && (
+                  <button
+                    onClick={() => setShowConfirmDelete(true)}
+                    className="btn-action btn-delete"
+                    style={{
+                      backgroundColor: '#ef4444',
+                      color: '#ffffff',
+                      gridColumn: '1 / -1'
+                    }}
+                    type="button"
+                  >
+                    <Trash2 size={18} style={{ display: 'inline', marginRight: '0.5rem' }} />
+                    Eliminar Ejercicio
+                  </button>
+                )}
               </div>
             </>
           )}
@@ -480,6 +515,69 @@ const ExerciseDetailsModal: React.FC<ExerciseDetailsModalProps> = ({
                   </button>
                   <button
                     onClick={() => setShowConfirmRemove(false)}
+                    disabled={isClosing}
+                    style={{
+                      backgroundColor: '#64748b',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '0.5rem 1.5rem',
+                      borderRadius: '0.5rem',
+                      fontWeight: 600,
+                      cursor: isClosing ? 'not-allowed' : 'pointer',
+                      fontSize: '1rem',
+                      transition: 'all 0.3s ease',
+                      opacity: isClosing ? 0.6 : 1,
+                    }}
+                    onMouseEnter={(e) => !isClosing && (e.currentTarget.style.backgroundColor = '#475569')}
+                    onMouseLeave={(e) => !isClosing && (e.currentTarget.style.backgroundColor = '#64748b')}
+                    type="button"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ✅ Confirm Delete Exercise Modal */}
+        {showConfirmDelete && (
+          <div className="exercise-modal-overlay" onClick={() => !isClosing && setShowConfirmDelete(false)}>
+            <div className="exercise-details-modal dark" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Eliminar Ejercicio</h2>
+                <button onClick={() => !isClosing && setShowConfirmDelete(false)} className="modal-close" type="button">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="modal-body" style={{ paddingTop: '1rem', paddingBottom: '1rem' }}>
+                <p style={{ fontSize: '1rem', marginBottom: '1.5rem', color: '#cbd5e1', textAlign: 'center' }}>
+                  ¿Estás seguro de que deseas eliminar el ejercicio "{ejercicio.nombre}"? Esta acción no se puede deshacer.
+                </p>
+                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                  <button
+                    onClick={confirmDelete}
+                    disabled={isClosing}
+                    style={{
+                      backgroundColor: '#ef4444',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '0.5rem 1.5rem',
+                      borderRadius: '0.5rem',
+                      fontWeight: 600,
+                      cursor: isClosing ? 'not-allowed' : 'pointer',
+                      fontSize: '1rem',
+                      transition: 'all 0.3s ease',
+                      opacity: isClosing ? 0.6 : 1,
+                    }}
+                    onMouseEnter={(e) => !isClosing && (e.currentTarget.style.backgroundColor = '#dc2626')}
+                    onMouseLeave={(e) => !isClosing && (e.currentTarget.style.backgroundColor = '#ef4444')}
+                    type="button"
+                  >
+                    Sí, eliminar
+                  </button>
+                  <button
+                    onClick={() => setShowConfirmDelete(false)}
                     disabled={isClosing}
                     style={{
                       backgroundColor: '#64748b',

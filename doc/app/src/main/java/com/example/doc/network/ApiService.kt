@@ -3,6 +3,7 @@ package com.example.doc.network
 import com.example.doc.repository.SyncPushResponse
 import com.example.doc.repository.SyncPullResponse
 import com.example.doc.repository.SyncStatus
+import com.example.doc.repository.CheckUpdatesResponse
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -111,10 +112,30 @@ data class UsuarioBackendData(
  */
 data class UpdateProfileRequest(
     val usuarioId: Int,
+    val cedula: String? = null,
+    val nombre: String? = null,
+    val apellido: String? = null,
+    val edad: Int? = null,
     val peso: Double? = null,
+    val altura: Double? = null,
+    val sexo: String? = null,
+    val glucosaInicial: Double? = null,
+    val colesterolInicial: Double? = null,
     val notifEnabled: Boolean? = null,
     val notifType: String? = null,
-    val notifDetails: String? = null
+    val notifDetails: String? = null,
+    val confirmDataChange: Boolean? = null
+)
+
+/**
+ * DTO para respuesta de confirmación requerida (status 403)
+ */
+data class ConfirmationRequiredResponse(
+    val error: String,
+    val requiresConfirmation: Boolean,
+    val currentData: Map<String, Any?>,
+    val proposedData: Map<String, Any?>,
+    val message: String
 )
 
 /**
@@ -163,6 +184,18 @@ interface ApiService {
     suspend fun pullSync(
         @Query("usuarioId") usuarioId: Int
     ): Response<SyncPullResponse>
+
+    /**
+     * GET /api/sync/check-updates?usuarioId={id}&lastSync={timestamp}
+     * Verificar si hay cambios sin descargar todos los datos
+     * 
+     * NOTA: Sin autenticación JWT. El usuarioId viene en query params.
+     */
+    @GET("sync/check-updates")
+    suspend fun checkUpdates(
+        @Query("usuarioId") usuarioId: Int,
+        @Query("lastSync") lastSync: Long
+    ): Response<CheckUpdatesResponse>
 
     // ============================================
     // 🔔 Notificaciones y Tokens

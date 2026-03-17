@@ -92,28 +92,57 @@ export const push = async (req: Request, res: Response) => {
           registradoEn = new Date();  // Usar ahora si no viene fecha
         }
 
-        // Crear registro con el usuarioId del body y la fecha correcta
-        await prisma.registroSalud.create({
-          data: {
-            usuarioId: userId,  // Usar el usuarioId del body de la request
+        // 🔧 FIX: Verificar si ya existe un registro con la misma fecha/hora para evitar duplicados
+        const registroExistente = await prisma.registroSalud.findFirst({
+          where: {
+            usuarioId: userId,
             fecha: registro.fecha,
-            hora: registro.hora,
-            registradoEn,  // 🔧 Usar la fecha de creación original del app
-            presionSistolica: registro.presionSistolica,
-            presionDiastolica: registro.presionDiastolica,
-            glucosa: registro.glucosa,
-            colesterol: registro.colesterol,
-            temperatura: registro.temperatura,
-            peso: registro.peso,
-            calorias: registro.calorias,
-            ejercicioMinutos: registro.ejercicioMinutos || 0,  // ✅ Usar ejercicioMinutos (Int)
-            estadoAnimo: registro.estadoAnimo,
-            notas: registro.notas
+            hora: registro.hora
           }
         });
 
+        if (registroExistente) {
+          // Si existe, actualizar en lugar de crear nuevo
+          await prisma.registroSalud.update({
+            where: { id: registroExistente.id },
+            data: {
+              presionSistolica: registro.presionSistolica,
+              presionDiastolica: registro.presionDiastolica,
+              glucosa: registro.glucosa,
+              colesterol: registro.colesterol,
+              temperatura: registro.temperatura,
+              peso: registro.peso,
+              calorias: registro.calorias,
+              ejercicioMinutos: registro.ejercicioMinutos || 0,
+              estadoAnimo: registro.estadoAnimo,
+              notas: registro.notas
+            }
+          });
+          Timber.debug(`♻️ Registro de salud actualizado (duplicado detectado) para usuario ${userId} en fecha ${registro.fecha}`);
+        } else {
+          // Crear registro nuevo
+          await prisma.registroSalud.create({
+            data: {
+              usuarioId: userId,  // Usar el usuarioId del body de la request
+              fecha: registro.fecha,
+              hora: registro.hora,
+              registradoEn,  // 🔧 Usar la fecha de creación original del app
+              presionSistolica: registro.presionSistolica,
+              presionDiastolica: registro.presionDiastolica,
+              glucosa: registro.glucosa,
+              colesterol: registro.colesterol,
+              temperatura: registro.temperatura,
+              peso: registro.peso,
+              calorias: registro.calorias,
+              ejercicioMinutos: registro.ejercicioMinutos || 0,  // ✅ Usar ejercicioMinutos (Int)
+              estadoAnimo: registro.estadoAnimo,
+              notas: registro.notas
+            }
+          });
+          Timber.debug(`✅ Registro de salud guardado para usuario ${userId} en fecha ${registro.fecha} (registradoEn: ${registradoEn.toISOString()})`);
+        }
+        
         registrosSincronizados++;
-        Timber.debug(`✅ Registro de salud guardado para usuario ${userId} en fecha ${registro.fecha} (registradoEn: ${registradoEn.toISOString()})`);
       } catch (error: any) {
         const errorMsg = `Error guardando registro ${registro.fecha}: ${error.message}`;
         registrosErrores.push(errorMsg);
@@ -293,7 +322,8 @@ export const pull = async (req: Request, res: Response) => {
             urlImagen: true,
             urlVideo: true,
             enfermedad: true,
-            descansoEntreSeries: true
+            descansoEntreSeries: true,
+            creadoEn: true
           }
         },
         doctor: {
@@ -310,10 +340,51 @@ export const pull = async (req: Request, res: Response) => {
 
     // 🔧 Extraer SOLO los ejercicios que fueron asignados (sin duplicados)
     const ejerciciosAsignados = asignaciones.map((a: any) => a.ejercicio);
-    const ejercicioIdsUnicos = new Set(ejerciciosAsignados.map((e: any) => e.id));
-    const ejercicios = Array.from(ejercicioIdsUnicos).map((id: any) => 
+    const ejercicioIdsAsignados = new Set(ejerciciosAsignados.map((e: any) => e.id));
+    
+    // ✅ NUEVO: Obtener también ejercicios generales del catálogo (no solo asignados)
+    // para que no solo vea los ejercicios que le asignó el doctor
+    const ejerciciosGenerales = await prisma.ejercicio.findMany({
+      where: {
+        enfermedad: usuario.enfermedad,
+        tipo: 'POR_ENFERMEDAD'  // Solo ejercicios generales, no "por pacientes"
+      },
+      select: {
+        id: true,
+        nombre: true,
+        descripcion: true,
+        duracion: true,
+        series: true,
+        intensidad: true,
+        urlImagen: true,
+        urlVideo: true,
+        enfermedad: true,
+        descansoEntreSeries: true,
+        creadoEn: true
+      }
+    });
+
+    // 🔧 Combinar: Asignados primero (más recientes) + Generales (ordenados DESC)
+    const ejerciciosAsignadosDedup = Array.from(ejercicioIdsAsignados).map((id: any) => 
       ejerciciosAsignados.find((e: any) => e.id === id)
     ).filter(Boolean) as any[];
+    
+    // Combinar y ordenar: asignados primero por creadoEn, luego generales por creadoEn
+    const ejercicios = [
+      ...ejerciciosAsignadosDedup.sort((a: any, b: any) => 
+        new Date(b.creadoEn).getTime() - new Date(a.creadoEn).getTime()
+      ),
+      ...ejerciciosGenerales
+        .filter((eg: any) => !ejercicioIdsAsignados.has(eg.id))  // Filtrar duplicados
+        .sort((a: any, b: any) => 
+          new Date(b.creadoEn).getTime() - new Date(a.creadoEn).getTime()
+        )
+    ];
+
+    Timber.debug(`📊 [pull] Ejercicios para usuario ${userId}:`);
+    Timber.debug(`   - Asignados: ${ejerciciosAsignadosDedup.length}`);
+    Timber.debug(`   - Del catálogo: ${ejerciciosGenerales.length - ejerciciosAsignadosDedup.length}`);
+    Timber.debug(`   - Total: ${ejercicios.length}`);
 
     // 🔧 Mapear asignaciones para convertir timestamp
     const asignacionesMapeadas = asignaciones.map((a: any) => ({
@@ -350,6 +421,21 @@ export const pull = async (req: Request, res: Response) => {
       take: 20
     });
 
+    // ✅ NUEVO: Obtener consejos por enfermedad del usuario
+    const consejos = await prisma.consejo.findMany({
+      where: {
+        enfermedad: usuario.enfermedad
+      },
+      select: {
+        id: true,
+        consejo: true,
+        enfermedad: true,
+        creadoEn: true
+      },
+      orderBy: { consejo: 'asc' }
+    });
+    Timber.debug(`📝 [pull] Consejos obtenidos para ${usuario.enfermedad}: ${consejos.length}`);
+
     const response: SyncPullResponse = {
       success: true,
       usuario: {
@@ -373,6 +459,7 @@ export const pull = async (req: Request, res: Response) => {
       registrosSalud: registrosSaludMapeados,  // 🔧 Usar versión mapeada con timestamps
       asignaciones: asignacionesMapeadas,      // ✅ NUEVO: Asignaciones de ejercicios
       ejercicios,
+      consejos,                                 // ✅ NUEVO: Consejos por enfermedad
       notificaciones,
       estadoCuenta: {
         activo: usuario.estadoCuenta === 'ACTIVE',
@@ -537,5 +624,250 @@ export const getSyncStatus = async (req: Request, res: Response) => {
       success: false,
       error: 'Error obteniendo estado de sincronización'
     });
+  }
+};
+
+/**
+ * GET /api/sync/check-updates
+ * Verifica si hay cambios en ejercicios, consejos y asignaciones desde el último sync
+ * Retorna flags para que la app sepa si necesita hacer PULL
+ * 
+ * Query params:
+ * - usuarioId: ID del usuario (requerido)
+ * - lastSync: Timestamp en milisegundos del último sync (opcional)
+ */
+export const checkUpdates = async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.query.usuarioId as string);
+    const lastSyncMs = parseInt(req.query.lastSync as string) || 0;
+    const lastSync = new Date(lastSyncMs);
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ error: 'usuarioId requerido en query params' });
+    }
+
+    Timber.debug(`🔍 [checkUpdates] Verificando cambios para usuario: ${userId}, lastSync: ${lastSync.toISOString()}`);
+
+    // Obtener usuario para verificar su enfermedad
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: userId }
+    });
+
+    if (!usuario) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    // 1️⃣ Verificar cambios en EJERCICIOS
+    const exercisesUpdated = await prisma.ejercicio.count({
+      where: {
+        actualizadoEn: {
+          gte: lastSync
+        }
+      }
+    });
+
+    // 2️⃣ Verificar cambios en CONSEJOS
+    const adviceUpdated = await prisma.consejo.count({
+      where: {
+        enfermedad: usuario.enfermedad,
+        actualizadoEn: {
+          gte: lastSync
+        }
+      }
+    });
+
+    // 3️⃣ Verificar cambios en ASIGNACIONES (directas + generales por enfermedad)
+    const assignmentsUpdated = await prisma.asignacionEjercicio.count({
+      where: {
+        AND: [
+          {
+            OR: [
+              { usuarioId: userId },
+              { usuarioId: null, enfermedad: usuario.enfermedad }
+            ]
+          },
+          {
+            actualizadoEn: {
+              gte: lastSync
+            }
+          }
+        ]
+      }
+    });
+
+    const hasExerciseUpdates = exercisesUpdated > 0;
+    const hasAdviceUpdates = adviceUpdated > 0;
+    const hasAssignmentUpdates = assignmentsUpdated > 0;
+    const shouldPull = hasExerciseUpdates || hasAdviceUpdates || hasAssignmentUpdates;
+
+    Timber.debug(`✅ [checkUpdates] Resultados - Ejercicios: ${hasExerciseUpdates}, Consejos: ${hasAdviceUpdates}, Asignaciones: ${hasAssignmentUpdates}, shouldPull: ${shouldPull}`);
+
+    res.json({
+      shouldPull,
+      hasExerciseUpdates,
+      hasAdviceUpdates,
+      hasAssignmentUpdates,
+      lastBackendSync: new Date().getTime()
+    });
+  } catch (error: any) {
+    Timber.error(`❌ Error en checkUpdates: ${error.message}`);
+    return res.status(500).json({ 
+      error: 'Error verificando actualizaciones',
+      details: error.message
+    });
+  }
+};
+
+/**
+ * PUT /api/sync/update-notifications
+ * Actualizar configuración de notificaciones del usuario
+ * FIX: Agregar endpoint que faltaba para actualizar notificaciones
+ */
+export const updateNotifications = async (req: Request, res: Response) => {
+  try {
+    const { usuarioId, notifEnabled, notifType, notifDetails } = req.body;
+
+    if (!usuarioId) {
+      return res.status(400).json({ error: 'usuarioId requerido' });
+    }
+
+    const updated = await prisma.usuario.update({
+      where: { id: usuarioId },
+      data: {
+        ...(notifEnabled !== undefined && { notifEnabled }),
+        ...(notifType !== undefined && { notifType }),
+        ...(notifDetails !== undefined && { notifDetails })
+      }
+    });
+
+    Timber.debug(`✅ Notificaciones actualizadas para usuario ${usuarioId}`);
+    res.status(200).json(updated);
+  } catch (error: any) {
+    Timber.error(`❌ Error actualizando notificaciones: ${error.message}`);
+    res.status(500).json({ error: 'Error al actualizar notificaciones' });
+  }
+};
+
+/**
+ * PUT /api/sync/update-profile
+ * Actualizar perfil del usuario desde sync
+ * FIX: Agregar endpoint que faltaba para actualizar perfil vía sync
+ */
+export const updateSyncProfile = async (req: Request, res: Response) => {
+  try {
+    const { 
+      usuarioId,
+      cedula,
+      nombre,
+      apellido,
+      edad,
+      peso,
+      altura,
+      sexo,
+      enfermedad,
+      glucosaInicial,
+      colesterolInicial,
+      confirmDataChange
+    } = req.body;
+
+    if (!usuarioId) {
+      return res.status(400).json({ error: 'usuarioId requerido' });
+    }
+
+    // 🔍 OPCIÓN B: Verificar si el usuario YA EXISTÍA (por cédula)
+    let isExistingUser = false;
+    if (cedula) {
+      const userByCedula = await prisma.usuario.findFirst({
+        where: { cedula: cedula }
+      });
+      if (userByCedula && userByCedula.id === usuarioId) {
+        const now = new Date();
+        const createdAt = new Date(userByCedula.creadoEn);
+        const minutesSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60);
+        isExistingUser = minutesSinceCreation > 2;
+      }
+    }
+
+    // 🔍 Detectar si está intentando cambiar datos personales
+    const isChangingPersonalData = nombre !== undefined || apellido !== undefined || 
+                                    edad !== undefined || peso !== undefined || 
+                                    altura !== undefined || sexo !== undefined || enfermedad !== undefined;
+
+    // ⚠️ OPCIÓN B: Si es usuario existente Y está cambiando datos personales
+    // Requiere confirmación explícita
+    if (isExistingUser && isChangingPersonalData && !confirmDataChange) {
+      console.warn(`⚠️ Usuario existente (ID: ${usuarioId}) vía sync intenta cambiar datos sin confirmación`);
+      const currentUser = await prisma.usuario.findUnique({ where: { id: usuarioId } });
+      return res.status(403).json({
+        error: 'Confirmación requerida para cambiar datos personales',
+        requiresConfirmation: true,
+        currentData: {
+          nombre: currentUser?.nombre,
+          apellido: currentUser?.apellido,
+          edad: currentUser?.edad,
+          peso: currentUser?.peso,
+          altura: currentUser?.altura,
+          sexo: currentUser?.sexo,
+          enfermedad: currentUser?.enfermedad
+        },
+        proposedData: {
+          nombre,
+          apellido,
+          edad,
+          peso,
+          altura,
+          sexo,
+          enfermedad
+        },
+        message: 'Usuario debe confirmar cambios explícitamente'
+      });
+    }
+
+    const updateData: any = {};
+
+    // ✅ Permitir cambiar datos personales si:
+    // - No es usuario existente, O
+    // - Es usuario existente PERO viene confirmDataChange: true
+    if (!isExistingUser || confirmDataChange) {
+      if (nombre !== undefined) updateData.nombre = nombre.trim();
+      if (apellido !== undefined) updateData.apellido = apellido.trim();
+      if (edad !== undefined) updateData.edad = parseInt(edad);
+      if (peso !== undefined) updateData.peso = parseFloat(parseFloat(peso).toFixed(1));
+      if (altura !== undefined) updateData.altura = parseFloat(parseFloat(altura).toFixed(2));
+      if (sexo !== undefined) updateData.sexo = sexo.toUpperCase();
+      if (enfermedad !== undefined) updateData.enfermedad = enfermedad;
+    }
+
+    // 🔒 CEDULA NUNCA SE ACTUALIZA - Es un documento de identidad único e inmutable
+    // Ignorar si viene en el request
+    if (cedula !== undefined) {
+      const currentUser = await prisma.usuario.findUnique({ where: { id: usuarioId } });
+      if (currentUser && currentUser.cedula !== cedula) {
+        Timber.warn(`⚠️ Intento de cambiar cédula via sync bloqueado. ID: ${usuarioId}, Cédula anterior: ${currentUser.cedula}, Cédula propuesta: ${cedula}`);
+      }
+    }
+
+    // ✅ SIEMPRE permitir: glucosa, colesterol
+    if (glucosaInicial !== undefined) updateData.glucosaInicial = parseFloat(parseFloat(glucosaInicial).toFixed(1));
+    if (colesterolInicial !== undefined) updateData.colesterolInicial = parseFloat(parseFloat(colesterolInicial).toFixed(1));
+
+    const updated = await prisma.usuario.update({
+      where: { id: usuarioId },
+      data: updateData
+    });
+
+    const successMessage = confirmDataChange && isExistingUser
+      ? 'Datos personales actualizados vía sync con confirmación'
+      : 'Perfil actualizado vía sync';
+
+    Timber.debug(`✅ ${successMessage} para usuario ${usuarioId}`);
+    res.status(200).json({
+      usuario: updated,
+      isExistingUser: isExistingUser,
+      message: successMessage
+    });
+  } catch (error: any) {
+    Timber.error(`❌ Error actualizando perfil: ${error.message}`);
+    res.status(500).json({ error: 'Error al actualizar perfil' });
   }
 };
