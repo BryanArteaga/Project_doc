@@ -379,6 +379,9 @@ fun MainScreen(
                 message = evaluationMessage,
                 color = evaluationColor.value,
                 details = evaluationDetails,
+                estado = popupViewModel.evaluationEstado.value,
+                context = context,
+                usuario = usuario,
                 onDismiss = { popupViewModel.showEvaluationPopup.value = false }
             )
 

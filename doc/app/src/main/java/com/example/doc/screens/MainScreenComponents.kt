@@ -43,6 +43,7 @@ import com.example.doc.model.RegistroSalud
 import com.example.doc.model.Usuario
 import com.example.doc.ui.components.SyncIconButton
 import com.example.doc.utils.HealthFormatUtils
+import com.example.doc.utils.abrirWhatsAppDoctor
 import com.example.doc.viewmodel.PopupViewModel
 import com.example.doc.viewmodel.SyncState
 
@@ -299,6 +300,8 @@ fun MainScreenRegistrosCard(
                                     EvaluacionSalud.Estado.ADVERTENCIA -> Color(0xFFFFA500)
                                     EvaluacionSalud.Estado.EMERGENCIA -> Color(0xFFD32F2F)
                                 }
+                                // 📲 OPCIÓN B: Guardar estado para mostrar FAB WhatsApp
+                                popupViewModel.setEvaluationEstado(eval.estado.toString())
                                 popupViewModel.evaluationMessage.value = eval.mensaje
                                 popupViewModel.evaluationDetails.value = eval.detalles
                                 popupViewModel.showEvaluationPopup.value = true
@@ -449,7 +452,10 @@ fun MainScreenEvaluationPopup(
     message: String,
     color: Color,
     details: List<String>,
-    onDismiss: () -> Unit
+    estado: String = "NORMAL",
+    onDismiss: () -> Unit,
+    context: android.content.Context? = null,
+    usuario: Usuario? = null
 ) {
     if (isVisible) {
         // FIX #8: Usar updateTransition para sincronizar animaciones relacionadas
@@ -544,19 +550,84 @@ fun MainScreenEvaluationPopup(
                         }
                     }
                     Spacer(modifier = Modifier.height(20.dp))
-                    Button(
-                        onClick = onDismiss,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.White,
-                            contentColor = Color(0xFF2196F3)
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text(
-                            "Aceptar",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
-                        )
+                    
+                    // 📲 OPCIÓN B: Mostrar botón WhatsApp solo si NO es NORMAL
+                    if (estado != "NORMAL") {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    // Abrir WhatsApp con pregunta contextual + detalles del registro
+                                    val mensaje = when (estado) {
+                                        "LEVE" -> "¿Por qué mi registro se muestra en amarillo?"
+                                        "ADVERTENCIA" -> "¿Por qué mi registro se muestra en naranja?"
+                                        "EMERGENCIA" -> "¿Por qué mi registro se muestra en rojo?"
+                                        else -> "¿Qué significa mi registro?"
+                                    }
+                                    val detallesTexto = details.joinToString("\n")
+                                    abrirWhatsAppDoctor(context, usuario, mensaje, detallesTexto)
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(44.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF25D366),  // WhatsApp green
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Call,
+                                    contentDescription = "WhatsApp",
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                        .padding(end = 4.dp)
+                                )
+                                Text(
+                                    "¿Por qué?",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                            }
+                            
+                            Button(
+                                onClick = onDismiss,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(44.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.White,
+                                    contentColor = Color(0xFF2196F3)
+                                ),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Text(
+                                    "Cerrar",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
+                    } else {
+                        Button(
+                            onClick = onDismiss,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.White,
+                                contentColor = Color(0xFF2196F3)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                "Aceptar",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+                        }
                     }
                 }
             }

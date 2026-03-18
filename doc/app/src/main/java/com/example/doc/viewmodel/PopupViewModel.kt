@@ -16,6 +16,12 @@ class PopupViewModel @Inject constructor() : ViewModel() {
     val evaluationDetails = mutableStateOf(listOf<String>())
     val resultPopupColor: MutableState<Color> = mutableStateOf(Color.Unspecified)
     val evaluationColor: MutableState<Color> = mutableStateOf(Color.Unspecified)
-
+    
+    // 📲 OPCIÓN B: Estado para mostrar botón WhatsApp solo si NO es normal
+    val evaluationEstado = mutableStateOf("")  // "NORMAL", "LEVE", "ADVERTENCIA", "EMERGENCIA"
+    
+    fun setEvaluationEstado(estado: String) {
+        evaluationEstado.value = estado
+    }
 
 }

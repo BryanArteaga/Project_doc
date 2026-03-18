@@ -1,6 +1,7 @@
 package com.example.doc.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -8,9 +9,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -19,6 +23,11 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.example.doc.data.entities.RegistroSaludEntity
+import com.example.doc.domain.SaludEvaluator
+import com.example.doc.model.EvaluacionSalud
+import com.example.doc.model.RegistroSalud
+import com.example.doc.model.Usuario
+import com.example.doc.utils.abrirWhatsAppDoctor
 import com.example.doc.viewmodel.RegistroSaludViewModel
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -28,11 +37,20 @@ import java.util.Locale
 fun HistorialRegistrosScreen(
     navController: NavController,
     registroSaludViewModel: RegistroSaludViewModel,
-    usuarioId: Int
+    usuarioId: Int,
+    usuario: Usuario? = null
 ) {
     // Obtener registros paginados (solo carga lo necesario)
     val registrosPaginados: LazyPagingItems<RegistroSaludEntity> =
         registroSaludViewModel.getRegistrosPaginados(usuarioId).collectAsLazyPagingItems()
+
+    // Estado para el popup de evaluación
+    val showEvaluationPopup = remember { mutableStateOf(false) }
+    val evaluationMessage = remember { mutableStateOf("") }
+    val evaluationColor = remember { mutableStateOf(Color.White) }
+    val evaluationDetails = remember { mutableStateOf("") }
+    val evaluationEstado = remember { mutableStateOf("NORMAL") }
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -62,7 +80,46 @@ fun HistorialRegistrosScreen(
             ) { index ->
                 val registro = registrosPaginados[index]
                 registro?.let {
-                    RegistroCard(registro = it)
+                    RegistroCard(
+                        registro = it,
+                        onClicked = {
+                            if (usuario != null) {
+                                // Convertir RegistroSaludEntity a RegistroSalud
+                                val registroSalud = RegistroSalud(
+                                    id = it.id,
+                                    usuarioId = it.usuarioId,
+                                    fecha = it.fecha,
+                                    hora = it.hora,
+                                    presionSistolica = it.presionSistolica,
+                                    presionDiastolica = it.presionDiastolica,
+                                    glucosa = it.glucosa,
+                                    colesterol = it.colesterol,
+                                    temperatura = it.temperatura,
+                                    peso = it.peso,
+                                    imc = it.imc,
+                                    pulso = it.pulso,
+                                    calorias = it.calorias,
+                                    ejercicio = it.ejercicio,
+                                    ejercicioMinutos = it.ejercicioMinutos,
+                                    estadoAnimo = it.estadoAnimo,
+                                    notas = it.notas,
+                                    registradoEn = it.registradoEn
+                                )
+                                
+                                val eval = SaludEvaluator.evaluarRegistroDetallado(usuario, registroSalud)
+                                evaluationMessage.value = eval.mensaje
+                                evaluationColor.value = when (eval.estado) {
+                                    EvaluacionSalud.Estado.NORMAL -> Color(0xFF4CAF50)
+                                    EvaluacionSalud.Estado.LEVE -> Color(0xFFA3DC39)
+                                    EvaluacionSalud.Estado.ADVERTENCIA -> Color(0xFFFFA500)
+                                    EvaluacionSalud.Estado.EMERGENCIA -> Color(0xFFD32F2F)
+                                }
+                                evaluationDetails.value = eval.detalles.joinToString("\n")
+                                evaluationEstado.value = eval.estado.toString()
+                                showEvaluationPopup.value = true
+                            }
+                        }
+                    )
                 }
             }
 
@@ -87,12 +144,88 @@ fun HistorialRegistrosScreen(
             }
         }
     }
+
+    // Popup de evaluación con WhatsApp
+    if (showEvaluationPopup.value) {
+        AlertDialog(
+            onDismissRequest = { showEvaluationPopup.value = false },
+            title = {
+                Text(
+                    text = evaluationMessage.value,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = evaluationColor.value
+                )
+            },
+            text = {
+                Text(text = evaluationDetails.value)
+            },
+            confirmButton = {
+                if (evaluationEstado.value != "NORMAL") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Botón WhatsApp
+                        Button(
+                            onClick = {
+                                val mensaje = "¿Por qué me sale en ${when(evaluationEstado.value) {
+                                    "LEVE" -> "amarillo"
+                                    "ADVERTENCIA" -> "naranja"
+                                    "EMERGENCIA" -> "rojo"
+                                    else -> evaluationEstado.value
+                                }}?"
+                                abrirWhatsAppDoctor(context, usuario, mensaje, evaluationDetails.value)
+                                showEvaluationPopup.value = false
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(40.dp)
+                        ) {
+                            Text("¿Por qué?")
+                        }
+
+                        // Botón Cerrar
+                        Button(
+                            onClick = { showEvaluationPopup.value = false },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(40.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Gray
+                            )
+                        ) {
+                            Text("Cerrar")
+                        }
+                    }
+                } else {
+                    Button(
+                        onClick = { showEvaluationPopup.value = false },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(40.dp)
+                    ) {
+                        Text("Aceptar")
+                    }
+                }
+            }
+        )
+    }
 }
 
 @Composable
-private fun RegistroCard(registro: RegistroSaludEntity) {
+private fun RegistroCard(
+    registro: RegistroSaludEntity,
+    onClicked: () -> Unit = {}
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(
+                enabled = true,
+                onClickLabel = "Ver detalles del registro",
+                onClick = onClicked
+            ),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
