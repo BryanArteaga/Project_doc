@@ -24,6 +24,7 @@ const pool = new Pool({
   allowExitOnIdle: true,
 });
 
+// @ts-ignore - Conflicto de tipos entre pg y @prisma/adapter-pg
 const adapter = new PrismaPg(pool);
 
 const prisma = new PrismaClient({

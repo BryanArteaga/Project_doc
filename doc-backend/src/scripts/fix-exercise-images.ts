@@ -19,6 +19,7 @@ const pool = new Pool({
   allowExitOnIdle: true,
 });
 
+// @ts-ignore - Conflicto de tipos entre pg y @prisma/adapter-pg
 const adapter = new PrismaPg(pool);
 const { PrismaClient } = require(path.join(__dirname, '../../generated/prisma/index.js'));
 const prisma = new PrismaClient({

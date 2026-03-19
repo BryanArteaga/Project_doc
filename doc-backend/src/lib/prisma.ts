@@ -126,6 +126,7 @@ const prismaClientSingleton = () => {
   // Iniciar health check después de un pequeño delay
   setTimeout(() => startHealthCheck(), 2000);
   
+  // @ts-ignore - Conflicto de tipos entre pg y @prisma/adapter-pg
   const adapter = new PrismaPg(pool);
   
   const prismaClient = new PrismaClient({
