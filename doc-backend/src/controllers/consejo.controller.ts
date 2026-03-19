@@ -160,7 +160,7 @@ export const getConsejo = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Solo doctores pueden ver consejos' });
     }
 
-    const { id } = req.params;
+    const id = (req.params.id as string);
     const consejo = await prisma.consejo.findUnique({
       where: { id: parseInt(id) }
     });
@@ -185,7 +185,7 @@ export const updateConsejo = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Solo doctores pueden editar consejos' });
     }
 
-    const { id } = req.params;
+    const id = (req.params.id as string);
     const schema = z.object({
       consejo: z.string().min(1).optional(),
       enfermedad: z.enum(['Hipertensión', 'Diabetes', 'Obesidad', 'Colesterol alto']).optional()
@@ -215,7 +215,7 @@ export const deleteConsejo = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Solo doctores pueden eliminar consejos' });
     }
 
-    const { id } = req.params;
+    const id = (req.params.id as string);
 
     await prisma.consejo.delete({
       where: { id: parseInt(id) }

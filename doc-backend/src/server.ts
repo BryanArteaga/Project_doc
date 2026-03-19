@@ -4,6 +4,10 @@ import compression from 'compression';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+
+// ✅ Type overrides para Express
+import './types/express-override';
+
 import authDoctorRoutes from './routes/auth.doctor.routes';
 import usuarioRoutes from './routes/usuario.routes';
 import registroSaludRoutes from './routes/registroSalud.routes';
@@ -18,6 +22,7 @@ import notaMedicaRoutes from './routes/notaMedica.routes';
 import { prisma } from './lib/prisma';
 import { initializeFirebase } from './config/firebase';
 import { NotificationScheduler } from './services/notification-scheduler';
+import { normalizeParamsMiddleware } from './middleware/normalizeParams';
 
 dotenv.config();
 
@@ -73,6 +78,9 @@ app.use(compression({
   },
   level: 6 // Balance entre compresión y CPU
 }));
+
+// ✅ Normalizar params para evitar string | string[] tipo de Express
+app.use(normalizeParamsMiddleware);
 
 app.use(express.json({ limit: '1mb' })); // Limitar tamaño de payloads
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));

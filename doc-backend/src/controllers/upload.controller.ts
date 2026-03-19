@@ -87,7 +87,7 @@ export const deleteEjercicioImagen = async (req: AuthRequest, res: Response) => 
       return res.status(401).json({ error: 'Solo doctores pueden eliminar imágenes' });
     }
 
-    const { fileName } = req.params;
+    const fileName = (req.params.fileName || '') as string;
 
     if (!fileName) {
       return res.status(400).json({ error: 'Nombre de archivo requerido' });

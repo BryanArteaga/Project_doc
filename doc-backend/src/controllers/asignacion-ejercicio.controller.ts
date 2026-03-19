@@ -195,7 +195,7 @@ export const listarAsignaciones = async (req: Request, res: Response) => {
 // ✅ OBTENER una asignación específica
 export const obtenerAsignacion = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = (req.params.id as string);
     const doctorId = req.doctorDbId;
 
     const asignacion = await prisma.asignacionEjercicio.findUnique({
@@ -235,7 +235,7 @@ export const obtenerAsignacion = async (req: Request, res: Response) => {
 // ✅ ACTUALIZAR asignación
 export const actualizarAsignacion = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = (req.params.id as string);
     const doctorId = req.doctorDbId;
     const data: UpdateAsignacionEjercicioDTO = req.body;
 
@@ -285,7 +285,7 @@ export const actualizarAsignacion = async (req: Request, res: Response) => {
 // ✅ ELIMINAR asignación
 export const eliminarAsignacion = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = (req.params.id as string);
     const doctorId = req.doctorDbId;
 
     // Verificar permisos
@@ -316,7 +316,8 @@ export const eliminarAsignacion = async (req: Request, res: Response) => {
 // ✅ ELIMINAR asignación por ejercicio y paciente
 export const eliminarAsignacionPorEjercicioPaciente = async (req: Request, res: Response) => {
   try {
-    const { ejercicioId, pacienteId } = req.params;
+    const ejercicioId = (req.params.ejercicioId as string);
+    const pacienteId = (req.params.pacienteId as string);
     const doctorId = req.doctorDbId;
 
     console.log('🗑️ [eliminarAsignacionPorEjercicioPaciente] doctorId:', doctorId, 'ejercicioId:', ejercicioId, 'pacienteId:', pacienteId);

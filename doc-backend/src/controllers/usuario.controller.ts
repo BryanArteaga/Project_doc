@@ -294,7 +294,7 @@ export const updateProfile = async (req: Request, res: Response) => {
  */
 export const searchByCedula = async (req: Request, res: Response) => {
   try {
-    const { cedula } = req.params;
+    const cedula = (req.params.cedula || '') as string;
 
     if (!cedula || cedula.length !== 10) {
       return res.status(400).json({ 

@@ -42,7 +42,7 @@ export const createNotaMedica = async (req: AuthRequest, res: Response) => {
  */
 export const getNotasPorPaciente = async (req: AuthRequest, res: Response) => {
   try {
-    const { pacienteId } = req.params;
+    const pacienteId = (req.params.pacienteId || '0') as string;
     const pacId = parseInt(pacienteId);
 
     if (isNaN(pacId)) {
@@ -71,7 +71,7 @@ export const getNotasPorPaciente = async (req: AuthRequest, res: Response) => {
  */
 export const getNotaById = async (req: AuthRequest, res: Response) => {
   try {
-    const { notaId } = req.params;
+    const notaId = (req.params.notaId || '0') as string;
     const id = parseInt(notaId);
 
     if (isNaN(id)) {
@@ -101,7 +101,7 @@ export const updateNotaMedica = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ error: 'Solo doctores pueden actualizar notas' });
     }
 
-    const { notaId } = req.params;
+    const notaId = (req.params.notaId || '0') as string;
     const id = parseInt(notaId);
 
     if (isNaN(id)) {
@@ -147,7 +147,7 @@ export const deleteNotaMedica = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ error: 'Solo doctores pueden eliminar notas' });
     }
 
-    const { notaId } = req.params;
+    const notaId = (req.params.notaId || '0') as string;
     const id = parseInt(notaId);
 
     if (isNaN(id)) {

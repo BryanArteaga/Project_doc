@@ -207,7 +207,7 @@ export const getEjercicio = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Solo doctores pueden ver ejercicios' });
     }
 
-    const { id } = req.params;
+    const id = (req.params.id as string);
     const ejercicio = await prisma.ejercicio.findUnique({
       where: { id: parseInt(id) }
     });
@@ -232,7 +232,7 @@ export const updateEjercicio = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Solo doctores pueden editar ejercicios' });
     }
 
-    const { id } = req.params;
+    const id = (req.params.id as string);
     const schema = z.object({
       nombre: z.string().min(1).optional(),
       descripcion: z.string().optional(),
@@ -270,7 +270,7 @@ export const deleteEjercicio = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Solo doctores pueden eliminar ejercicios' });
     }
 
-    const { id } = req.params;
+    const id = (req.params.id as string);
 
     // Verificar si hay asignaciones activas
     const asignaciones = await prisma.asignacionEjercicio.findFirst({
