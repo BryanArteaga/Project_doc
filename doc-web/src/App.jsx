@@ -27,31 +27,31 @@ export default function App() {
       step: 1,
       title: 'Descargar el APK',
       description: 'Presiona el botón "Descargar APK v1.0" y guarda el archivo',
-      image: '/screenshots/screenshot-1.png'
+      images: ['/screenshots/image1.png', '/screenshots/image2.png']
     },
     {
       step: 2,
       title: 'Habilitar Fuentes Desconocidas',
       description: 'Ve a Configuración > Seguridad > Orígenes desconocidos y actívalo',
-      image: '/screenshots/screenshot-2.png'
+      images: ['/screenshots/image3.png']
     },
     {
       step: 3,
       title: 'Instalar la App',
       description: 'Abre el archivo APK descargado y presiona "Instalar"',
-      image: '/screenshots/screenshot-3.png'
+      images: ['/screenshots/image4.png']
     },
     {
       step: 4,
       title: 'Registrarse',
       description: 'Crea tu cuenta con tu cédula y datos de salud',
-      image: '/screenshots/screenshot-4.png'
+      images: ['/screenshots/image5.png']
     },
     {
       step: 5,
       title: 'Comenzar a Monitorear',
       description: 'Registra tus primeras métricas de salud',
-      image: '/screenshots/screenshot-5.png'
+      images: ['/screenshots/image6.png']
     }
   ]
 
@@ -139,9 +139,13 @@ export default function App() {
                   <h3>{instruction.title}</h3>
                   <p>{instruction.description}</p>
                 </div>
-                {instruction.image && (
-                  <div className="step-image">
-                    <img src={instruction.image} alt={instruction.title} />
+                {instruction.images && instruction.images.length > 0 && (
+                  <div className="step-images">
+                    {instruction.images.map((image, imgIdx) => (
+                      <div key={imgIdx} className="step-image">
+                        <img src={image} alt={`${instruction.title} ${imgIdx + 1}`} />
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -208,7 +212,6 @@ export default function App() {
               <h4>Enlaces</h4>
               <ul>
                 <li><a href="#features">Características</a></li>
-                <li><a href="#gallery">Galería</a></li>
                 <li><a href="#instructions">Instrucciones</a></li>
               </ul>
             </div>
