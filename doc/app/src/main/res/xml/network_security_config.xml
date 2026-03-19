@@ -10,6 +10,6 @@
     
     <!-- Para el resto de dominios, requerir HTTPS -->
     <domain-config cleartextTrafficPermitted="false">
-        <domain includeSubdomains="true">*.example.com</domain>
+        <domain includeSubdomains="true">https://project-doc-itvm.onrender.com</domain>
     </domain-config>
 </network-security-config>
