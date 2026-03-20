@@ -32,6 +32,9 @@ initializeFirebase();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// 🔐 Confiar en proxy de Render para X-Forwarded-For
+app.set('trust proxy', 1);
+
 // Security Headers
 app.use(helmet({
   contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false
