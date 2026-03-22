@@ -30,6 +30,10 @@ jobs:
       - name: Generar Prisma Client
         working-directory: ./doc-backend
         run: npm run prisma:generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DATABASE_URL }}
+          NODE_ENV: production
 
       - name: Ejecutar mantenimiento
         working-directory: ./doc-backend
