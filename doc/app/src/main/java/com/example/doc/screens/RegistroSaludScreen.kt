@@ -88,7 +88,9 @@ fun RegistroSaludScreen(
     var pulso by remember { mutableStateOf("") }  // ✅ Pulso (opcional, solo Obesidad)
     var presionSistolicaColesterol by remember { mutableStateOf("") }  // ✅ Presión para Colesterol
     var presionDiastolicaColesterol by remember { mutableStateOf("") }  // ✅ Presión para Colesterol
-    var calorias by remember { mutableStateOf("") }
+    var desayunoOpcion by remember { mutableStateOf("") }
+    var almuerzoOpcion by remember { mutableStateOf("") }
+    var cenaOpcion by remember { mutableStateOf("") }
     var ejercicioHoras by remember { mutableStateOf("") }
     var ejercicioMinutos by remember { mutableStateOf("") }
     var ejercicioHorasExtra by remember { mutableStateOf("") }
@@ -96,6 +98,26 @@ fun RegistroSaludScreen(
     var animo by remember { mutableStateOf("") }
     var hizoEjercicioSinApp by remember { mutableStateOf<Boolean?>(null) }
     var hizoEjercicioExtra by remember { mutableStateOf<Boolean?>(null) }
+
+    fun calcularCaloriasTotales(): Int {
+        var total = 0
+        when (desayunoOpcion) {
+            "Ligero" -> total += 250
+            "Normal" -> total += 400
+            "Abundante" -> total += 600
+        }
+        when (almuerzoOpcion) {
+            "Ligero" -> total += 350
+            "Normal" -> total += 700
+            "Abundante" -> total += 1000
+        }
+        when (cenaOpcion) {
+            "Ligero" -> total += 300
+            "Normal" -> total += 550
+            "Abundante" -> total += 850
+        }
+        return total
+    }
 
     fun calcularMinutos(horas: String, minutos: String): Int {
         val h = horas.toIntOrNull() ?: 0
@@ -152,6 +174,12 @@ fun RegistroSaludScreen(
 
     val opcionesEstado = listOf("Bueno", "Regular", "Malo")
     var expandedEstado by remember { mutableStateOf(false) }
+    
+    val opcionesComida = listOf("No comí", "Ligero", "Normal", "Abundante")
+    var expandedDesayuno by remember { mutableStateOf(false) }
+    var expandedAlmuerzo by remember { mutableStateOf(false) }
+    var expandedCena by remember { mutableStateOf(false) }
+    var showGuiaCalorías by remember { mutableStateOf(false) }
 
     val colorCondicion = Color(android.graphics.Color.parseColor(user.colorEnfermedad))
 
@@ -220,8 +248,8 @@ fun RegistroSaludScreen(
 
     // Detecta si hay al menos un parámetro llenado
     val hayParametroLlenado = listOf(
-        presionSistolica, presionDiastolica, glucosa, colesterol, pesoNuevo, pulso, calorias, animo
-    ).any { it.isNotBlank() } || hizoEjercicioSinApp != null || hizoEjercicioExtra != null
+        presionSistolica, presionDiastolica, glucosa, colesterol, pesoNuevo, pulso, animo
+    ).any { it.isNotBlank() } || desayunoOpcion.isNotBlank() || almuerzoOpcion.isNotBlank() || cenaOpcion.isNotBlank() || hizoEjercicioSinApp != null || hizoEjercicioExtra != null
 
     fun intentarGuardarRegistro() {
         if (!hayParametroLlenado || isSaving) return
@@ -241,7 +269,7 @@ fun RegistroSaludScreen(
             "Obesidad" -> if (pesoNuevo.isNotBlank()) filledFields++
             "Colesterol alto" -> if (colesterol.isNotBlank()) filledFields++
         }
-        if (calorias.isNotBlank()) filledFields++
+        if (desayunoOpcion.isNotBlank() || almuerzoOpcion.isNotBlank() || cenaOpcion.isNotBlank()) filledFields++
         if (animo.isNotBlank()) filledFields++
         if (hizoEjerciciosApp || hizoEjercicioSinApp != null || hizoEjercicioExtra != null) {
             filledFields++
@@ -315,12 +343,6 @@ fun RegistroSaludScreen(
                 }
             }
         }
-        if (calorias.isNotBlank()) {
-            val caloriasValue = calorias.toIntOrNull() ?: 0
-            if (caloriasValue !in 500..5000) {
-                errors.add("Las calorías deben estar entre 500 y 5000 kcal")
-            }
-        }
         if (enableEjercicioInput && (ejercicioHoras.isNotBlank() || ejercicioMinutos.isNotBlank())) {
             val horas = ejercicioHoras.toIntOrNull() ?: 0
             val minutos = ejercicioMinutos.toIntOrNull() ?: 0
@@ -349,6 +371,13 @@ fun RegistroSaludScreen(
                 errors.add("El tiempo de ejercicio adicional no puede exceder 24 horas")
             }
         }
+
+        // ✅ Validar calorías (250-2500 kcal)
+        val caloriasTotales = calcularCaloriasTotales()
+        if (caloriasTotales > 0 && caloriasTotales !in 250..2500) {
+            errors.add("Las calorías deben estar entre 250 y 2500 kcal")
+        }
+
         if (animo.isBlank()) {
             errors.add("El estado de ánimo es obligatorio")
         }
@@ -362,17 +391,18 @@ fun RegistroSaludScreen(
         coroutineScope.launch {
             if (user.enfermedad == "Obesidad" && pesoNuevo.isNotBlank()) {
                 // ✅ Redondear peso a 1 decimal para evitar 75.1999969482422
-                val nuevoPeso = (pesoNuevo.toDoubleOrNull() ?: user.peso).let { 
-                    kotlin.math.round(it * 10.0) / 10.0 
+                val nuevoPeso = (pesoNuevo.toDoubleOrNull() ?: user.peso).let {
+                    kotlin.math.round(it * 10.0) / 10.0
                 }
                 usuarioViewModel.actualizarUsuario(user.copy(peso = nuevoPeso))
             }
             val presionFinal = if (user.enfermedad == "Hipertensión") {
                 "${presionSistolica.trim()}/${presionDiastolica.trim()}"
             } else null
-            
-            val presionFinalColesterol = if (user.enfermedad == "Colesterol alto" && 
-                (presionSistolicaColesterol.isNotBlank() || presionDiastolicaColesterol.isNotBlank())) {
+
+            val presionFinalColesterol = if (user.enfermedad == "Colesterol alto" &&
+                (presionSistolicaColesterol.isNotBlank() || presionDiastolicaColesterol.isNotBlank())
+            ) {
                 val syst = presionSistolicaColesterol.trim().ifBlank { null }
                 val dias = presionDiastolicaColesterol.trim().ifBlank { null }
                 if (syst != null && dias != null) "$syst/$dias" else null
@@ -382,15 +412,18 @@ fun RegistroSaludScreen(
                 usuarioId = user.id,
                 fecha = currentDate,
                 presionArterial = presionFinal,
-                presionSistolica = if (user.enfermedad == "Hipertensión") presionSistolica.trim().toIntOrNull() else presionSistolicaColesterol.trim().toIntOrNull(),
-                presionDiastolica = if (user.enfermedad == "Hipertensión") presionDiastolica.trim().toIntOrNull() else presionDiastolicaColesterol.trim().toIntOrNull(),
+                presionSistolica = if (user.enfermedad == "Hipertensión") presionSistolica.trim()
+                    .toIntOrNull() else presionSistolicaColesterol.trim().toIntOrNull(),
+                presionDiastolica = if (user.enfermedad == "Hipertensión") presionDiastolica.trim()
+                    .toIntOrNull() else presionDiastolicaColesterol.trim().toIntOrNull(),
                 glucosa = glucosa.trim().toIntOrNull(),
                 imc = imc,
                 colesterol = colesterol.trim().toIntOrNull(),
                 // ✅ Redondear peso a 1 decimal al guardar
-                peso = pesoNuevo.trim().toDoubleOrNull()?.let { kotlin.math.round(it * 10.0) / 10.0 },
+                peso = pesoNuevo.trim().toDoubleOrNull()
+                    ?.let { kotlin.math.round(it * 10.0) / 10.0 },
                 pulso = pulso.trim().toIntOrNull(),  // ✅ Pasar pulso al registro
-                calorias = calorias.trim().toIntOrNull(),
+                calorias = calcularCaloriasTotales(),
                 ejercicioMinutos = ejercicioTotal,  // Pasar minutos al registro
                 estadoAnimo = animo.trim()
             )
@@ -498,7 +531,10 @@ fun RegistroSaludScreen(
                                 modifier = Modifier.clickable { navController.popBackStack() }
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    modifier = Modifier.padding(
+                                        horizontal = 12.dp,
+                                        vertical = 8.dp
+                                    ),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
@@ -544,7 +580,14 @@ fun RegistroSaludScreen(
                                             presionSistolica = it.filter { c -> c.isDigit() }
                                         },
                                         label = { Text("Sistólica") },
-                                        placeholder = { Text("120", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
+                                        placeholder = {
+                                            Text(
+                                                "120",
+                                                color = MaterialTheme.colorScheme.onSurface.copy(
+                                                    alpha = 0.4f
+                                                )
+                                            )
+                                        },
                                         modifier = Modifier.weight(1f),
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         visualTransformation = SafeIntegerVisualTransformation("000")
@@ -558,7 +601,14 @@ fun RegistroSaludScreen(
                                             presionDiastolica = it.filter { c -> c.isDigit() }
                                         },
                                         label = { Text("Diastólica") },
-                                        placeholder = { Text("80", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
+                                        placeholder = {
+                                            Text(
+                                                "80",
+                                                color = MaterialTheme.colorScheme.onSurface.copy(
+                                                    alpha = 0.4f
+                                                )
+                                            )
+                                        },
                                         modifier = Modifier.weight(1f),
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         visualTransformation = SafeIntegerVisualTransformation("00")
@@ -570,7 +620,12 @@ fun RegistroSaludScreen(
                                 value = glucosa,
                                 onValueChange = { glucosa = it.filter { it.isDigit() } },
                                 label = { Text("Glucosa (mg/dL)") },
-                                placeholder = { Text("000", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
+                                placeholder = {
+                                    Text(
+                                        "000",
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                                    )
+                                },
                                 textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
                                 modifier = Modifier.fillMaxWidth(),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -591,11 +646,17 @@ fun RegistroSaludScreen(
                                                 filtered
                                             }
                                         } else {
-                                            filtered.replace(".", "", false).substring(0, filtered.length - 1)
+                                            filtered.replace(".", "", false)
+                                                .substring(0, filtered.length - 1)
                                         }
                                     },
                                     label = { Text("Peso actual (kg, opcional)") },
-                                    placeholder = { Text("75.5", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
+                                    placeholder = {
+                                        Text(
+                                            "75.5",
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                                        )
+                                    },
                                     textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
                                     modifier = Modifier.fillMaxWidth(),
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -606,7 +667,12 @@ fun RegistroSaludScreen(
                                     value = pulso,
                                     onValueChange = { pulso = it.filter { it.isDigit() } },
                                     label = { Text("Pulso (latidos/min, opcional)") },
-                                    placeholder = { Text("70", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
+                                    placeholder = {
+                                        Text(
+                                            "70",
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                                        )
+                                    },
                                     textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
                                     modifier = Modifier.fillMaxWidth(),
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -636,7 +702,12 @@ fun RegistroSaludScreen(
                                     value = colesterol,
                                     onValueChange = { colesterol = it.filter { it.isDigit() } },
                                     label = { Text("Colesterol (mg/dL)") },
-                                    placeholder = { Text("200", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
+                                    placeholder = {
+                                        Text(
+                                            "200",
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                                        )
+                                    },
                                     textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
                                     modifier = Modifier.fillMaxWidth(),
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -655,10 +726,18 @@ fun RegistroSaludScreen(
                                     OutlinedTextField(
                                         value = presionSistolicaColesterol,
                                         onValueChange = {
-                                            presionSistolicaColesterol = it.filter { c -> c.isDigit() }
+                                            presionSistolicaColesterol =
+                                                it.filter { c -> c.isDigit() }
                                         },
                                         label = { Text("Sistólica") },
-                                        placeholder = { Text("120", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
+                                        placeholder = {
+                                            Text(
+                                                "120",
+                                                color = MaterialTheme.colorScheme.onSurface.copy(
+                                                    alpha = 0.4f
+                                                )
+                                            )
+                                        },
                                         modifier = Modifier.weight(1f),
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         visualTransformation = SafeIntegerVisualTransformation("000")
@@ -669,10 +748,18 @@ fun RegistroSaludScreen(
                                     OutlinedTextField(
                                         value = presionDiastolicaColesterol,
                                         onValueChange = {
-                                            presionDiastolicaColesterol = it.filter { c -> c.isDigit() }
+                                            presionDiastolicaColesterol =
+                                                it.filter { c -> c.isDigit() }
                                         },
                                         label = { Text("Diastólica") },
-                                        placeholder = { Text("80", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
+                                        placeholder = {
+                                            Text(
+                                                "80",
+                                                color = MaterialTheme.colorScheme.onSurface.copy(
+                                                    alpha = 0.4f
+                                                )
+                                            )
+                                        },
                                         modifier = Modifier.weight(1f),
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         visualTransformation = SafeIntegerVisualTransformation("00")
@@ -681,19 +768,157 @@ fun RegistroSaludScreen(
                             }
                         }
 
-                        OutlinedTextField(
-                            value = calorias,
-                            onValueChange = { calorias = it.filter { it.isDigit() } },
-                            label = { Text("Calorías consumidas (ej: 2200)") },
-                            placeholder = { Text("0000", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
-                            textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
+                        // Secciones de comidas para cálculo de calorías
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            visualTransformation = SafeIntegerVisualTransformation("0000")
-                        )
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                "¿Cómo fue tu día de comida?",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF2196F3),
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(
+                                onClick = { showGuiaCalorías = true },
+                                modifier = Modifier.size(35.dp)
+                            ) {
+                                Icon(
+                                    Icons.Filled.Info,
+                                    contentDescription = "Guía de opciones de comida",
+                                    tint = Color(0xFF2196F3),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        if (hizoEjerciciosApp) {
+                        // DESAYUNO
+                        ExposedDropdownMenuBox(
+                            expanded = expandedDesayuno,
+                            onExpandedChange = { expandedDesayuno = !expandedDesayuno }
+                        ) {
+                            OutlinedTextField(
+                                value = desayunoOpcion,
+                                onValueChange = {},
+                                label = { Text("Desayuno") },
+                                readOnly = true,
+                                modifier = Modifier.menuAnchor()
+                            )
+                            ExposedDropdownMenu(
+                                expanded = expandedDesayuno,
+                                onDismissRequest = { expandedDesayuno = false }
+                            ) {
+                                opcionesComida.forEach { opcion ->
+                                    DropdownMenuItem(
+                                        text = { Text(opcion) },
+                                        onClick = {
+                                            desayunoOpcion = opcion
+                                            expandedDesayuno = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // ALMUERZO
+                        ExposedDropdownMenuBox(
+                            expanded = expandedAlmuerzo,
+                            onExpandedChange = { expandedAlmuerzo = !expandedAlmuerzo }
+                        ) {
+                            OutlinedTextField(
+                                value = almuerzoOpcion,
+                                onValueChange = {},
+                                label = { Text("Almuerzo") },
+                                readOnly = true,
+                                modifier = Modifier.menuAnchor()
+                            )
+                            ExposedDropdownMenu(
+                                expanded = expandedAlmuerzo,
+                                onDismissRequest = { expandedAlmuerzo = false }
+                            ) {
+                                opcionesComida.forEach { opcion ->
+                                    DropdownMenuItem(
+                                        text = { Text(opcion) },
+                                        onClick = {
+                                            almuerzoOpcion = opcion
+                                            expandedAlmuerzo = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // CENA
+                        ExposedDropdownMenuBox(
+                            expanded = expandedCena,
+                            onExpandedChange = { expandedCena = !expandedCena }
+                        ) {
+                            OutlinedTextField(
+                                value = cenaOpcion,
+                                onValueChange = {},
+                                label = { Text("Cena") },
+                                readOnly = true,
+                                modifier = Modifier.menuAnchor()
+                            )
+                            ExposedDropdownMenu(
+                                expanded = expandedCena,
+                                onDismissRequest = { expandedCena = false }
+                            ) {
+                                opcionesComida.forEach { opcion ->
+                                    DropdownMenuItem(
+                                        text = { Text(opcion) },
+                                        onClick = {
+                                            cenaOpcion = opcion
+                                            expandedCena = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        // Mostrar total de calorías estimadas
+                        val caloriasTotales = calcularCaloriasTotales()
+                        if (caloriasTotales > 0) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Card(
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFF2196F3).copy(
+                                        alpha = 0.1f
+                                    )
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        "Calorías estimadas:",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFF2196F3)
+                                    )
+                                    Text(
+                                        "$caloriasTotales kcal",
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF2196F3)
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        if (totalEjercicioApp > 0) {
                             Card(
                                 shape = RoundedCornerShape(16.dp),
                                 colors = CardDefaults.cardColors(
@@ -789,7 +1014,14 @@ fun RegistroSaludScreen(
                                             ejercicioHorasExtra = it.filter { c -> c.isDigit() }
                                         },
                                         label = { Text("Horas") },
-                                        placeholder = { Text("0", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
+                                        placeholder = {
+                                            Text(
+                                                "0",
+                                                color = MaterialTheme.colorScheme.onSurface.copy(
+                                                    alpha = 0.4f
+                                                )
+                                            )
+                                        },
                                         modifier = Modifier.weight(1f),
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         visualTransformation = SafeIntegerVisualTransformation("0")
@@ -802,7 +1034,14 @@ fun RegistroSaludScreen(
                                                 it.filter { c -> c.isDigit() }
                                         },
                                         label = { Text("Minutos") },
-                                        placeholder = { Text("00", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
+                                        placeholder = {
+                                            Text(
+                                                "00",
+                                                color = MaterialTheme.colorScheme.onSurface.copy(
+                                                    alpha = 0.4f
+                                                )
+                                            )
+                                        },
                                         modifier = Modifier.weight(1f),
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         visualTransformation = SafeIntegerVisualTransformation("00")
@@ -881,7 +1120,14 @@ fun RegistroSaludScreen(
                                             ejercicioHoras = it.filter { c -> c.isDigit() }
                                         },
                                         label = { Text("Horas") },
-                                        placeholder = { Text("0", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
+                                        placeholder = {
+                                            Text(
+                                                "0",
+                                                color = MaterialTheme.colorScheme.onSurface.copy(
+                                                    alpha = 0.4f
+                                                )
+                                            )
+                                        },
                                         modifier = Modifier.weight(1f),
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         visualTransformation = SafeIntegerVisualTransformation("0")
@@ -893,7 +1139,14 @@ fun RegistroSaludScreen(
                                             ejercicioMinutos = it.filter { c -> c.isDigit() }
                                         },
                                         label = { Text("Minutos") },
-                                        placeholder = { Text("00", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)) },
+                                        placeholder = {
+                                            Text(
+                                                "00",
+                                                color = MaterialTheme.colorScheme.onSurface.copy(
+                                                    alpha = 0.4f
+                                                )
+                                            )
+                                        },
                                         modifier = Modifier.weight(1f),
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         visualTransformation = SafeIntegerVisualTransformation("00")
@@ -984,6 +1237,53 @@ fun RegistroSaludScreen(
             }
         }
 
+        if (showGuiaCalorías) {
+            AlertDialog(
+                onDismissRequest = { showGuiaCalorías = false },
+                title = {
+                    Text(
+                        "Guía de opciones de comida",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2196F3)
+                    )
+                },
+                text = {
+                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                        listOf(
+                            "No comí" to "No comiste esa comida",
+                            "Ligero" to "Comida baja en calorías\n(frutas, yogur, ensalada)",
+                            "Normal" to "Comida balanceada con porción regular",
+                            "Abundante" to "Comida grande o con muchos ingredientes"
+                        ).forEach { (opcion, descripcion) ->
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Text(
+                                    opcion,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF2196F3)
+                                )
+                                Text(
+                                    descripcion,
+                                    fontSize = 13.sp,
+                                    color = Color(0xFF666666),
+                                    modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 12.dp)
+                                )
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { showGuiaCalorías = false },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+                    ) {
+                        Text("Entendido", color = Color.White)
+                    }
+                }
+            )
+        }
+
         AnimatedVisibility(
             visible = errorMessages.isNotEmpty(),
             enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 }),
@@ -1043,4 +1343,5 @@ fun RegistroSaludScreen(
         }
     }
 }
+
 
