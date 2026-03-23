@@ -57,7 +57,7 @@ export default function App() {
 
   const handleDownloadAPK = () => {
     const link = document.createElement('a')
-    link.href = '/app.apk'
+    link.href = '/DocControl.apk'
     link.download = 'DocControl-v1.0.apk'
     document.body.appendChild(link)
     link.click()
