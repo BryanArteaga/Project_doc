@@ -58,7 +58,7 @@ export default function App() {
   const handleDownloadAPK = () => {
     const link = document.createElement('a')
     link.href = '/app.apk'
-    link.download = 'DocPlus-v1.0.apk'
+    link.download = 'DocControl-v1.0.apk'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -71,7 +71,7 @@ export default function App() {
         <div className="container">
           <div className="logo">
             <span className="logo-icon">📱</span>
-            <h1>DocPlus</h1>
+            <h1>DocControl</h1>
           </div>
           <nav className="nav">
             <a href="#features">Características</a>
@@ -85,7 +85,7 @@ export default function App() {
         <div className="container">
           <div className="hero-content">
             <h1>Tu Salud en Tus Manos</h1>
-            <p>DocPlus es una aplicación de monitoreo de salud que te permite registrar, visualizar y compartir tus datos médicos con tu doctor en tiempo real.</p>
+            <p>DocControl es una aplicación de monitoreo de salud que te permite registrar, visualizar y compartir tus datos médicos con tu doctor en tiempo real.</p>
             
             <div className="hero-features">
               <div className="feature-item">
@@ -169,7 +169,7 @@ export default function App() {
           <div className="faq-items">
             <div className="faq-item">
               <h4>⚠️ ¿Qué permisos necesita la app?</h4>
-              <p>DocPlus requiere acceso a las notificaciones y conexión a internet para sincronizar datos con el servidor.</p>
+              <p>DocControl requiere acceso a las notificaciones y conexión a internet para sincronizar datos con el servidor.</p>
             </div>
 
             <div className="faq-item">
@@ -184,7 +184,7 @@ export default function App() {
 
             <div className="faq-item">
               <h4>📞 ¿Cuál es la versión mínima de Android?</h4>
-              <p>DocPlus requiere Android 7.0 o superior.</p>
+              <p>DocControl requiere Android 7.0 o superior.</p>
             </div>
 
             <div className="faq-item">
@@ -205,7 +205,7 @@ export default function App() {
         <div className="container">
           <div className="footer-content">
             <div className="footer-section">
-              <h4>DocPlus</h4>
+              <h4>DocControl</h4>
               <p>Monitoreo de salud inteligente</p>
             </div>
             <div className="footer-section">
@@ -217,7 +217,7 @@ export default function App() {
             </div>
           </div>
           <div className="footer-bottom">
-            <p>&copy; 2026 DocPlus. Todos los derechos reservados.</p>
+            <p>&copy; 2026 DocControl. Todos los derechos reservados.</p>
           </div>
         </div>
       </footer>

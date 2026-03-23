@@ -65,18 +65,18 @@ jobs:
           node-version: '20'
 
       - name: Instalar dependencias Frontend
-        working-directory: ./doc-frontend
+        working-directory: ./DocControl
         run: npm install --legacy-peer-deps
 
       - name: Build Frontend
-        working-directory: ./doc-frontend
+        working-directory: ./DocControl
         run: npm run build
         env:
           # Usar variable de entorno o valor por defecto
           VITE_API_URL: ${{ secrets.VITE_API_URL != '' && secrets.VITE_API_URL || 'http://localhost:3000' }}
 
       - name: Analizar tamaño del bundle
-        working-directory: ./doc-frontend
+        working-directory: ./DocControl
         run: |
           echo "Tamaño del bundle:"
           du -sh dist/
@@ -88,7 +88,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
-          path: doc-frontend/dist/
+          path: DocControl/dist/
           retention-days: 7
 
   # Job 3: Linting y Formato (Opcional)
@@ -105,7 +105,7 @@ jobs:
           node-version: '20'
 
       - name: Lint Frontend
-        working-directory: ./doc-frontend
+        working-directory: ./DocControl
         run: |
           npm install --legacy-peer-deps
           npm run lint || echo "Linting con warnings"
@@ -131,7 +131,7 @@ jobs:
           echo "Backend audit completado"
 
       - name: Audit Frontend
-        working-directory: ./doc-frontend
+        working-directory: ./DocControl
         run: |
           npm install --legacy-peer-deps
           npm audit --production || true
@@ -159,7 +159,7 @@ jobs:
       #     vercel-token: ${{ secrets.VERCEL_TOKEN }}
       #     vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
       #     vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-      #     working-directory: ./doc-frontend
+      #     working-directory: ./DocControl
       
       # Ejemplo: Deploy a Railway (Backend)
       # - name: Deploy to Railway

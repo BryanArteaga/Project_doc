@@ -95,7 +95,7 @@ private fun ResponsiveWelcomeCard(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            "Bienvenido a Medicini",
+                            "Bienvenido a DocControl",
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF2196F3),

@@ -1,6 +1,6 @@
-# DocPlus Landing Page
+# DocControl Landing Page
 
-Landing page para descargar la app DocPlus, con instrucciones de instalación y galería de capturas.
+Landing page para descargar la app DocControl, con instrucciones de instalación y galería de capturas.
 
 ## 📁 Estructura
 
@@ -50,7 +50,7 @@ La página abrirá en `http://localhost:5173`
 En `src/App.jsx`, reemplaza la URL de GitHub:
 
 ```javascript
-href="https://github.com/yourusername/docplus-app/releases"
+href="https://github.com/yourusername/DocControl-app/releases"
 ```
 
 Por tu repositorio real de GitHub Releases.
