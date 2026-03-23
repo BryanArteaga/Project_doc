@@ -23,7 +23,6 @@ local.properties
 gradle.properties
 
 # Android
-*.apk
 *.ap_
 *.dex
 *.class
