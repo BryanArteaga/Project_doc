@@ -38,7 +38,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="layout-header-inner">
             {/* Logo/Título */}
             <div className="layout-logo-section">
-              <h1 className="layout-logo-title">DocControlh</h1>
+              <img src="/favicon.png" alt="DocControl" style={{width: '40px', height: '40px', marginRight: '12px'}} />
+              <h1 className="layout-logo-title">DocControl</h1>
               {isAdmin && (
                 <span className="layout-admin-badge">
                   Admin
@@ -90,7 +91,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <footer className="layout-footer">
         <div className="layout-footer-content">
           <p className="layout-footer-text">
-            © 2026 DocControlh. Todos los derechos reservados.
+            © 2026 DocControl. Todos los derechos reservados.
           </p>
         </div>
       </footer>

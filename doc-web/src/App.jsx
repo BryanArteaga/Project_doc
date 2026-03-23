@@ -16,7 +16,7 @@ export default function App() {
       description: 'Seguimiento de actividad física y calorías'
     },
     {
-      icon: '📱',
+      icon: '�',
       title: 'Notificaciones Inteligentes',
       description: 'Alertas personalizadas por tu condición'
     }
@@ -70,7 +70,7 @@ export default function App() {
       <header className="header">
         <div className="container">
           <div className="logo">
-            <span className="logo-icon">📱</span>
+            <img src="/favicon.png" alt="DocControl" className="logo-icon" style={{width: '40px', height: '40px', filter: 'brightness(0.9)'}} />
             <h1>DocControl</h1>
           </div>
           <nav className="nav">
