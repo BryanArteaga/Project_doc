@@ -73,7 +73,9 @@ class MainActivity : ComponentActivity() {
                 withContext(Dispatchers.IO) {
                     val userId = prefs.getInt("user_id", -1)
                     val user = usuarioRepository.obtenerUsuarioFlow().firstOrNull()
-                    if (user != null) {
+                    // Verificar que el usuario está completo (con cédula)
+                    // Si solo hay datos incompletos en Room, ir a Welcome
+                    if (user != null && !user.cedula.isNullOrEmpty()) {
                         prefs.edit().putInt("user_id", user.id).apply()
                         
                         // Suscribirse al tema de notificaciones personales
@@ -86,6 +88,9 @@ class MainActivity : ComponentActivity() {
                             }
                         
                         startDestination = Routes.Main
+                    } else {
+                        // Usuario no completó registro o Room está vacío
+                        startDestination = Routes.Welcome
                     }
                 }
                 isDataLoaded = true
