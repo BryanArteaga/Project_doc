@@ -185,23 +185,28 @@ class SyncRepository(
                     // Pequeño delay para asegurar que la actualización se propagó
                     kotlinx.coroutines.delay(100)
                     
+                    // ✅ RELEER usuarioEnRoom después de crearUsuarioEnBackendSiNoExiste
+                    // Porque si había un PULL, los datos en Room fueron reemplazados
+                    val usuarioActualizado = usuarioDao.getUsuarioSuspend()
+                    Timber.d("📋 Usuario en Room DESPUÉS de verificar/crear en backend: ID=${usuarioActualizado?.id}, nombre=${usuarioActualizado?.nombre}")
+                    
                     // 📤 PUSH de actualización del usuario (nombre, peso, edad, etc)
                     Timber.d("📤 Actualizando perfil del usuario en backend...")
                     try {
                         val updateProfileRequest = UpdateProfileRequest(
-                            usuarioId = usuarioEnRoom.id,
-                            cedula = usuarioEnRoom.cedula,
-                            nombre = usuarioEnRoom.nombre,
-                            apellido = usuarioEnRoom.apellido,
-                            edad = usuarioEnRoom.edad,
-                            peso = usuarioEnRoom.peso,
-                            altura = usuarioEnRoom.altura,
-                            sexo = usuarioEnRoom.sexo,
-                            glucosaInicial = usuarioEnRoom.glucosaInicial?.toDouble(),
-                            colesterolInicial = usuarioEnRoom.colesterolInicial?.toDouble(),
-                            notifEnabled = usuarioEnRoom.notifEnabled,
-                            notifType = usuarioEnRoom.notifType,
-                            notifDetails = usuarioEnRoom.notifDetails,
+                            usuarioId = usuarioActualizado?.id ?: usuarioEnRoom.id,
+                            cedula = usuarioActualizado?.cedula ?: usuarioEnRoom.cedula,
+                            nombre = usuarioActualizado?.nombre ?: usuarioEnRoom.nombre,
+                            apellido = usuarioActualizado?.apellido ?: usuarioEnRoom.apellido,
+                            edad = usuarioActualizado?.edad ?: usuarioEnRoom.edad,
+                            peso = usuarioActualizado?.peso ?: usuarioEnRoom.peso,
+                            altura = usuarioActualizado?.altura ?: usuarioEnRoom.altura,
+                            sexo = usuarioActualizado?.sexo ?: usuarioEnRoom.sexo,
+                            glucosaInicial = (usuarioActualizado?.glucosaInicial ?: usuarioEnRoom.glucosaInicial)?.toDouble(),
+                            colesterolInicial = (usuarioActualizado?.colesterolInicial ?: usuarioEnRoom.colesterolInicial)?.toDouble(),
+                            notifEnabled = usuarioActualizado?.notifEnabled ?: usuarioEnRoom.notifEnabled,
+                            notifType = usuarioActualizado?.notifType ?: usuarioEnRoom.notifType,
+                            notifDetails = usuarioActualizado?.notifDetails ?: usuarioEnRoom.notifDetails,
                             confirmDataChange = true  // ✅ Autorizar cambios de datos personales en PUSH
                         )
                         val updateResponse = apiService.updateProfile(updateProfileRequest)
@@ -947,8 +952,49 @@ class SyncRepository(
                         Timber.e("❌ Error creando usuario en backend: ${createResponse.code()}")
                     }
                 } else if (pullResponse.isSuccessful) {
-                    // Usuario ya existe en backend
+                    // ✅ Usuario ya existe en backend - PULL y REEMPLAZAR datos locales
                     Timber.d("✅ Usuario ya existe en backend con ID: ${usuarioEntity.id}")
+                    try {
+                        val backendData = pullResponse.body()
+                        if (backendData != null) {
+                            Timber.d("📥 PULL de datos del usuario existente en backend...")
+                            
+                            // Reemplazar datos locales con los del backend para cada usuario existente
+                            val usuarioBackendId = backendData.usuario.id
+                            val backendUsuario = backendData.usuario
+                            
+                            // Actualizar Room con datos del backend
+                            val usuarioActualizado = usuarioEntity.copy(
+                                id = usuarioBackendId,
+                                nombre = backendUsuario.nombre,
+                                apellido = backendUsuario.apellido,
+                                cedula = usuarioEntity.cedula,  // La cédula NO cambia, usar la local
+                                edad = backendUsuario.edad ?: usuarioEntity.edad,
+                                peso = backendUsuario.peso ?: usuarioEntity.peso,
+                                altura = backendUsuario.altura ?: usuarioEntity.altura,
+                                sexo = backendUsuario.sexo ?: usuarioEntity.sexo,
+                                enfermedad = backendUsuario.enfermedad ?: usuarioEntity.enfermedad,
+                                colorEnfermedad = backendUsuario.colorEnfermedad ?: usuarioEntity.colorEnfermedad,
+                                notifEnabled = backendUsuario.notifEnabled,
+                                notifType = backendUsuario.notifType,
+                                notifDetails = backendUsuario.notifDetails
+                            )
+                            
+                            // Eliminar el usuario local anterior e insertar con datos del backend
+                            usuarioDao.delete(usuarioEntity)
+                            usuarioDao.insert(usuarioActualizado)
+                            Timber.d("✅ Usuario en Room actualizado con datos del backend (ID: $usuarioBackendId)")
+                            
+                            // Marcar como creado en backend
+                            sharedPreferences.edit()
+                                .putBoolean("usuario_creado_en_backend_${usuarioEntity.nombre}", true)
+                                .putInt("usuario_backend_id_${usuarioEntity.nombre}", usuarioBackendId)
+                                .apply()
+                            Timber.d("💾 Usuario marcado como creado en backend")
+                        }
+                    } catch (e: Exception) {
+                        Timber.w(e, "⚠️ Error procesando PULL de usuario existente, continuando...")
+                    }
                 } else {
                     Timber.w("⚠️ Error verificando usuario en backend: ${pullResponse.code()}")
                 }

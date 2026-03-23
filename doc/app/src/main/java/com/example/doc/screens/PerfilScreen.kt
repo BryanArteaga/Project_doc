@@ -42,6 +42,7 @@ import com.example.doc.R
 import com.example.doc.utils.isLandscape
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.time.delay
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.util.Calendar
 
@@ -53,6 +54,7 @@ fun PerfilScreen(
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()  // ✅ Para manejar corrutinas en el diálogo de confirmación
     val usuario by usuarioViewModel.usuario.collectAsState()
     var isEditing by remember { mutableStateOf(false) }
     var nombre by rememberSaveable { mutableStateOf(usuario?.nombre ?: "") }
@@ -267,12 +269,16 @@ fun PerfilScreen(
                 TextButton(
                     onClick = {
                         pendingUpdatedUser?.let { updatedUser ->
-                            usuarioViewModel.actualizarUsuario(updatedUser)
-                            usuarioViewModel.sincronizarManualmente()
-                            isEditing = false
+                            // 🔄 Ejecutar en corrutina para esperar a que se complete
+                            scope.launch {
+                                usuarioViewModel.actualizarUsuario(updatedUser)
+                                usuarioViewModel.sincronizarManualmente()
+                                // ✅ Solo después de completar, cerrar el diálogo y salir de edición
+                                isEditing = false
+                                showPersonalDataConfirmation = false
+                                pendingUpdatedUser = null
+                            }
                         }
-                        showPersonalDataConfirmation = false
-                        pendingUpdatedUser = null
                     }
                 ) {
                     Text("Sí, Confirmar", color = Color(0xFF2196F3), fontWeight = FontWeight.Bold)
