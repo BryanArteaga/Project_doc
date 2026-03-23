@@ -87,6 +87,12 @@ const ExerciseDetailsModal: React.FC<ExerciseDetailsModalProps> = ({
     };
   }, []);
 
+  // ✅ Actualizar cuando cambia ejercicio.pacientesAsignados (se eliminó un paciente)
+  React.useEffect(() => {
+    setShowConfirmRemove(false);
+    setPacienteARemover(null);
+  }, [ejercicio.pacientesAsignados?.length]);
+
   // Get unique enfermedades from pacientes
   const enfermedadesOptions = useMemo(() => {
     const unique = new Set(pacientes.map(p => p.enfermedad));

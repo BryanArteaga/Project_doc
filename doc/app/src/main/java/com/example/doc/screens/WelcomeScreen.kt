@@ -2,7 +2,9 @@ package com.example.doc.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -44,14 +46,19 @@ fun WelcomeScreen(navController: NavController, onUiReady: () -> Unit) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 24.dp),
+                .padding(horizontal = 16.dp, vertical = 16.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
+            Spacer(modifier = Modifier.height(8.dp))
+            
             ResponsiveWelcomeCard(
                 navController = navController,
                 isLandscape = isLandscape
             )
+            
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
@@ -64,11 +71,11 @@ private fun ResponsiveWelcomeCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = if (isLandscape) 16.dp else 36.dp),
+            .padding(horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Card(
-            shape = RoundedCornerShape(if (isLandscape) 32.dp else 40.dp),
+            shape = RoundedCornerShape(if (isLandscape) 32.dp else 32.dp),
             elevation = CardDefaults.cardElevation(14.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.88f)),
             modifier = Modifier
@@ -132,49 +139,49 @@ private fun ResponsiveWelcomeCard(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 36.dp, horizontal = 18.dp),
+                        .padding(vertical = 24.dp, horizontal = 16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
                         "Bienvenido a Medicini",
-                        fontSize = 34.sp,
+                        fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF2196F3),
                         textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(22.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
                     Text(
                         "Controla y mejora tu salud de forma sencilla",
-                        fontSize = 22.sp,
+                        fontSize = 18.sp,
                         color = Color(0xFF333333),
                         fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
                     Image(
                         painter = painterResource(id = R.drawable.corazon),
                         contentDescription = "Logo Medicini",
-                        modifier = Modifier.size(140.dp)
+                        modifier = Modifier.size(100.dp)
                     )
-                    Spacer(modifier = Modifier.height(18.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         "Monitorea tu salud, y recibe consejos personalizados",
-                        fontSize = 22.sp,
+                        fontSize = 16.sp,
                         color = Color(0xFF2196F3),
                         fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(18.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     Image(
                         painter = painterResource(id = R.drawable.persona),
                         contentDescription = "Imagen persona",
-                        modifier = Modifier.size(140.dp)
+                        modifier = Modifier.size(100.dp)
                     )
-                    Spacer(modifier = Modifier.height(22.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
                     Text(
                         "Comenzar Registro",
-                        fontSize = 20.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF2196F3).copy(alpha = 0.85f),
                         textAlign = TextAlign.Center
@@ -183,21 +190,21 @@ private fun ResponsiveWelcomeCard(
             }
         }
 
-        Spacer(modifier = Modifier.height(if (isLandscape) 16.dp else 24.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         Button(
             onClick = { navController.navigate(Routes.Register) },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(if (isLandscape) 56.dp else 62.dp)
+                .height(52.dp)
                 .then(
                     if (isLandscape) Modifier.widthIn(max = 400.dp)
                     else Modifier
                 ),
-            shape = RoundedCornerShape(32.dp),
+            shape = RoundedCornerShape(26.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
         ) {
-            Text("Comenzar", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Comenzar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
     }
 }

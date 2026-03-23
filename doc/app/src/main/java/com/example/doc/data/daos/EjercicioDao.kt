@@ -61,4 +61,7 @@ interface EjercicioDao {
 
     @Query("DELETE FROM ejercicios")
     suspend fun deleteAll()
+
+    @Query("DELETE FROM ejercicios WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Int>)
 }

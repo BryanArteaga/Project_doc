@@ -98,6 +98,79 @@ fun PerfilScreen(
     var oldPersonalData by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var newPersonalData by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
 
+    // ✅ Función para validar y guardar cambios
+    val validarYGuardar = {
+        errorMessages = emptyList()
+        val errors = mutableListOf<String>()
+
+        // Validaciones
+        if (nombre.isBlank()) errors.add("El nombre no puede estar vacío")
+        if (nombre.length !in 2..40 || !nombre.all { it.isLetter() || it.isWhitespace() }) {
+            errors.add("El nombre debe contener solo letras")
+        }
+
+        // 🔒 CEDULA NO SE VALIDA - Es READ-ONLY
+        
+        if (edad.toIntOrNull() !in 8..100) {
+            errors.add("La edad invalida")
+        }
+        peso.toDoubleOrNull()?.let {
+            if (it !in 30.0..250.0) {
+                errors.add("El peso Invalido")
+            }
+        }
+        val alturaValue = altura.toDoubleOrNull()?.let {
+            String.format(java.util.Locale.US, "%.2f", it).toDouble()
+        }
+        if (alturaValue == null || alturaValue !in 1.0..2.5) {
+            errors.add("La altura Invalida")
+        }
+
+        if (errors.isEmpty()) {
+            val updatedUser = usuario!!.copy(
+                nombre = nombre,
+                apellido = apellido.trim(),
+                edad = edad.toIntOrNull() ?: usuario!!.edad,
+                peso = peso.toDoubleOrNull() ?: usuario!!.peso,
+                altura = altura.toDoubleOrNull() ?: usuario!!.altura
+            )
+            
+            // 🔍 OPCIÓN B: Verificar si hay cambios en datos personales
+            val hasPersonalDataChanges = usuario!!.nombre != nombre.trim() ||
+                                        (usuario!!.apellido ?: "") != apellido.trim() ||
+                                        usuario!!.edad.toString() != edad ||
+                                        usuario!!.peso.toString() != peso ||
+                                        usuario!!.altura.toString() != altura
+            
+            if (hasPersonalDataChanges) {
+                // Guardar datos antiguos y nuevos para mostrar en el diálogo
+                oldPersonalData = mapOf(
+                    "Nombre" to (usuario!!.nombre ?: ""),
+                    "Apellido" to (usuario!!.apellido ?: ""),
+                    "Edad" to usuario!!.edad.toString(),
+                    "Peso" to usuario!!.peso.toString(),
+                    "Altura" to usuario!!.altura.toString()
+                )
+                newPersonalData = mapOf(
+                    "Nombre" to nombre.trim(),
+                    "Apellido" to apellido.trim(),
+                    "Edad" to edad,
+                    "Peso" to peso,
+                    "Altura" to altura
+                )
+                pendingUpdatedUser = updatedUser
+                showPersonalDataConfirmation = true
+            } else {
+                // Sin cambios en datos personales, guardar directamente
+                usuarioViewModel.actualizarUsuario(updatedUser)
+                usuarioViewModel.sincronizarManualmente()
+                isEditing = false
+            }
+        } else {
+            errorMessages = errors
+        }
+    }
+
     val notifOptions = listOf(
         "Diaria (hora fija)" to "daily_fixed",
         "Semanal (día fijo)" to "weekly_fixed",
@@ -290,7 +363,13 @@ fun PerfilScreen(
                         else
                             Color(0xFF2196F3).copy(alpha = 0.1f)
                     ),
-                    modifier = Modifier.clickable { isEditing = !isEditing }
+                    modifier = Modifier.clickable {
+                        if (isEditing) {
+                            validarYGuardar()
+                        } else {
+                            isEditing = true
+                        }
+                    }
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -465,77 +544,7 @@ fun PerfilScreen(
                                 Text("Cancelar", fontSize = 17.sp, color = Color.DarkGray, fontWeight = FontWeight.Bold)
                             }
                             Button(
-                                onClick = {
-                                    errorMessages = emptyList()
-                                    val errors = mutableListOf<String>()
-
-                                    // Validaciones
-                                    if (nombre.isBlank()) errors.add("El nombre no puede estar vacío")
-                                    if (nombre.length !in 2..40 || !nombre.all { it.isLetter() || it.isWhitespace() }) {
-                                        errors.add("El nombre debe contener solo letras")
-                                    }
-
-                                    // 🔒 CEDULA NO SE VALIDA - Es READ-ONLY
-                                    
-                                    if (edad.toIntOrNull() !in 8..100) {
-                                        errors.add("La edad invalida")
-                                    }
-                                    peso.toDoubleOrNull()?.let {
-                                        if (it !in 30.0..250.0) {
-                                            errors.add("El peso Invalido")
-                                        }
-                                    }
-                                    val alturaValue = altura.toDoubleOrNull()?.let {
-                                        String.format(java.util.Locale.US, "%.2f", it).toDouble()
-                                    }
-                                    if (alturaValue == null || alturaValue !in 1.0..2.5) {
-                                        errors.add("La altura Invalida")
-                                    }
-
-                                    if (errors.isNotEmpty()) {
-                                        errorMessages = errors
-                                        return@Button
-                                    }
-                                    val updatedUser = usuario!!.copy(
-                                        nombre = nombre,
-                                        apellido = apellido.trim(),
-                                        edad = edad.toIntOrNull() ?: usuario!!.edad,
-                                        peso = peso.toDoubleOrNull() ?: usuario!!.peso,
-                                        altura = altura.toDoubleOrNull() ?: usuario!!.altura
-                                    )
-                                    
-                                    // 🔍 OPCIÓN B: Verificar si hay cambios en datos personales
-                                    val hasPersonalDataChanges = usuario!!.nombre != nombre.trim() ||
-                                                                (usuario!!.apellido ?: "") != apellido.trim() ||
-                                                                usuario!!.edad.toString() != edad ||
-                                                                usuario!!.peso.toString() != peso ||
-                                                                usuario!!.altura.toString() != altura
-                                    
-                                    if (hasPersonalDataChanges) {
-                                        // Guardar datos antiguos y nuevos para mostrar en el diálogo
-                                        oldPersonalData = mapOf(
-                                            "Nombre" to (usuario!!.nombre ?: ""),
-                                            "Apellido" to (usuario!!.apellido ?: ""),
-                                            "Edad" to usuario!!.edad.toString(),
-                                            "Peso" to usuario!!.peso.toString(),
-                                            "Altura" to usuario!!.altura.toString()
-                                        )
-                                        newPersonalData = mapOf(
-                                            "Nombre" to nombre.trim(),
-                                            "Apellido" to apellido.trim(),
-                                            "Edad" to edad,
-                                            "Peso" to peso,
-                                            "Altura" to altura
-                                        )
-                                        pendingUpdatedUser = updatedUser
-                                        showPersonalDataConfirmation = true
-                                    } else {
-                                        // Sin cambios en datos personales, guardar directamente
-                                        usuarioViewModel.actualizarUsuario(updatedUser)
-                                        usuarioViewModel.sincronizarManualmente()
-                                        isEditing = false
-                                    }
-                                },
+                                onClick = { validarYGuardar() },
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(if (isLandscape) 48.dp else 54.dp)

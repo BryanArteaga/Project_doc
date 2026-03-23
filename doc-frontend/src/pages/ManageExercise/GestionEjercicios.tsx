@@ -130,6 +130,13 @@ const GestionEjercicios: React.FC = () => {
     aplicarFiltros();
   }, [ejercicios, searchTerm, filterEnfermedad, filterIntensidad, sortBy]);
 
+  // ✅ Real-time validation: validate as user types
+  useEffect(() => {
+    if (showModal) {
+      validateForm();
+    }
+  }, [formData, showModal]);
+
   // ============ DATA LOADING ============
   const loadEjercicios = async (
     page: number = 1, 
@@ -1421,6 +1428,7 @@ const GestionEjercicios: React.FC = () => {
           {/* Detalle Modal */}
           {selectedEjercicioDetalle && (
             <ExerciseDetailsModal
+              key={`${selectedEjercicioDetalle.id}-${selectedEjercicioDetalle.pacientesAsignados?.length || 0}`}
               ejercicio={selectedEjercicioDetalle as any}
               pacientes={pacientes}
               isDarkMode={isDarkMode}

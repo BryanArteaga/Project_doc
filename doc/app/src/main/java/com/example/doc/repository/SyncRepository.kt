@@ -201,7 +201,8 @@ class SyncRepository(
                             colesterolInicial = usuarioEnRoom.colesterolInicial?.toDouble(),
                             notifEnabled = usuarioEnRoom.notifEnabled,
                             notifType = usuarioEnRoom.notifType,
-                            notifDetails = usuarioEnRoom.notifDetails
+                            notifDetails = usuarioEnRoom.notifDetails,
+                            confirmDataChange = true  // ✅ Autorizar cambios de datos personales en PUSH
                         )
                         val updateResponse = apiService.updateProfile(updateProfileRequest)
                         if (updateResponse.isSuccessful) {
@@ -475,6 +476,23 @@ class SyncRepository(
                                     createdAt = System.currentTimeMillis()  // Timestamp para ordenamiento
                                 )
                             }
+                            
+                            // ✅ CRITICAL FIX: Eliminar ejercicios que ya no están en la PULL response
+                            // (p.ej., cuando una asignación individual es removida del backend)
+                            try {
+                                val todosLosEjercios = ejercicioDao.getAll(limit = 200)
+                                val ejerciciosAEliminar = todosLosEjercios.filter { it.id !in idsToSync }
+                                if (ejerciciosAEliminar.isNotEmpty()) {
+                                    Timber.d("🗑️ Eliminando ${ejerciciosAEliminar.size} ejercicios que ya no están asignados:")
+                                    ejerciciosAEliminar.forEach { ej ->
+                                        Timber.d("   - Ejercicio #${ej.id}: '${ej.nombre}'")
+                                    }
+                                    ejercicioDao.deleteByIds(ejerciciosAEliminar.map { it.id })
+                                }
+                            } catch (e: Exception) {
+                                Timber.e(e, "Error al eliminar ejercicios no asignados")
+                            }
+                            
                             ejercicioDao.upsertAll(ejerciciosEntities)
                             Timber.d("✅ ${body.ejercicios.size} ejercicios guardados en Room (ordenados por fecha)")
                         } catch (e: Exception) {
