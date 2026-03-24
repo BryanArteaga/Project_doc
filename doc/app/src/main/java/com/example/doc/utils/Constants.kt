@@ -18,7 +18,7 @@ object Constants {
     }
 
     object WorkManager {
-        const val NOTIFICATION_TAG = "medicini_notif"
+        const val NOTIFICATION_TAG = "doccontrol_notif"
         const val DAILY_FIXED_WORK = "daily_fixed"
         const val WEEKLY_FIXED_WORK = "weekly_fixed"
         const val MONTHLY_FIXED_WORK = "monthly_fixed"

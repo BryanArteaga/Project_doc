@@ -29,7 +29,7 @@ class ExerciseNotificationWorker(
 ) : CoroutineWorker(context, params) {
 
     companion object {
-        private const val CHANNEL_ID = "medicini_exercise_reminders"
+        private const val CHANNEL_ID = "doccontrol_exercise_reminders"
         private const val CHANNEL_NAME = "Recordatorios de Ejercicio"
         private const val NOTIFICATION_ID = 1002
     }

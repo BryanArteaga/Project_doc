@@ -27,7 +27,7 @@ class NotificationWorker(
 ) : CoroutineWorker(context, params) {
 
     companion object {
-        private const val CHANNEL_ID = "medicini_reminders"
+        private const val CHANNEL_ID = "doccontrol_reminders"
         private const val CHANNEL_NAME = "Recordatorios de Salud"
         private const val NOTIFICATION_ID = 1001
     }

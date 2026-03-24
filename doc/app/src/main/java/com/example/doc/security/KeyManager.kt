@@ -12,7 +12,7 @@ import javax.crypto.SecretKey
 class KeyManager(private val context: Context) {
 
     companion object {
-        private const val PREFS_NAME = "medicini_secure_prefs"
+        private const val PREFS_NAME = "doccontrol_secure_prefs"
         private const val KEY_ENCRYPTION_KEY = "encryption_key"
     }
 

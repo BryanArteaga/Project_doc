@@ -124,7 +124,7 @@ private fun ResponsiveWelcomeCard(
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.corazon),
-                            contentDescription = "Logo Medicini",
+                            contentDescription = "Logo DocControl",
                             modifier = Modifier.size(100.dp)
                         )
                         Spacer(modifier = Modifier.height(12.dp))
@@ -144,7 +144,7 @@ private fun ResponsiveWelcomeCard(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        "Bienvenido a Medicini",
+                        "Bienvenido a DocControl",
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF2196F3),
@@ -161,7 +161,7 @@ private fun ResponsiveWelcomeCard(
                     Spacer(modifier = Modifier.height(14.dp))
                     Image(
                         painter = painterResource(id = R.drawable.corazon),
-                        contentDescription = "Logo Medicini",
+                        contentDescription = "Logo DocControl",
                         modifier = Modifier.size(100.dp)
                     )
                     Spacer(modifier = Modifier.height(12.dp))

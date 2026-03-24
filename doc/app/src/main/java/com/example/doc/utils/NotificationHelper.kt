@@ -21,9 +21,9 @@ import java.util.concurrent.TimeUnit
  */
 object NotificationHelper {
 
-    private const val CHANNEL_ID = "medicini_reminders"
+    private const val CHANNEL_ID = "doccontrol_reminders"
     private const val CHANNEL_NAME = "Recordatorios de Salud"
-    private const val WORK_NAME = "medicini_notification_work"
+    private const val WORK_NAME = "doccontrol_notification_work"
 
     /**
      * Crear canal de notificaciones (Android 8.0+)
