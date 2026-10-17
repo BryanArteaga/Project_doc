@@ -8,23 +8,35 @@ async function cleanupExpiredTokens() {
   try {
     console.log('🧹 Limpiando tokens expirados...');
 
-    // Limpiar refresh tokens antiguos (más de 7 días)
-    await prisma.$executeRawUnsafe(`
-      DELETE FROM auth.refresh_tokens 
-      WHERE created_at < NOW() - INTERVAL '7 days'
-    `);
+    // Limpiar refresh tokens antiguos (más de 7 días) - Skip si esquema auth no existe
+    try {
+      await prisma.$executeRawUnsafe(`
+        DELETE FROM auth.refresh_tokens 
+        WHERE created_at < NOW() - INTERVAL '7 days'
+      `);
+    } catch (e) {
+      console.log('⚠️  Saltando limpieza de auth.refresh_tokens (esquema no disponible)');
+    }
 
     // Limpiar sesiones antiguas (más de 7 días)
-    await prisma.$executeRawUnsafe(`
-      DELETE FROM auth.sessions 
-      WHERE created_at < NOW() - INTERVAL '7 days'
-    `);
+    try {
+      await prisma.$executeRawUnsafe(`
+        DELETE FROM auth.sessions 
+        WHERE created_at < NOW() - INTERVAL '7 days'
+      `);
+    } catch (e) {
+      console.log('⚠️  Saltando limpieza de auth.sessions (esquema no disponible)');
+    }
 
     // Limpiar one-time tokens antiguos (más de 1 día)
-    await prisma.$executeRawUnsafe(`
-      DELETE FROM auth.one_time_tokens 
-      WHERE created_at < NOW() - INTERVAL '1 day'
-    `);
+    try {
+      await prisma.$executeRawUnsafe(`
+        DELETE FROM auth.one_time_tokens 
+        WHERE created_at < NOW() - INTERVAL '1 day'
+      `);
+    } catch (e) {
+      console.log('⚠️  Saltando limpieza de auth.one_time_tokens (esquema no disponible)');
+    }
 
     console.log('✅ Tokens expirados limpiados exitosamente');
   } catch (error) {
