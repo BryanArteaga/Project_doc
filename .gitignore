@@ -35,3 +35,13 @@ gen/
 # Firebase/Google secrets
 doc-backend/firebase-service-account.json
 doc/app/google-services.json
+
+# Artefactos de build / binarios (no commitear)
+*.apk
+*.aab
+*.ipa
+
+# Builds
+dist/
+build/
+generated/
