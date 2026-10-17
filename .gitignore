@@ -32,3 +32,6 @@ gen/
 
 # Kotlin
 *.kt.bak
+# Firebase/Google secrets
+doc-backend/firebase-service-account.json
+doc/app/google-services.json
